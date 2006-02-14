@@ -4,7 +4,8 @@ class TextField(Drawable):
     """
     A simple one-line textfield that obeys the following keybindings:
 
-    left arrow, right arrow: move cursor one character left or right, respectively
+    left arrow, right arrow: move cursor one character left or right,
+      respectively
     home, end: move cursor to start or end, respectively
     backspace: delete the character just behind the cursor
     delete: delete the character just ahead of the cursor
