@@ -11,7 +11,7 @@ class ColumnListBox(ListBox):
     appear in its own column, subject to layout rules, etc).
     """
 
-    def __init__(self, parent, name, spacing = 1):
+    def __init__(self, parent, name, vimlike = False, spacing = 1):
         ListBox.__init__(self, parent, name)
 
         # this guy calculates our columns for us (easy!)

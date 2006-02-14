@@ -11,7 +11,7 @@ class HeirarchyColumnListBox(ColumnListBox):
     appear in its own column, subject to layout rules, etc).
     """
 
-    def __init__(self, parent, name, spacing = 1):
+    def __init__(self, parent, name, vimlike = False, spacing = 1):
         ColumnListBox.__init__(self, parent, name, spacing = spacing)
 
         # key bindings for heirarchical collapsing

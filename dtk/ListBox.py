@@ -1,5 +1,4 @@
 import types
-import _curses
 
 from Drawable import Drawable
 
@@ -18,7 +17,7 @@ class ListBox(Drawable):
     views the list.
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, vimlike = False):
         Drawable.__init__(self, parent, name)
 
         # the higlighted element is shown in reverse mode
@@ -39,6 +38,10 @@ class ListBox(Drawable):
         self.bindKey('space', self.toggleSelect)
         self.bindKey('home', self.moveToTop)
         self.bindKey('end', self.moveToBottom)
+
+        if vimlike:
+            self.bindKey('j', self.moveDown)
+            self.bindKey('k', self.moveUp)
 
 
     # to conform, roughly, to the list interface
