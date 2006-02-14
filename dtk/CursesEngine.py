@@ -43,7 +43,8 @@ class CursesEngine(Engine):
                               83 : "F4",
                               109: "-",
                               107: "+"},
-                      None: "esc", # if we get a 27, followed by nothing, it's ESC
+                      None: "esc", # if we get a 27, followed by nothing,
+                                   # it's an ESC
                       91  : { 49  : { 49  :  { 126 : "F1"},
                                       50  : { 126 : "F2"},
                                       51  : { 126 : "F3"},
@@ -68,6 +69,8 @@ class CursesEngine(Engine):
                               66  : "down",
                               67  : "right",
                               68  : "left",
+                              70  : "end",
+                              72  : "home",
                               90  : "tab",
                               91  : { 65  : "F1",
                                       66  : "F2",
