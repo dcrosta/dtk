@@ -94,7 +94,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'hclb':
         ['Schneider TM', 'Zoomer', 8, 'Cuba TM']
         ]
 
-    clb = dtk.HeirarchyColumnListBox(e, 'columnlistbox')
+    clb = dtk.HierarchyColumnListBox(e, 'columnlistbox', vimlike = True)
 
     clb.addColumn(5, weight = 1, primary = True, name = 'Artist')
     clb.addColumn(5, weight = 1, primary = True, name = 'Album')
@@ -137,7 +137,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'clb':
         ['Schneider TM', 'Zoomer', 8, 'Cuba TM']
         ]
 
-    clb = dtk.ColumnListBox(e, 'columnlistbox')
+    clb = dtk.ColumnListBox(e, 'columnlistbox', vimlike = True)
 
     clb.addColumn(5, weight = 1)
     clb.addColumn(5, weight = 1)
@@ -146,8 +146,11 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'clb':
 
     clb.setItems(items, [i for i in range(len(items))])
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'l':
+    l = dtk.Label(e, 'label', 'My Label Text')
+
 else:
-    lb = dtk.ListBox(e, '+++')
+    lb = dtk.ListBox(e, '+++', vimlike = True)
     lb.setItems(['First item', 'Second item', 'Third Item'], [1,2,3])
 
 
