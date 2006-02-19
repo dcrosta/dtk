@@ -3,7 +3,7 @@ import utils
 
 from ColumnListBox import ColumnListBox
 
-class HeirarchyColumnListBox(ColumnListBox):
+class HierarchyColumnListBox(ColumnListBox):
     """
     ColumnListBox extends the basic ListBox by adding support for
     a multicolumn sortable interface by accepting sequences rather
@@ -56,7 +56,7 @@ class HeirarchyColumnListBox(ColumnListBox):
 
         # make it
         if self.heirarchy is None:
-            self.makeHeirarchy()
+            self.makeHierarchy()
 
         self.backupitems = self.items
 
@@ -73,17 +73,17 @@ class HeirarchyColumnListBox(ColumnListBox):
         self.items = self.backupitems
         self.collapsed = False
 
-    def makeHeirarchy(self):
+    def makeHierarchy(self):
         """
         makes the heirarchy
         """
         self.heirarchy = Node(None, -1, None)
-        self.doMakeHeirarchy(self.heirarchy, 0, len(self.items), 0)
+        self.doMakeHierarchy(self.heirarchy, 0, len(self.items), 0)
 
         self.clear()
         self.touch()
 
-    def doMakeHeirarchy(self, parent, start, end, level):
+    def doMakeHierarchy(self, parent, start, end, level):
         if level == len(self.primaryFields):
             for i in range(start, end):
                 parent.addChild(Node(parent, level, self.items[i]), i, i)
@@ -104,14 +104,14 @@ class HeirarchyColumnListBox(ColumnListBox):
                 elif item[field] != current:
                     n = Node(parent, level, "'%s' = '%s'" % (self.fieldNames[field], current), s, i)
                     parent.addChild(n)
-                    self.doMakeHeirarchy(n, s, i, level + 1)
+                    self.doMakeHierarchy(n, s, i, level + 1)
 
                     current = None
                     
             if current is not None:
                 n = Node(parent, level, "'%s' = '%s'" % (self.fieldNames[field], current), s, end)
                 parent.addChild(n)
-                self.doMakeHeirarchy(n, s, end, level + 1)
+                self.doMakeHierarchy(n, s, end, level + 1)
 
 
 
