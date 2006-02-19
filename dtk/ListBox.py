@@ -17,15 +17,31 @@ class ListBox(Drawable):
     views the list.
     """
 
-    def __init__(self, parent, name, vimlike = False):
+    def __init__(self, parent, name, selection = 'multiple', vimlike = False):
+        """
+        Initialize the ListBox.
+
+        @param parent   : the parent class
+        @param name     : the name of this ListBox (used, eg, in logging)
+        @param selection: the type of selection to be supported by this
+            ListBox. one of 'multiple', 'single' or 'none'
+        @param vimlike  : whether this ListBox should support vimlike
+            keybindings. Currently binds 'j' to moveDown and 'k' to moveUp
+        """
         Drawable.__init__(self, parent, name)
 
         # the higlighted element is shown in reverse mode
         self.highlighted = 0
 
-        # selected is a list to support selecting
-        # ranges or several individual elements
+
+        # these get immediately overwritten
+        self.allowSelection = False
+        self.multipleSelection = False
         self.selected = []
+
+        # remember the selection type
+        self.setSelectionType(selection)
+
 
         # sensible defaults 
         self.firstVisible = 0
@@ -35,7 +51,8 @@ class ListBox(Drawable):
         self.bindKey('up', self.moveUp)
         self.bindKey('page down', self.pageDown)
         self.bindKey('page up', self.pageUp)
-        self.bindKey('space', self.toggleSelect)
+        if self.allowSelection:
+            self.bindKey('space', self.toggleSelect)
         self.bindKey('home', self.moveToTop)
         self.bindKey('end', self.moveToBottom)
 
@@ -78,8 +95,8 @@ class ListBox(Drawable):
             raise ValueError, "unknown key type: %s" % type(key)
 
 
-    def __getitem__(self, key):
-        return self.items[key]
+    def __getitem__(self, index):
+        return self.items[index]
 
     def __iadd__(self, other):
         """
@@ -251,8 +268,6 @@ class ListBox(Drawable):
     def __len__(self):
         return self.len
 
-    def __getitem__(self, n):
-        return self.items[n]
 
     def index(self):
         """
@@ -270,6 +285,37 @@ class ListBox(Drawable):
             return None
         return self.items[self.highlighted]
 
+    def setSelectionType(self, selectionType):
+        """
+        Set the selection type for this ListBox. If changing from
+        multiple selection to single selection, the existing
+        selection is cleared. When changing to no selection, any
+        existing selection is cleared.
+
+        @param selectionType: one of 'multiple', 'single', or 'none'
+        """
+        if selectionType.lower() == 'multiple':
+            self.allowSelection = True
+            self.multipleSelection = True
+
+        elif selectionType.lower() == 'single':
+            # toggleSelection expects the list to have
+            # at least one element -- this should not
+            # cause anything to be displayed as selected
+            self.selected = [None]
+
+            self.allowSelection = True
+            self.multipleSelection = False
+
+        else:
+            self.selected = []
+
+            self.allowSelection = False
+            self.multipleSelection = False
+
+        self.log('allowSelection:    %s' % self.allowSelection)
+        self.log('multipleSelection: %s' % self.multipleSelection)
+
     def toggleSelect(self):
         """
         if the highlighted item is not selected, select it,
@@ -277,8 +323,13 @@ class ListBox(Drawable):
         """
         if self.highlighted in self.selected:
             self.selected.remove(self.highlighted)
-        else:
+
+        elif self.multipleSelection:
             self.selected.append(self.highlighted)
+
+        else:
+            self.log('self.selected: %s' % self.selected)
+            self.selected[0] = self.highlighted
 
         self.touch()
 
