@@ -26,7 +26,7 @@ class Drawable:
         # initialize sane default values
         self.y = self.x = self.h = self.w = 0
         self.border = 0
-        self.hasFocus = False
+        self.focused = False
 
         # register with the parent
         self.parent.register(self)
@@ -135,23 +135,25 @@ class Drawable:
             self.w = w
 
 
-    def gotFocus(self):
+    def focus(self):
         """
         called when this Drawable gets focus
         """
-        self.hasFocus = True
+        self.focused = True
+        self.touch()
 
-    def lostFocus(self):
+    def unfocus(self):
         """
         called when this Drawable loses focus
         """
-        self.hasFocus = False
+        self.focused = False
+        self.touch()
 
-    def getHasFocus(self):
+    def hasFocus(self):
         """
         returns the focused state, True or False
         """
-        return self.hasFocus
+        return self.focused
 
     def getParent(self):
         """
@@ -192,7 +194,7 @@ class Drawable:
         if 'printable' in self.keybindings and self.isprintable(input):
             (method, userdata) = self.keybindings['printable']
             if len(input) > 1:
-                input = self.printableVersion[input] # for things like 'space' => ' '
+                input = self.printableVersion[input] # map things like 'space' => ' '
 
         elif input in self.keybindings:
             (method, userdata) = self.keybindings[input]
@@ -205,15 +207,17 @@ class Drawable:
         extra = 0
         name = None
         vars = None
+
         if type(method) == types.MethodType:
             name = method.im_func.func_name
-            vars = len(method.im_func.func_code.co_varnames)
+            vars = method.im_func.func_code.co_argcount
             extra = 1
+
         else:
             name = method.func_name
-            vars = len(method.func_code.co_varnames)
+            vars = method.func_code.co_argcount
             extra = 0
-        
+
         # try to determine if this function wants a copy of the input
         takesInput = False
         if userdata is not None and vars == (2 + extra):

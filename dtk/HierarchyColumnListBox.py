@@ -177,7 +177,7 @@ class HierarchyColumnListBox(ColumnListBox):
             attr = {}
             if i in self.selected:
                 attr['bold'] = True
-            if self.hasFocus and i == self.highlighted:
+            if self.focused and i == self.highlighted:
                 attr['highlight'] = True
 
 

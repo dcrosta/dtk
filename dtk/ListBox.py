@@ -329,21 +329,6 @@ class ListBox(Drawable):
 
         self.touch()
 
-    def gotFocus(self):
-        """
-        when we get focus, 
-        """
-        Drawable.gotFocus(self)
-        self.hideCursor()
-        self.touch()
-
-    def lostFocus(self):
-        """
-        when we lose focus, 
-        """
-        Drawable.lostFocus(self)
-        self.touch()
-
     def render(self):
         """
         if this gets called, then one of our functions has indicated
@@ -368,7 +353,7 @@ class ListBox(Drawable):
             attr = {}
             if i in self.selected:
                 attr['bold'] = True
-            if self.hasFocus and i == self.highlighted:
+            if self.focused and i == self.highlighted:
                 attr['highlight'] = True
 
             self.draw(item, i - self.firstVisible, 0, **attr);

@@ -149,6 +149,21 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'clb':
 elif len(sys.argv) > 1 and sys.argv[1] == 'l':
     l = dtk.Label(e, 'label', 'My Label Text')
 
+elif len(sys.argv) > 1 and sys.argv[1] == 's':
+    s = dtk.Stack(e, 'stack')
+
+    lbl = dtk.Label(s, 'label-0', 'Label 0')
+    s.push(lbl)
+    e.setFocus(lbl)
+
+
+    def stackPush(stack):
+        lbl = dtk.Label(stack, 'label-%d' % len(stack), 'Label %d' % len(stack))
+        stack.push(lbl)
+
+    s.bindKey('page up', stackPush, s)
+    s.bindKey('page down', s.pop)
+
 else:
     lb = dtk.ListBox(e, '+++', vimlike = True)
     lb.setItems(['First item', 'Second item', 'Third Item'], [1,2,3])

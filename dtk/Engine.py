@@ -81,6 +81,7 @@ class Engine(object):
         """
         pass
 
+
     def getFocusedDrawable(self):
         """
         returns the drawable that has focus. raises an Exception
@@ -89,7 +90,7 @@ class Engine(object):
         f = []
         for name in self.drawables:
             drawable = self.drawables[name]
-            if drawable.getHasFocus():
+            if drawable.hasFocus():
                 f.append(drawable)
 
         if len(f) is not 1:
@@ -98,24 +99,25 @@ class Engine(object):
 
         return f[0]
 
+
     def setFocus(self, drawable):
         """
         sets the focus to be on the given drawable, given
-        by name
+        by name or reference
         """
 
         if isinstance(drawable, str):
             for n in self.drawables:
                 if drawable == n:
-                    self.drawables[n].gotFocus()
+                    self.drawables[n].focus()
                 else:
-                    self.drawables[n].lostFocus()
+                    self.drawables[n].unfocus()
         elif isinstance(drawable, Drawable):
             for d in self.drawables.values():
                 if d == drawable:
-                    d.gotFocus()
+                    d.focus()
                 else:
-                    d.lostFocus()
+                    d.unfocus()
         else:
             raise TypeError, "setFocus expects a dtk.Drawable or the name of a registered Drawable"
 
@@ -127,15 +129,13 @@ class Engine(object):
         initializer. this makes handling keyboard input through
         Engine possible.
         """
-        self.log("registered drawable `%s'" % drawable.getName())
         self.drawables[drawable.getName()] = drawable
 
         # if this is the first drawable we get registered,
-        # it is by default the root drawable
+        # it is by default the focused root drawable
         if len(self.drawables) == 1:
             self.setRoot(drawable)
             self.setFocus(drawable)
-            self.log("setting %s as focused root drawable" % drawable.getName())
 
     def setRoot(self, drawable):
         """
