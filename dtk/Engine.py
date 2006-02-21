@@ -152,6 +152,26 @@ class Engine(object):
         returns the root drawable, as set by setRoot()
         """
         return self.root
+
+    
+    def getDrawable(self, name):
+        """
+        returns the Drawable with the given name, or None if
+        Engine doesn't know about the given Drawable
+        """
+        try:
+            return self.drawables[name]
+        except:
+            return None
+
+
+    def resize(self):
+        """
+        tells the engine that a resize has happened or that it
+        should believe that one has happened and resize all the
+        visible Drawables
+        """
+        pass
             
 
     def hideCursor(self):

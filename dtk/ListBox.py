@@ -198,6 +198,8 @@ class ListBox(Drawable):
         self.highlighted = highlighted
         if selected is not None:
             self.selected = selected
+        else:
+            selected = [None]
 
         self.touch()
 
@@ -227,42 +229,36 @@ class ListBox(Drawable):
         move the highlight to the first item
         """
         self.move(0)
-        self.touch()
 
     def moveToBottom(self):
         """
         move the highlight to the last item
         """
         self.move(self.len)
-        self.touch()
 
     def moveUp(self):
         """
         move the highlight up one item
         """
         self.move(self.highlighted - 1)
-        self.touch()
 
     def moveDown(self):
         """
         move the highlight down one item
         """
         self.move(self.highlighted + 1)
-        self.touch()
 
     def pageDown(self):
         """
         move down by self.height rows
         """
         self.move(self.highlighted + self.h)
-        self.touch()
 
     def pageUp(self):
         """
         move up by self.height rows
         """
         self.move(self.highlighted - self.h)
-        self.touch()
 
 
     def __len__(self):
@@ -364,7 +360,7 @@ class ListBox(Drawable):
             self.firstVisible = self.highlighted
 
         for i in range(self.firstVisible, min(len(self.items), self.firstVisible + self.h)):
-            item = self.items[i]
+            item = str(self.items[i])
 
             if len(item) < self.w:
                 item += ' ' * (self.w - len(item))

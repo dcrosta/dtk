@@ -50,6 +50,8 @@ class Rows(Drawable):
         are taken into account.
         """
         self.rows.append(self.Row(drawable, minheight, maxheight, weight))
+        self.setSize(self.y, self.x, self.h, self.w)
+        self.touch()
 
     def insertRow(self, index, drawable, minheight, maxheight = None, weight = 1):
         """
@@ -70,12 +72,32 @@ class Rows(Drawable):
         after minimum and maximum are taken into account.
         """
         self.rows.insert(index, self.Row(drawable, minheight, maxheight, weight))
+        self.setSize(self.y, self.x, self.h, self.w)
+        self.touch()
+
+
+    def setRow(self, index, drawable, minheight, maxheight = None, weight = 1):
+        """
+        similar to insertRow, but will overwrite a row that already
+        exists with the given index.
+        """
+        self.rows[index].drawable.clear()
+
+        self.rows[index] = self.Row(drawable, minheight, maxheight, weight)
+        self.setSize(self.y, self.x, self.h, self.w)
+        self.touch()
+
 
     def setSize(self, y, x, h, w):
         """
         calculate children's sizes, then call setSize on each of them
         """
         Drawable.setSize(self, y, x, h, w)
+
+        # this is the case when we're being resized before
+        # the Engine is initialized
+        if y == 0 and x == 0 and h == 0 and w == 0:
+            return
 
         # start from available height
         available = self.h
@@ -156,10 +178,8 @@ class Rows(Drawable):
 
             for child in self.rows[:-1]:
                 if self.outerborder:
-                    self.log("drawing inner border at %d" % (y + borders + child.height))
                     self.line(self.x, y + borders + child.height, self.w, leftEnd = curses.ACS_LTEE, rightEnd = curses.ACS_RTEE)
                 else:
-                    self.log("drawing inner border at %d" % (y + borders + child.height))
                     self.line(self.x, y + borders + child.height, self.w)
 
                 y += child.height
@@ -181,9 +201,9 @@ class Rows(Drawable):
 
         return rowdrawables.index(drawable)
 
-    def focusedColumn(self):
+    def focusedRow(self):
         """
-        returns the Column that has internal focus
+        returns the Row that has internal focus
         """
         return self.rows[self.getFocusedRowIndex()]
 

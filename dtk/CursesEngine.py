@@ -36,6 +36,7 @@ class CursesEngine(Engine):
     # keycode sequences to see if they are valid input
     # tokens or not.
     keymap = { 9   : "tab",
+               10  : "enter",
                27  : { 79 : { 77 : "enter",
                               80 : "F1",
                               81 : "F2",
@@ -138,6 +139,7 @@ class CursesEngine(Engine):
         # initially, we are tiny!
         self.w = 0
         self.h = 0
+        self.resized = True
 
         # cursor position
         self.cursorpos = (-1, -1)
@@ -192,23 +194,33 @@ class CursesEngine(Engine):
 
 
         # these are all 0 so that we get a "resize" on the first time
-        h = w = lasth = lastw = 0
+        # h = w = lasth = lastw = 0
+        self.resized = True
 
         # handle input every 1/10th of a second
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        curses.halfdelay(1)
+        curses.halfdelay(2)
 
         while not self.done:
             # first try to detect and handle a terminal resize
             (h, w) = self.scr.getmaxyx()
-            if h != lasth or w != lastw:
+
+            # update self.resized to be True if the height
+            # or width has changed since the last iteration
+            if self.resized:
+                self.log('self.resized: True')
+
+            self.resized = self.resized or h != lasth or w != lastw
+
+            if self.resized:
                 # a resize has happened
                 self.root.setSize(0, 0, h, w)
                 
                 lasth = h
                 lastw = w
+                self.resized = False
 
                 # try to erase everything (necessary in some terms)
                 self.scr.move(0,0)
@@ -289,7 +301,6 @@ class CursesEngine(Engine):
 
             return char
 
-
         # otherwise, we look for the char in self.curmap,
         # which always corresponds to one of the nested
         # dictionaries in self.keymap. if we find the char
@@ -316,6 +327,15 @@ class CursesEngine(Engine):
         else:
             self.log("couldn't parse char: %d" % char)
             return None
+    
+
+    def resize(self):
+        """
+        tells the engine that a resize has happened or that it
+        should believe that one has happened and resize all the
+        visible Drawables
+        """
+        self.resized = True
     
 
     def lookupColorPair(self, fg, bg):

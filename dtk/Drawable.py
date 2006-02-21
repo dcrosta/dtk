@@ -35,17 +35,21 @@ class Drawable:
         self.keybindings = {}
 
         # whether to redraw?
-        self.touched = False
+        self.touched = True
 
     def __str__(self):
         """
         returns the type of class this is. use getName() to
         get the name of the instance
         """
+        return self.name
+
+        """
         # split off the package name
         name = str(self.__class__).split('.')
         # return only the class name
         return name[-1]
+        """
 
     def getName(self):
         """
@@ -98,7 +102,7 @@ class Drawable:
         (the upper-left corner) and self.w, self.h (the width and
         height)
         """
-        if self.needsRedraw():
+        if self.touched:
             self.untouch()
             self.render()
 
@@ -121,8 +125,6 @@ class Drawable:
 
         if y < 0 or x < 0:
             raise ValueError, "y and x arguments to setSize must be non-negative"
-        if w <= 0 or h <= 0:
-            raise ValueError, "w and h arguments to setSize must be positive"
 
         if y != self.y or x != self.x or h != self.h or w != self.w:
             self.touch()
