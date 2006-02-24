@@ -1,4 +1,4 @@
 from distutils.core import setup
 
 
-setup(name='dtk', version='0.1', packages=['dtk'])
+setup(name='dtk', version=str(dtk.__version__), packages=['dtk'])
