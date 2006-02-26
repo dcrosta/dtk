@@ -11,7 +11,7 @@ class TextEditor(Drawable):
     A simple multi-line text edtor/viewer that does smart things.
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, editable = True):
         Drawable.__init__(self, parent, name)
 
         # the buffer of lines
@@ -20,22 +20,20 @@ class TextEditor(Drawable):
         self.cx = 0
 
         # key bindings
-        self.bindPrintable(self.typing)
-        self.bindKey('enter', self.typing)
+        if editable:
+            self.bindPrintable(self.typing)
+            self.bindKey('enter', self.typing)
+            self.bindKey('backspace', self.backspace)
+            self.bindKey('delete', self.delete)
 
-        self.bindKey('up',    self.moveUp)
-        self.bindKey('down',  self.moveDown)
-        self.bindKey('left',  self.moveLeft)
-        self.bindKey('right', self.moveRight)
-
-        self.bindKey('home',  self.moveToHome)
-        self.bindKey('end',   self.moveToEnd)
-
-        self.bindKey('page up', self.pageUp)
+        self.bindKey('up',        self.moveUp)
+        self.bindKey('down',      self.moveDown)
+        self.bindKey('left',      self.moveLeft)
+        self.bindKey('right',     self.moveRight)
+        self.bindKey('home',      self.moveToHome)
+        self.bindKey('end',       self.moveToEnd)
+        self.bindKey('page up',   self.pageUp)
         self.bindKey('page down', self.pageDown)
-
-        self.bindKey('backspace', self.backspace)
-        self.bindKey('delete', self.delete)
 
 
     def focus(self):
