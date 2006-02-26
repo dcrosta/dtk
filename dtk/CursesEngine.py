@@ -156,21 +156,7 @@ class CursesEngine(Engine):
         actual main event loop function
         """
 
-        # this code adapted from curses.wrapper
-        try:
-            self.scr = curses.initscr()
-
-            # save the shell mode so we can drop back into it later.
-            curses.def_shell_mode()
-
-            curses.noecho()
-            curses.cbreak()
-
-            return self.cursesMainLoop(self.scr)
-        finally:
-            curses.echo()
-            curses.nocbreak()
-            curses.endwin()
+        curses.wrapper(self.cursesMainLoop)
 
 
     def cursesMainLoop(self, scr):
@@ -179,7 +165,7 @@ class CursesEngine(Engine):
         does its thing.
         """
 
-        # self.scr = scr
+        self.scr = scr
 
         self.initBuffer()
         
@@ -352,27 +338,12 @@ class CursesEngine(Engine):
         shellMode()
         """
 
-        # first backup the state of self.scr
-        self.winstate = os.tmpfile()
-        self.scr.putwin(self.winstate)
-
         # save the program mode
         curses.def_prog_mode()
 
-        # clean the terminal
-        self.scr.move(0, 0)
-        self.scr.clrtobot()
-        self.scr.refresh()
-
-        time.sleep(1) 
-
-        # and finally drop to shell mode
-        curses.echo()
-        curses.nocbreak()
-        curses.nl()
-
-        # curses.reset_shell_mode()
-
+        # this drops us to shell mode...
+        # the next call to curses.refresh() will
+        # return to curses mode
         curses.endwin()
 
 
@@ -381,13 +352,7 @@ class CursesEngine(Engine):
         returns to dtk mode (from shell mode) and restarts the main
         loop. opposite of shellMode()
         """
-
-        return self.mainLoop()
-
-        # self.winstate.seek(0)
-        # self.scr = curses.getwin(self.winstate)
-        # self.winstate.close()
-        # del self.winstate
+        pass
 
 
     def resize(self):
