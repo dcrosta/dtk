@@ -2,6 +2,8 @@ import _curses
 import curses
 import curses.ascii
 import types
+import os
+import time
 
 from Engine import Engine
 
@@ -153,7 +155,22 @@ class CursesEngine(Engine):
         initializes curses, and asks it to run the
         actual main event loop function
         """
-        curses.wrapper(self.cursesMainLoop)
+
+        # this code adapted from curses.wrapper
+        try:
+            self.scr = curses.initscr()
+
+            # save the shell mode so we can drop back into it later.
+            curses.def_shell_mode()
+
+            curses.noecho()
+            curses.cbreak()
+
+            return self.cursesMainLoop(self.scr)
+        finally:
+            curses.echo()
+            curses.nocbreak()
+            curses.endwin()
 
 
     def cursesMainLoop(self, scr):
@@ -162,7 +179,7 @@ class CursesEngine(Engine):
         does its thing.
         """
 
-        self.scr = scr
+        # self.scr = scr
 
         self.initBuffer()
         
@@ -328,6 +345,50 @@ class CursesEngine(Engine):
             self.log("couldn't parse char: %d" % char)
             return None
     
+    def shellMode(self):
+        """
+        pauses the main loop and returns the terminal to the shell
+        mode it was in before starting the Engine. opposite of
+        shellMode()
+        """
+
+        # first backup the state of self.scr
+        self.winstate = os.tmpfile()
+        self.scr.putwin(self.winstate)
+
+        # save the program mode
+        curses.def_prog_mode()
+
+        # clean the terminal
+        self.scr.move(0, 0)
+        self.scr.clrtobot()
+        self.scr.refresh()
+
+        time.sleep(1) 
+
+        # and finally drop to shell mode
+        curses.echo()
+        curses.nocbreak()
+        curses.nl()
+
+        # curses.reset_shell_mode()
+
+        curses.endwin()
+
+
+    def dtkMode(self):
+        """
+        returns to dtk mode (from shell mode) and restarts the main
+        loop. opposite of shellMode()
+        """
+
+        return self.mainLoop()
+
+        # self.winstate.seek(0)
+        # self.scr = curses.getwin(self.winstate)
+        # self.winstate.close()
+        # del self.winstate
+
 
     def resize(self):
         """

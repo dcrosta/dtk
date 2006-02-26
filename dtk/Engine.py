@@ -199,6 +199,21 @@ class Engine(object):
         """
         pass
 
+    def shellMode(self):
+        """
+        pauses the main loop and returns the terminal to the shell
+        mode it was in before starting the Engine. opposite of
+        shellMode()
+        """
+        pass
+
+    def dtkMode(self):
+        """
+        returns to dtk mode (from shell mode) and restarts the main
+        loop. opposite of shellMode()
+        """
+        pass
+
     def _draw(self, str, row, col, drawable, **kwargs):
         """
         draws the string at the position given by row and col, with

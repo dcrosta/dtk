@@ -161,7 +161,19 @@ class TextEditor(Drawable):
         """
         if type(text) in types.StringTypes:
             self.buffer = text.split('\n')
-        
+        elif type(text) in [types.ListType, types.TupleType]:
+            self.buffer = list(text)
+
+        self.touch()
+
+
+    def getText(self):
+        """
+        returns the list of strings currently in the TextEditor's
+        buffer
+        """
+        return self.buffer
+
 
     def render(self):
 
