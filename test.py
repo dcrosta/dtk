@@ -18,6 +18,11 @@ e = dtk.Engine(name='dtk Test App', log=file('log.txt','a'))
 if len(sys.argv) > 1 and sys.argv[1] == 't':
     tf = dtk.TextField(e, 'textfield')
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'te':
+    te = dtk.TextEditor(e, 'texteditor')
+
+    e.setFocus(te)
+
 elif len(sys.argv) > 1 and sys.argv[1] == 'r':
     c = dtk.Rows(e, 'rows')
     c.bindKey('a', add_item)
