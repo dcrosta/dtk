@@ -169,8 +169,7 @@ class CursesEngine(Engine):
 
         self.initBuffer()
         
-        # set terminal name string
-        print "\033]0;%s\007" % self.name
+        self.setTitle(self.title)
 
         # our terminating condition
         self.done = False
@@ -353,6 +352,14 @@ class CursesEngine(Engine):
         loop. opposite of shellMode()
         """
         pass
+
+
+    def setTitle(self, title):
+        """
+        Set the title of the window running DTK, if possible
+        """
+        Engine.setTitle(self, title)
+        print "\033]0;%s\007" % self.title
 
 
     def resize(self):

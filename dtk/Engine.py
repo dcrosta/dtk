@@ -42,6 +42,8 @@ class Engine(object):
         """
 
         self.name = name
+        # initially...
+        self.title = self.name
 
         if log is not None:
             self.logfile = log
@@ -75,6 +77,21 @@ class Engine(object):
         """
         pass
         
+
+    def setTitle(self, title):
+        """
+        Set the title of the window running DTK, if possible
+        """
+        self.title = title
+
+
+    def getTitle(self):
+        """
+        Return the title as previously set by setTitle()
+        """
+        return self.title
+
+
     def mainLoop(self):
         """
         runs the main event loop
