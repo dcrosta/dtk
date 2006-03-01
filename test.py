@@ -144,10 +144,11 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
 
     table = dtk.TextTable(e, 'texttable', vimlike = True)
 
-    table.addColumn(5, weight = 1)
-    table.addColumn(5, weight = 1)
+    table.addColumn(5, weight = 1, name = 'Artist')
+    table.addColumn(5, weight = 1, name = 'Album')
     table.addColumn(2, 2, alignment = 'right')
-    table.addColumn(5, weight = 2)
+    table.addColumn(5, weight = 2, name = 'Song')
+
 
     table.setItems(items, [i for i in range(len(items))])
 

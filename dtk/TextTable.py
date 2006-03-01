@@ -16,6 +16,7 @@ class TextTable(ListBox):
 
         # this guy calculates our columns for us (easy!)
         self.sizer = utils.FlexSizer(spacing)
+        self.colnames = []
 
         self.spacing = spacing
 
@@ -31,7 +32,7 @@ class TextTable(ListBox):
 
         ListBox.setSize(self, y, x, h, w)
 
-    def addColumn(self, minwidth, maxwidth = None, weight = 1, alignment = 'left'):
+    def addColumn(self, minwidth, maxwidth = None, weight = 1, alignment = 'left', name = None):
         """
         add a column (will become the rightmost column) containing
         the given drawable (its parent should be this ColumnLayout),
@@ -44,6 +45,7 @@ class TextTable(ListBox):
             raise ValueError, "'alignment' argument must be 'left' or 'right'"
 
         self.sizer.addItem(minwidth, maxwidth, weight, sortOrder = None, sortPriority = None, alignment = alignment)
+        self.colnames.append(name)
 
     def render(self):
         """
@@ -70,16 +72,28 @@ class TextTable(ListBox):
             # trim off trailing space
             if self.spacing:
                 self.format = self.format[:len(self.format) - self.spacing]
+
+        offset = 0
         
+        # max([None, None, ...]) will evaluate False
+        if max(self.colnames):
+            # then we must render the header
+            self.draw(self.format % tuple(map(lambda x: x or '', self.colnames)), 0, 0, bold = True)
+            self.line(0, 1, self.w)
+
+            offset = 2
+        
+        # the effective height, less the offset (if there's a header)
+        height = self.h - offset
 
         # update firstVisible to so that currently highligted item
         # is visible
-        if self.highlighted >= self.firstVisible + self.h:
-            self.firstVisible = self.highlighted - self.h + 1
+        if self.highlighted >= self.firstVisible + height:
+            self.firstVisible = self.highlighted - height + 1
         elif self.highlighted < self.firstVisible:
             self.firstVisible = self.highlighted
 
-        for i in range(self.firstVisible, min(len(self.items), self.firstVisible + self.h)):
+        for i in range(self.firstVisible, min(len(self.items), self.firstVisible + height)):
             item = self.items[i]
 
             if len(item) < self.cols:
@@ -95,4 +109,4 @@ class TextTable(ListBox):
 
             formatted = self.format % tuple(item)
 
-            self.draw(formatted, i - self.firstVisible, 0, **attr);
+            self.draw(formatted, i - self.firstVisible + offset, 0, **attr);
