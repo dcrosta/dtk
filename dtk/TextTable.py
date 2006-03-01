@@ -3,7 +3,7 @@ import utils
 
 from ListBox import ListBox
 
-class ColumnListBox(ListBox):
+class TextTable(ListBox):
     """
     ColumnListBox extends the basic ListBox by adding support for
     a multicolumn sortable interface by accepting sequences rather

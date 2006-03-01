@@ -108,7 +108,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'hclb':
 
     clb.setItems(items, [i for i in range(len(items))])
 
-elif len(sys.argv) > 1 and sys.argv[1] == 'clb':
+elif len(sys.argv) > 1 and sys.argv[1] == 'table':
     items = [
         ['Radiohead', 'Kid A',  1, 'Everything In Its Right Place'],
         ['Radiohead', 'Kid A',  2, 'Kid A'],
@@ -142,14 +142,14 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'clb':
         ['Schneider TM', 'Zoomer', 8, 'Cuba TM']
         ]
 
-    clb = dtk.ColumnListBox(e, 'columnlistbox', vimlike = True)
+    table = dtk.TextTable(e, 'texttable', vimlike = True)
 
-    clb.addColumn(5, weight = 1)
-    clb.addColumn(5, weight = 1)
-    clb.addColumn(2, 2, alignment = 'right')
-    clb.addColumn(5, weight = 2)
+    table.addColumn(5, weight = 1)
+    table.addColumn(5, weight = 1)
+    table.addColumn(2, 2, alignment = 'right')
+    table.addColumn(5, weight = 2)
 
-    clb.setItems(items, [i for i in range(len(items))])
+    table.setItems(items, [i for i in range(len(items))])
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'l':
     l = dtk.Label(e, 'label', 'My Label Text')

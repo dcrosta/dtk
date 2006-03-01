@@ -1,9 +1,9 @@
 import types
 import utils
 
-from ColumnListBox import ColumnListBox
+from TextTable import TextTable
 
-class HierarchyColumnListBox(ColumnListBox):
+class HierarchyColumnListBox(TextTable):
     """
     ColumnListBox extends the basic ListBox by adding support for
     a multicolumn sortable interface by accepting sequences rather
