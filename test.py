@@ -139,7 +139,10 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
         ['Schneider TM', 'Zoomer', 5, 'Turn On'],
         ['Schneider TM', 'Zoomer', 6, 'Hunger'],
         ['Schneider TM', 'Zoomer', 7, '999'],
-        ['Schneider TM', 'Zoomer', 8, 'Cuba TM']
+        ['Schneider TM', 'Zoomer', 8, 'Cuba TM'],
+        ['The Dandy Warhols', 'Thirteen Tales of Urban Bohemia', 1, 'Godless'],
+        ['The Dandy Warhols', 'Thirteen Tales of Urban Bohemia', 2, 'Mohammed'],
+        ['The Dandy Warhols', 'Thirteen Tales of Urban Bohemia', 3, 'Nietzsche'],
         ]
 
     table = dtk.TextTable(e, 'texttable', vimlike = True)
