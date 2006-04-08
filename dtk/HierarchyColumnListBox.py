@@ -1,5 +1,5 @@
 import types
-import utils
+import util
 
 from TextTable import TextTable
 
@@ -12,7 +12,7 @@ class HierarchyColumnListBox(TextTable):
     """
 
     def __init__(self, parent, name, vimlike = False, spacing = 1):
-        ColumnListBox.__init__(self, parent, name, spacing = spacing)
+        super(HierarchyColumnListBox, self).__init__(parent, name, spacing = spacing)
 
         # key bindings for heirarchical collapsing
         self.bindKey('+', self.expandAll)

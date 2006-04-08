@@ -12,7 +12,7 @@ class TextTable(ListBox):
     """
 
     def __init__(self, parent, name, spacing = 1, **kwargs):
-        ListBox.__init__(self, parent, name, **kwargs)
+        super(TextTable, self).__init__(parent, name, **kwargs)
 
         # this guy calculates our columns for us (easy!)
         self.sizer = util.FlexSizer(spacing)
