@@ -35,7 +35,7 @@ class Rows(Drawable):
         self.rows = []
 
         # keybindings
-        self.bindKey('tab', self.switchRow)
+        self.bindKey('tab', self._switchRow)
 
     def __str__(self):
         return 'Rows'
@@ -206,6 +206,11 @@ class Rows(Drawable):
         returns the Row that has internal focus
         """
         return self.rows[self.getFocusedRowIndex()]
+
+
+    def _switchRow(self):
+        return self.switchRow(None)
+
 
     def switchRow(self, index = None):
         """
