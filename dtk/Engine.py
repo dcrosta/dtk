@@ -76,6 +76,13 @@ class Engine(object):
         (used when no logging is requested)
         """
         pass
+
+    
+    def getScreenSize(self):
+        """
+        return a tuple (height, width) of the current screen size
+        """
+        pass
         
 
     def setTitle(self, title):

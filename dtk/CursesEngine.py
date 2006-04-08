@@ -354,6 +354,13 @@ class CursesEngine(Engine):
         pass
 
 
+    def getScreenSize(self):
+        """
+        return a tuple (height, width) of the current screen size
+        """
+        return self.scr.getmaxyx()
+
+
     def setTitle(self, title):
         """
         Set the title of the window running DTK, if possible
