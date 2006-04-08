@@ -486,7 +486,7 @@ class CursesEngine(Engine):
                 fg = attrdict[name]
             elif name == 'background' or name == 'bg':
                 bg = attrdict[name]
-            elif name in self.attrs:
+            elif name in self.attrs and attrdict[name] == True:
                 attr |= self.attrs[name]
 
         attr |= self.lookupColorPair(fg, bg)
