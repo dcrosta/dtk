@@ -1,5 +1,5 @@
 import types
-import utils
+import util
 
 from ListBox import ListBox
 
@@ -11,11 +11,11 @@ class TextTable(ListBox):
     appear in its own column, subject to layout rules, etc).
     """
 
-    def __init__(self, parent, name, vimlike = False, spacing = 1):
-        ListBox.__init__(self, parent, name)
+    def __init__(self, parent, name, spacing = 1, **kwargs):
+        ListBox.__init__(self, parent, name, **kwargs)
 
         # this guy calculates our columns for us (easy!)
-        self.sizer = utils.FlexSizer(spacing)
+        self.sizer = util.FlexSizer(spacing)
         self.colnames = []
 
         self.spacing = spacing

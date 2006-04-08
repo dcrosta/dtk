@@ -1,5 +1,5 @@
 from Drawable import Drawable
-import utils
+import util
 
 import types
 import re
@@ -177,7 +177,7 @@ class TextEditor(Drawable):
 
         wrapped = []
         for line in self.buffer:
-            wrapped.extend(utils.wrap(line, self.w))
+            wrapped.extend(util.wrap(line, self.w))
 
         self.log('wrapped: %s' % wrapped)
 
