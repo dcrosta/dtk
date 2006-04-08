@@ -25,7 +25,7 @@ class Rows(Drawable):
         """
         initialize the ColumnLayout
         """
-        Drawable.__init__(self, parent, name)
+        super(Rows, self).__init__(parent, name)
 
         # save these for later use
         self.outerborder = outerborder
@@ -92,7 +92,7 @@ class Rows(Drawable):
         """
         calculate children's sizes, then call setSize on each of them
         """
-        Drawable.setSize(self, y, x, h, w)
+        super(Rows, self).setSize(y, x, h, w)
 
         # this is the case when we're being resized before
         # the Engine is initialized

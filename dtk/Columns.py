@@ -25,7 +25,7 @@ class Columns(Drawable):
         """
         initialize the ColumnLayout
         """
-        Drawable.__init__(self, parent, name)
+        super(Columns, self).__init__(parent, name)
 
         # save these for later use
         self.outerborder = outerborder
@@ -75,7 +75,7 @@ class Columns(Drawable):
         """
         calculate children's sizes, then call setSize on each of them
         """
-        Drawable.setSize(self, y, x, h, w)
+        super(Columns, self).setSize(y, x, h, w)
 
         # start from available width
         available = self.w

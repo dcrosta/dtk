@@ -1,7 +1,7 @@
 import curses
 import types
 
-class Drawable:
+class Drawable(object):
     """
     Drawable is the basic GUI unit of dtk. It contains methods
     to set onscreen position (which should only be called from

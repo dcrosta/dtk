@@ -136,6 +136,7 @@ class Engine(object):
                     self.drawables[n].focus()
                 else:
                     self.drawables[n].unfocus()
+
         elif isinstance(drawable, Drawable):
             for d in self.drawables.values():
                 if d == drawable:

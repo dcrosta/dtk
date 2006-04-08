@@ -28,7 +28,7 @@ class ListBox(Drawable):
         @param vimlike  : whether this ListBox should support vimlike
             keybindings. Currently binds 'j' to moveDown and 'k' to moveUp
         """
-        Drawable.__init__(self, parent, name)
+        super(ListBox, self).__init__(parent, name)
 
         # the higlighted element is shown in reverse mode
         self.highlighted = 0

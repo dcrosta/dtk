@@ -12,7 +12,7 @@ class TextEditor(Drawable):
     """
 
     def __init__(self, parent, name, editable = True):
-        Drawable.__init__(self, parent, name)
+        super(TextEditor, self).__init__(parent, name)
 
         # the buffer of lines
         self.buffer = ['']
@@ -34,11 +34,6 @@ class TextEditor(Drawable):
         self.bindKey('end',       self.moveToEnd)
         self.bindKey('page up',   self.pageUp)
         self.bindKey('page down', self.pageDown)
-
-
-    def focus(self):
-        Drawable.focus(self)
-        self.hideCursor()
 
 
     def dopass(self):

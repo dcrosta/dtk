@@ -6,7 +6,7 @@ class Stack(Drawable):
     """
 
     def __init__(self, parent, name):
-        Drawable.__init__(self, parent, name)
+        super(Stack, self).__init__(parent, name)
 
         self.stack = []
 
@@ -37,7 +37,7 @@ class Stack(Drawable):
 
 
     def setSize(self, y, x, h, w):
-        Drawable.setSize(self, y, x, h, w)
+        super(Stack, self).setSize(y, x, h, w)
 
         if len(self.stack):
             self.stack[-1].setSize(self.y, self.x, self.h, self.w)

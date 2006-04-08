@@ -15,7 +15,7 @@ class TextField(Drawable):
     """
 
     def __init__(self, parent, name):
-        Drawable.__init__(self, parent, name)
+        super(TextField, self).__init__(parent, name)
 
         self.buffer = ''
         self.cursor = 0
