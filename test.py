@@ -173,11 +173,40 @@ elif len(sys.argv) > 1 and sys.argv[1] == 's':
     s.bindKey('page up', stackPush, s)
     s.bindKey('page down', s.pop)
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'button':
+    r = dtk.Rows(e, 'rows', outerborder = False, innerborder = False)
+
+    def toggle(item):
+        text = item.getText()
+        split = text.split()
+
+        dict = {'1': 'One',
+                'One': '1',
+                '2': 'Two',
+                'Two': '2',
+                '3': 'Three',
+                'Three': '3'}
+
+        item.setText('%s %s' % (split[0], dict[split[1]]))
+
+    b1 = dtk.Button(r, 'Button 1')
+    b2 = dtk.Button(r, 'Button 2')
+    b3 = dtk.Button(r, 'Button 3')
+
+    b1.bindKey('click', toggle, b1)
+    b2.bindKey('click', toggle, b2)
+    b3.bindKey('click', toggle, b3)
+
+    r.addRow(b1, 1)
+    r.addRow(b2, 1)
+    r.addRow(b3, 1)
+
+    e.setFocus(b1)
+
 else:
     lb = dtk.ListBox(e, '+++', vimlike = True)
     lb.setItems(['First item', 'Second item', 'Third Item'], [1,2,3])
 
 
 e.getRoot().bindKey('q', e.quit)
-
 e.mainLoop()
