@@ -11,15 +11,27 @@ class Label(Drawable):
     """
 
     def __init__(self, parent, name, text = None):
-        Drawable.__init__(self, parent, name)
+        super(Label, self).__init__(parent, name)
 
-        self.text = text
+        if text is None:
+            self.text = name
+        else:
+            self.text = text
+
+
+    def getText(self):
+        """
+        sets the Label's text to be the given text
+        """
+        return self.text
+
 
     def setText(self, text):
         """
         sets the Label's text to be the given text
         """
         self.text = text
+        self.clear()
         self.touch()
 
 
