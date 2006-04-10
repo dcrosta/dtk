@@ -189,76 +189,34 @@ class Drawable(object):
         """
 
         method = None
-        userdata = None
+        args   = []
+        kwargs = {}
 
         if 'printable' in self.keybindings and self.isprintable(input):
-            (method, userdata) = self.keybindings['printable']
+            (method, args, kwargs) = self.keybindings['printable']
             if len(input) > 1:
                 input = self.printableVersion[input] # map things like 'space' => ' '
 
         elif input in self.keybindings:
-            (method, userdata) = self.keybindings[input]
+            (method, args, kwargs) = self.keybindings[input]
 
         else:
             return False
 
-
-        # there'll be one more argument expected if it's an instance method
-        extra = 0
-        name = None
-        vars = None
-
-        if type(method) == types.MethodType:
-            name = method.im_func.func_name
-            vars = method.im_func.func_code.co_argcount
-            extra = 1
-
-        else:
-            name = method.func_name
-            vars = method.func_code.co_argcount
-            extra = 0
-
-        # try to determine if this function wants a copy of the input
-        takesInput = False
-        if userdata is not None and vars == (2 + extra):
-            takesInput = True
-        elif userdata is None and vars == (1 + extra):
-            takesInput = True
+        
+        return method(*args, **kwargs)
 
 
-        # now call it appropriately
-        if userdata is not None:
-            if takesInput:
-                return method(input, userdata)
-            else:
-                return method(userdata)
-        else:
-            if takesInput:
-                return method(input)
-            else:
-                return method()
-
-
-    def bindKey(self, key, method, userdata = None):
+    def bindKey(self, key, method, *args, **kwargs):
         """
         tell the input subsystem that the given key should
         have the effect of calling the given method with
-        the given userdata. the prototype for method should
-        be:
-        
-        def method(key, user_data)
-
-        or
-
-        def method(key)
-
-        if you specify None as the userdata.
+        the given arguments and keyword arguments
         """
         if key in self.keybindings:
-            self.log("not overwriting existing keybinding for `%s' in `%s'" % (key, self.getName()))
-            return
+            self.log("overwriting existing keybinding for `%s' in `%s'" % (key, self.getName()))
 
-        self.keybindings[key] = (method, userdata)
+        self.keybindings[key] = (method, args, kwargs)
 
     def unbindKey(self, key):
         """
@@ -269,12 +227,12 @@ class Drawable(object):
         if key in self.keybindings:
             del(self.keybindings[key])
 
-    def bindPrintable(self, method, userdata = None):
+    def bindPrintable(self, method, *args, **kwargs):
         """
         tell the input subsystem that printable characters
         should be passed to the given method as they arrive.
-        printable characters are anything that curses.ascii.isprint()
-        returns True for
+        printable characters are anything for which
+        curses.ascii.isprint() returns True. 
         """
         self.keybindings['printable'] = (method, userdata)
 
