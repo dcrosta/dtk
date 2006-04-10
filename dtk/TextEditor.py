@@ -55,7 +55,6 @@ class TextEditor(Drawable):
         if input == 'enter':
             self.cy += 1
             self.cx = 0
-            self.log('adding new line %d' % self.cy)
             self.buffer.insert(self.cy, '')
 
             self.touch()
@@ -175,10 +174,8 @@ class TextEditor(Drawable):
         for line in self.buffer:
             wrapped.extend(util.wrap(line, self.w))
 
-        self.log('wrapped: %s' % wrapped)
 
         self.clear()
-        self.log('cursor: %d, %d' % (self.cy, self.cx))
 
         y = 0
         for line in wrapped:

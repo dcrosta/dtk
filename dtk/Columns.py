@@ -96,7 +96,6 @@ class Columns(Drawable):
 
 
         required = sum([col.minwidth for col in self.columns])
-        self.log("required: %d" % required)
 
         if required > available:
             raise Exception, "more space is required than available"
@@ -108,9 +107,7 @@ class Columns(Drawable):
         available -= required
 
         for child in self.columns:
-            self.log("%d / %d = %f" % (child.weight, totalweight, float(child.weight) / float(totalweight)))
             child.width = child.minwidth + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
-            self.log("assigning width %d" % child.width)
 
             child.drawable.setSize(y, x, h, child.width)
 
@@ -179,7 +176,6 @@ class Columns(Drawable):
         """
         returns the Column that has internal focus
         """
-        self.log("found index %d" % self.getFocusedColumnIndex())
         return self.columns[self.getFocusedColumnIndex()]
 
     def switchColumn(self, index = None):
