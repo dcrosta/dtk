@@ -20,7 +20,8 @@ class TextEditor(Drawable):
         self.cx = 0
 
         # key bindings
-        if editable:
+        self.editable = editable
+        if self.editable:
             self.bindPrintable(self.typing)
             self.bindKey('enter', self.typing)
             self.bindKey('backspace', self.backspace)
@@ -184,11 +185,12 @@ class TextEditor(Drawable):
             self.draw(line, y, 0)
             y += 1
 
+        # TODO
         # have to have a more intelligent calculation (taking into
         # account line wrapping) of where the cursor is... that might
         # take some work, or really we'll just need to move the wrapping
         # into this class
-        if self.cx == self.w:
+        if self.editable and self.cx == self.w:
             self.showCursor(self.cy + 1, 0)
-        else:
+        elif self.editable:
             self.showCursor(self.cy, self.cx)

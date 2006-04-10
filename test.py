@@ -203,6 +203,22 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'button':
 
     e.setFocus(b1)
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
+    b = dtk.Button(e, 'button', 'The Button')
+    e.setFocus(b)
+
+    d = dtk.Dialog(e, 'dialog')
+    d.setTitle('Dialog Box')
+    d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
+
+    def showDialog():
+        e.log('showDialog()')
+        # e.setRoot(d)
+        e.pushFocus(d)
+        d.touch()
+
+    b.bindKey('click', showDialog)
+
 else:
     lb = dtk.ListBox(e, '+++', vimlike = True)
     lb.setItems(['First item', 'Second item', 'Third Item'], [1,2,3])

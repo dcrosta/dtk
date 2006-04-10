@@ -1,4 +1,5 @@
 import string
+import types
 
 from Drawable import Drawable
 
@@ -52,6 +53,7 @@ class Engine(object):
             self.log = self.ignore
 
         self.drawables = {}
+        self.focusStack = []
         self.root = None
 
         self.hideCursor()
@@ -130,7 +132,13 @@ class Engine(object):
         by name or reference
         """
 
-        if isinstance(drawable, str):
+        self.focusStack = []
+        self._setFocus(drawable)
+
+
+    def _setFocus(self, drawable):
+
+        if type(drawable) in types.StringTypes:
             for n in self.drawables:
                 if drawable == n:
                     self.drawables[n].focus()
@@ -145,6 +153,69 @@ class Engine(object):
                     d.unfocus()
         else:
             raise TypeError, "setFocus expects a dtk.Drawable or the name of a registered Drawable"
+
+
+    def pushFocus(self, drawable):
+        """
+        like setFocus, but retains the previous focused elements
+        in an internal stack. calls to popFocus undo this action
+        incrementally; calls to setFocus erase the stack.
+        """
+
+        if len(self.focusStack) == 0:
+            self.focusStack.append(self.getFocusedDrawable().name)
+
+        if isinstance(drawable, Drawable):
+            self.focusStack.append(drawable.name)
+
+        elif type(drawable) in types.StringTypes:
+            self.focusStack.append(drawable)
+
+        else:
+            raise TypeError, "pushFocus expects a dtk.Drawable or the name of a registered Drawable"
+
+        self._setFocus(drawable)
+        self.log('self.focusStack: %s' % self.focusStack)
+        
+        # XXX: hack!
+        self.drawables[self.focusStack[-1]].drawContents()
+
+
+
+    def popFocus(self, drawable = None):
+        """
+        If there is more than one Drawable on the focused
+        elements stack, then the most recently pushed Drawable
+        is removed, and the next most recently focused one
+        is set to be the focused Drawable. Otherwise, no
+        action is taken
+
+        if the optional 'drawable' argument is set, the stack
+        is popped to the element just underneath the given
+        drawable, if it is in the stack
+        """
+        
+        if len(self.focusStack) > 1:
+            self.log('popFocus(%s)' % drawable)
+            if isinstance(drawable, Drawable):
+                drawable = drawable.name
+    
+                if drawable in self.focusStack:
+                    spot = self.focusStack.index(drawable)
+        
+                    self.log('removing %s' % self.focusStack[:spot])
+
+                    # remove the elements after spot
+                    del self.focusStack[spot:]
+
+
+            else:
+                self.focusStack.pop()
+    
+            self.log('dropping focus to %s' % self.focusStack[-1])
+
+            self._setFocus(self.focusStack[-1])
+            self.root.clear()
 
 
     def register(self, drawable):

@@ -13,10 +13,11 @@ class Label(Drawable):
     def __init__(self, parent, name, text = None):
         super(Label, self).__init__(parent, name)
 
+        # if text is None, use the name as label text
         if text is None:
-            self.text = name
+            self.setText(name)
         else:
-            self.text = text
+            self.setText(text)
 
 
     def getText(self):

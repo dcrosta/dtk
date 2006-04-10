@@ -608,7 +608,6 @@ class BufferGappedString:
         """
         pass
 
-
 def wrap(line, width):
     """
     Wrap a line of text to the given width. Whitespace is allowed to
@@ -642,7 +641,9 @@ def wrap(line, width):
     words = newwords
 
     
-    for word in words:
+    for i in range(len(words)):
+        word = words[i]
+
         l = len(word)
         iswhitespace = (re.match('\s+$', word) is not None)
 
@@ -651,13 +652,20 @@ def wrap(line, width):
             x += l
 
         # this case needs to be made smarter
-        elif l >= width:
-            out[-1] += word[:width - x]
-            words.insert()
-            x = l - (width - x)
+        elif l > width:
+            # split the word in half
+            first  = word[:width - x]
+            second = word[width - x:]
+
+            out[-1] += first
+            out.append(second)
+            # i -= 1
+
+            x = len(second) 
 
         else:
             out.append(word)
             x = l
 
     return out
+

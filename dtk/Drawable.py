@@ -64,7 +64,7 @@ class Drawable(object):
         parent's log method
         """
         if who is None:
-            who = self.__str__()
+            who = self.name
 
         self.parent.log(what, who)
 
@@ -140,6 +140,7 @@ class Drawable(object):
         called when this Drawable gets focus
         """
         self.focused = True
+        self.log('%s focusing...' % self.name)
         self.touch()
 
     def unfocus(self):
@@ -221,10 +222,15 @@ class Drawable(object):
     def unbindKey(self, key):
         """
         removes the binding for key from the Drawable's keybindings,
-        if it exists.
+        if it exists. removing the pseudo-key 'all' removes all
+        keybindings from the Drawable.
         """
 
-        if key in self.keybindings:
+        if key == 'all':
+            for key in self.keybindings.keys():
+                del(self.keybindings[key])
+
+        elif key in self.keybindings:
             del(self.keybindings[key])
 
     def bindPrintable(self, method, *args, **kwargs):
@@ -234,7 +240,7 @@ class Drawable(object):
         printable characters are anything for which
         curses.ascii.isprint() returns True. 
         """
-        self.keybindings['printable'] = (method, userdata)
+        self.keybindings['printable'] = (method, args, kwargs)
 
     def unbindPrintable(self):
         """
@@ -311,12 +317,14 @@ class Drawable(object):
         """
         see _draw()
         """
+        self.log('calling parent._box on %s (%s)' % (str(self.parent), self.parent.__class__))
         self.parent._box(x, y, w, h, drawable, **kwargs)
 
     def box(self, x, y, w, h, **kwargs):
         """
         call box up the stack.
         """
+        self.log('CALLING _box(%s, %s, %s, %s, %s, %s)' % (x, y, w, h, self.name, kwargs))
         self.parent._box(x, y, w, h, drawable = self, **kwargs)
 
     def _line(self, x, y, len, drawable, **kwargs):

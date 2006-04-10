@@ -11,7 +11,7 @@ from Engine import Engine
 
 class CursesEngine(Engine):
     """
-    CursesEngine provides a character buffer of the screen
+    CursesEngine provides an abstraction of the screen
     implemented using the python curses module. It creates
     one curses.win object (through curses.wrapper()) and uses
     its own logic to determine occlusion, etc, for everything
@@ -109,34 +109,12 @@ class CursesEngine(Engine):
                } 
 
 
-
-    class Character:
-        """
-        the basic unit that goes into the screen buffer.
-        Character wraps the notion of a single printable
-        letter string with a curses attribute string and
-        a flag to indicate that the character has changed
-        and must be redrawn
-        """
-
-        def __init__(self, char, attr, engine):
-            self.char = char
-            self.attr = attr
-            self.diff = True # initially, draw everything
-
-        def __str__(self):
-            return self.char
-
-
     def __init__(self, *args, **kwargs):
         # some things can only be done once curses.init_scr has been called
         self.cursesInitialized = False
         self.doWhenCursesInitialized = []
 
         Engine.__init__(self, *args, **kwargs)
-
-        # eventually, a list of lists of Characters
-        self.buffer = []
 
         # initially, we are tiny!
         self.w = 0
@@ -167,7 +145,7 @@ class CursesEngine(Engine):
 
         self.scr = scr
 
-        self.initBuffer()
+        (self.h, self.w) = self.scr.getmaxyx()
         
         self.setTitle(self.title)
 
@@ -236,7 +214,7 @@ class CursesEngine(Engine):
             # wait until i say so to update the screen state
             self.scr.noutrefresh()
 
-            # tell children to draw to the buffer
+            # tell children to draw
             self.root.drawContents()
 
             # draw the cursor if it's valid
@@ -456,21 +434,6 @@ class CursesEngine(Engine):
         self.done = True
 
 
-    def initBuffer(self):
-        """
-        initialize the buffer to all blank spaces
-        """
-        (self.h, self.w) = self.scr.getmaxyx()
-
-        buffer = []
-        for r in range(self.h):
-            row = []
-            for c in range(self.w):
-                row.append(self.Character(' ', 0, self))
-            buffer.append(row)
-
-        self.buffer = buffer
-
     def cursesAttr(self, attrdict):
         """
         calculate the attribute bitstring for curses drawing
@@ -538,7 +501,7 @@ class CursesEngine(Engine):
         """
 
         # check bounds
-        if x < drawable.x or y < drawable.y or x + w > drawable.w or y + h > drawable.h:
+        if x < 0 or y < 0 or x + w > drawable.w or y + h > drawable.h:
             return
 
         x += drawable.x
@@ -546,6 +509,7 @@ class CursesEngine(Engine):
 
         attr = self.cursesAttr(kwargs)
 
+        # draw corners
         self.scr.addch(y, x, curses.ACS_ULCORNER, attr)
         self.scr.addch(y, x + w - 1, curses.ACS_URCORNER, attr)
         self.scr.addch(y + h - 1, x, curses.ACS_LLCORNER, attr)
@@ -554,7 +518,9 @@ class CursesEngine(Engine):
         except _curses.error, e:
             pass
 
+        # draw edges
         if attr:
+            # if we have an attribute, we have to draw char-by-char
             for r in range(x + 1, x + w - 1):
                 self.scr.addch(y, r, curses.ACS_HLINE, attr)
                 self.scr.addch(y + h - 1, r, curses.ACS_HLINE, attr)
@@ -562,7 +528,9 @@ class CursesEngine(Engine):
             for c in range(y + 1, y + h - 1):
                 self.scr.addch(c, x, curses.ACS_VLINE, attr)
                 self.scr.addch(c, x + w - 1, curses.ACS_VLINE, attr)
+
         else:
+            # else we can use these functions which are probably quicker
             self.scr.hline(y, x + 1, curses.ACS_HLINE, w - 2)
             self.scr.hline(y + h - 1, x + 1, curses.ACS_HLINE, w - 2)
 
