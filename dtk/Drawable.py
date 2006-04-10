@@ -317,14 +317,12 @@ class Drawable(object):
         """
         see _draw()
         """
-        self.log('calling parent._box on %s (%s)' % (str(self.parent), self.parent.__class__))
         self.parent._box(x, y, w, h, drawable, **kwargs)
 
     def box(self, x, y, w, h, **kwargs):
         """
         call box up the stack.
         """
-        self.log('CALLING _box(%s, %s, %s, %s, %s, %s)' % (x, y, w, h, self.name, kwargs))
         self.parent._box(x, y, w, h, drawable = self, **kwargs)
 
     def _line(self, x, y, len, drawable, **kwargs):
