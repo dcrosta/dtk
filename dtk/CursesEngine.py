@@ -189,9 +189,6 @@ class CursesEngine(Engine):
 
             # update self.resized to be True if the height
             # or width has changed since the last iteration
-            if self.resized:
-                self.log('self.resized: True')
-
             self.resized = self.resized or h != lasth or w != lastw
 
             if self.resized:
@@ -216,6 +213,12 @@ class CursesEngine(Engine):
 
             # tell children to draw
             self.root.drawContents()
+
+            if len(self.focusStack):
+                # draw from the bottom up
+                for name in self.focusStack:
+                    self.drawables[name].drawContents()
+
 
             # draw the cursor if it's valid
             if self.cursorpos != (-1, -1):
@@ -397,11 +400,9 @@ class CursesEngine(Engine):
         # color pair exists in our cache of colors, and
         # either return it, or create it and then return it
         if fg not in self.colors.keys():
-            self.log("adding '%s' to self.colors" % fg)
             self.colors[fg] = {}
 
         if bg not in self.colors[fg].keys():
-            self.log("adding '%s' to self.colors['%s']" % (bg, fg))
             curses.init_pair(self.numColors, colormap[fg], colormap[bg])
             self.colors[fg][bg] = curses.color_pair(self.numColors)
             self.numColors += 1
@@ -472,9 +473,7 @@ class CursesEngine(Engine):
 
         # truncate the string to fit
         if col + len(str) > drawable.w:
-            self.log("clipping str from length %d" % len(str))
             str = str[:self.w - col]
-            self.log("               to length %d" % len(str))
 
         if col < 0:
             str = str[-col:]
