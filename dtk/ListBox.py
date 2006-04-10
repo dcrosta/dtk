@@ -309,8 +309,6 @@ class ListBox(Drawable):
             self.allowSelection = False
             self.multipleSelection = False
 
-        self.log('allowSelection:    %s' % self.allowSelection)
-        self.log('multipleSelection: %s' % self.multipleSelection)
 
     def toggleSelect(self):
         """
@@ -324,7 +322,6 @@ class ListBox(Drawable):
             self.selected.append(self.highlighted)
 
         else:
-            self.log('self.selected: %s' % self.selected)
             self.selected[0] = self.highlighted
 
         self.touch()
