@@ -118,9 +118,6 @@ class Rows(Drawable):
 
 
         required = sum([row.minheight for row in self.rows])
-        self.log(" required: %d" % required)
-        self.log("available: %d" % available)
-        self.log("   self.h: %d" % self.h)
 
         if required > available:
             raise Exception, "more space is required than available"
@@ -132,11 +129,8 @@ class Rows(Drawable):
         available -= required
 
         for child in self.rows:
-            self.log("%d / %d = %f" % (child.weight, totalweight, float(child.weight) / float(totalweight)))
             child.height = child.minheight + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
-            self.log("assigning height %d" % child.height)
 
-            self.log("child.drawable.setSize(%d, %d, %d, %d)" % (y, x, child.height, w))
             child.drawable.setSize(y, x, child.height, w)
 
             y += child.height

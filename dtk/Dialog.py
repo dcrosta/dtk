@@ -82,6 +82,14 @@ class Dialog(Drawable):
         """
         return self.title
 
+    
+    def show(self):
+        """
+        shows the dialog
+        """
+        self.touch()
+        self.getEngine().pushFocus(self)
+
 
     def clickedOK(self):
         self.log('calling popFocus(%s)' % self)
