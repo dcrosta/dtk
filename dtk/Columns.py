@@ -132,8 +132,8 @@ class Columns(Drawable):
         for child in self.columns:
             child.drawable.drawContents()
 
-        # draw borders
-        self.render()
+        # draw borders through render() if necessary
+        super(Columns, self).drawContents()
 
     def render(self):
         """
@@ -157,7 +157,6 @@ class Columns(Drawable):
                 x += child.width
                 borders += 1
 
-                child.drawable.touch()
 
     def focusedColumnIndex(self):
         """
@@ -198,4 +197,9 @@ class Columns(Drawable):
         
         # tell engine to focus on this one
         col = self.columns[newindex]
-        self.getEngine().setFocus(col.drawable)
+
+        engine = self.getEngine()
+        if engine.peekFocus() is not None:
+            engine.pushFocus(col.drawable)
+        else:
+            engine.setFocus(col.drawable)

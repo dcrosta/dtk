@@ -114,7 +114,7 @@ class CursesEngine(Engine):
         self.cursesInitialized = False
         self.doWhenCursesInitialized = []
 
-        Engine.__init__(self, *args, **kwargs)
+        super(CursesEngine, self).__init__(*args, **kwargs)
 
         # initially, we are tiny!
         self.w = 0
@@ -211,6 +211,7 @@ class CursesEngine(Engine):
             # wait until i say so to update the screen state
             self.scr.noutrefresh()
 
+
             # tell children to draw
             self.root.drawContents()
 
@@ -250,12 +251,20 @@ class CursesEngine(Engine):
 
                 # we hand the input off to the focused Drawable,
                 # and recurse up the implicit stack until
-                # drawable is the Engine
+                # 'drawable' is the Engine. if we haven't gotten
+                # a positive acknowledgement that the input was
+                # handled, then we try the Engine's bindings
+                # as a last resort
+                handled = False
                 while drawable is not self:
-                    if drawable.handleInput(input):
+                    handled = drawable.handleInput(input)
+                    if handled:
                         break
-                    else:
-                        drawable = drawable.getParent()
+                    
+                    drawable = drawable.getParent()
+
+                if not handled:
+                    self.handleInput(input)
                 
 
     def parseInput(self, char):

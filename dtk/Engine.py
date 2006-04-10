@@ -1,9 +1,11 @@
 import string
 import types
+import time
 
 from Drawable import Drawable
+from InputHandler import InputHandler
 
-class Engine(object):
+class Engine(InputHandler, object):
     """
     Engine handles the main event loop of dtk, manages
     a list of Drawables, and handles input parsing and
@@ -42,6 +44,8 @@ class Engine(object):
         the main event loop.
         """
 
+        super(Engine, self).__init__()
+
         self.name = name
         # initially...
         self.title = self.name
@@ -68,7 +72,7 @@ class Engine(object):
         if who is None:
             who = self.__str__()
 
-        self.logfile.write("%s: %s\n" % (who, what))
+        self.logfile.write("[%s] %s: %s\n" % (time.strftime('%H:%M:%S'), who, what))
         self.logfile.flush()
 
 
@@ -116,7 +120,7 @@ class Engine(object):
         f = []
         for name in self.drawables:
             drawable = self.drawables[name]
-            if drawable.hasFocus():
+            if drawable.focused:
                 f.append(drawable)
 
         if len(f) is not 1:
@@ -139,17 +143,13 @@ class Engine(object):
     def _setFocus(self, drawable):
 
         if type(drawable) in types.StringTypes:
-            for n in self.drawables:
-                if drawable == n:
-                    self.drawables[n].focus()
-                else:
-                    self.drawables[n].unfocus()
+            drawable = self.drawables[drawable]
 
-        elif isinstance(drawable, Drawable):
+        if isinstance(drawable, Drawable):
             for d in self.drawables.values():
                 if d == drawable:
                     d.focus()
-                else:
+                elif d.focused:
                     d.unfocus()
         else:
             raise TypeError, "setFocus expects a dtk.Drawable or the name of a registered Drawable"
@@ -162,20 +162,23 @@ class Engine(object):
         incrementally; calls to setFocus erase the stack.
         """
 
+        # if we're pushing for the first time, prepend the name of the 
+        # currently focused drawable
         if len(self.focusStack) == 0:
             self.focusStack.append(self.getFocusedDrawable().name)
 
         if isinstance(drawable, Drawable):
-            self.focusStack.append(drawable.name)
+            drawable = drawable.name
 
-        elif type(drawable) in types.StringTypes:
-            self.focusStack.append(drawable)
-
-        else:
+        elif not type(drawable) in types.StringTypes:
             raise TypeError, "pushFocus expects a dtk.Drawable or the name of a registered Drawable"
 
+        # make sure it only ends up in the stack once
+        if drawable in self.focusStack:
+            self.focusStack.remove(drawable)
+        self.focusStack.append(drawable)
+
         self._setFocus(drawable)
-        self.log('self.focusStack: %s' % self.focusStack)
         
         # XXX: hack!
         self.drawables[self.focusStack[-1]].drawContents()
@@ -196,14 +199,12 @@ class Engine(object):
         """
         
         if len(self.focusStack) > 1:
-            self.log('popFocus(%s)' % drawable)
             if isinstance(drawable, Drawable):
                 drawable = drawable.name
     
                 if drawable in self.focusStack:
                     spot = self.focusStack.index(drawable)
         
-                    self.log('removing %s' % self.focusStack[:spot])
 
                     # remove the elements after spot
                     del self.focusStack[spot:]
@@ -212,10 +213,20 @@ class Engine(object):
             else:
                 self.focusStack.pop()
     
-            self.log('dropping focus to %s' % self.focusStack[-1])
 
             self._setFocus(self.focusStack[-1])
             self.root.clear()
+
+
+    def peekFocus(self, drawable = None):
+        """
+        returns the top element from the focus stack 
+        """
+        
+        if len(self.focusStack):
+            return self.focusStack[-1]
+
+        return None
 
 
     def register(self, drawable):

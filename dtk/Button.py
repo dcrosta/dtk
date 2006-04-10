@@ -13,10 +13,10 @@ class Button(Label):
         super(Button, self).__init__(parent, name, text)
 
         self.onClick = None
-        self.bindKey('enter', self.doClick)
+        self.bindKey('enter', self._doClick)
 
 
-    def doClick(self):
+    def _doClick(self):
         """
         Call parent's handleInput() method with the
         'click' pseudo-key

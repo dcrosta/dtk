@@ -154,8 +154,8 @@ class Rows(Drawable):
         for child in self.rows:
             child.drawable.drawContents()
 
-        # draw borders
-        self.render()
+        # draw borders through render() if necessary
+        super(Rows, self).drawContents()
 
     def render(self):
         """
@@ -179,7 +179,6 @@ class Rows(Drawable):
                 y += child.height
                 borders += 1
 
-                child.drawable.touch()
         
 
     def focusedRowIndex(self):
@@ -222,4 +221,9 @@ class Rows(Drawable):
         
         # tell engine to focus on this one
         row = self.rows[newindex]
-        self.getEngine().setFocus(row.drawable)
+
+        engine = self.getEngine()
+        if engine.peekFocus() is not None:
+            engine.pushFocus(row.drawable)
+        else:
+            engine.setFocus(row.drawable)

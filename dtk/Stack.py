@@ -12,8 +12,8 @@ class Stack(Drawable):
 
 
     def push(self, drawable):
-        if len(self.stack) and self.stack[-1].hasFocus():
-            self.getEngine().setFocus(drawable)
+        if len(self.stack) and self.stack[-1].focused:
+            self.getEngine().pushFocus(drawable)
 
         self.stack.append(drawable)
 
@@ -26,8 +26,8 @@ class Stack(Drawable):
     def pop(self):
         drawable = self.stack.pop()
 
-        if drawable.hasFocus() and len(self.stack):
-            self.getEngine().setFocus(self.stack[-1])
+        if drawable.focused and len(self.stack):
+            self.getEngine().popFocus(self.stack[-1])
 
         if len(self.stack):
             self.stack[-1].setSize(self.y, self.x, self.h, self.w)

@@ -167,7 +167,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 's':
 
 
     def stackPush(stack):
-        lbl = dtk.Label(stack, 'label-%d' % len(stack), 'Label %d' % len(stack))
+        lbl = dtk.Label(stack, 'label-%d' % len(stack.stack), 'Label %d' % len(stack.stack))
         stack.push(lbl)
 
     s.bindKey('page up', stackPush, s)
@@ -208,6 +208,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
     e.setFocus(b)
 
     d = dtk.Dialog(e, 'dialog')
+    d.setType('yesno')
     d.setTitle('Dialog Box')
     d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
 
@@ -224,5 +225,5 @@ else:
     lb.setItems(['First item', 'Second item', 'Third Item'], [1,2,3])
 
 
-e.getRoot().bindKey('q', e.quit)
+e.bindKey('q', e.quit)
 e.mainLoop()
