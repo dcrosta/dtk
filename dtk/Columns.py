@@ -132,8 +132,8 @@ class Columns(Drawable):
         for child in self.columns:
             child.drawable.drawContents()
 
-        # draw borders through render() if necessary
-        super(Columns, self).drawContents()
+        # draw borders through render()
+        self.render()
 
     def render(self):
         """

@@ -19,9 +19,14 @@ class Dialog(Drawable):
     if the text to be shown plus the button take up more
     space than is available -- be smart! The text will
     be re-wrapped to fit in the available space.
+
+    When the dialog is dismissed (by hitting "enter" on
+    one of the buttons, depending on the type), it will
+    create a psuedo-key, 'dismissed' which may be used
+    as any other key (eg with bindKey).
     """
 
-    def __init__(self, parent, name, title = None, text = None, type = 'message'):
+    def __init__(self, parent, name, title = '', text = '', type = 'message'):
         """
         Dialog constructor.
 
@@ -31,9 +36,13 @@ class Dialog(Drawable):
         """
         super(Dialog, self).__init__(parent, name)
 
+        self.children = {}
+
         self.setTitle(text)
         self.setText(text)
         self.setType(type)
+
+        self._setup()
     
 
     def setType(self, type):
@@ -59,6 +68,9 @@ class Dialog(Drawable):
             self.type = type
         else:
             raise ValueError, "setType() expects 'message' or 'yesno' only"
+
+        self._setup()
+        self.touch()
 
 
     def getResult(self):
@@ -93,6 +105,7 @@ class Dialog(Drawable):
         @type  text: string or list of strings
         """
         self.text = text
+        self._setup()
         self.touch()
 
 
@@ -117,6 +130,7 @@ class Dialog(Drawable):
         @type  title: string or list of strings
         """
         self.title = title
+        self._setup()
         self.touch()
 
 
@@ -134,8 +148,29 @@ class Dialog(Drawable):
         """
         shows the dialog
         """
+        self.setSize(0, 0, 0, 0)
         self.touch()
-        self.getEngine().pushFocus(self)
+
+        for child in self.children.values():
+            if child is not None:
+                child.touch()
+        
+        engine = self.getEngine()
+        engine.pushFocus(self)
+
+        if self.type == 'message':
+            engine.pushFocus(self.children['ok'])
+        else:
+            engine.pushFocus(self.children['yes'])
+
+    
+    def _dismissed(self):
+        """
+        called when any button is clicked
+        """
+        self.getEngine().popFocus(self)
+
+        self.handleInput('dismissed')
 
 
     def _clickedOK(self):
@@ -144,7 +179,7 @@ class Dialog(Drawable):
         """
         self.returned = True
 
-        self.getEngine().popFocus(self)
+        self._dismissed()
 
 
     def _clickedYes(self):
@@ -154,7 +189,7 @@ class Dialog(Drawable):
         self.returned = True
         self.result = True
 
-        self.getEngine().popFocus(self)
+        self._dismissed()
 
 
     def _clickedNo(self):
@@ -164,10 +199,10 @@ class Dialog(Drawable):
         self.returned = True
         self.result = False
 
-        self.getEngine().popFocus(self)
+        self._dismissed()
 
 
-    def render(self):
+    def _setup(self):
         """
         first try to determine how best to fit the Dialog on
         screen, using the word length of the text and an
@@ -176,10 +211,82 @@ class Dialog(Drawable):
         do the hard work of drawing.
         """
 
+        if getattr(self, 'text', None)  is None or \
+           getattr(self, 'title', None) is None or \
+           getattr(self, 'type', None)  is None:
+            return
+
+
+
+        from Rows import Rows
+        from Columns import Columns
+        from Label import Label
+        from TextEditor import TextEditor
+        from Button import Button
+
+        self.children['window'] = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = True)
+        self.children['title']  = Label(self.children['window'], '%s:Window:Title' % self.name, text = self.title)
+        self.children['window'].addRow(self.children['title'], 1, weight = 0)
+        self.children['window'].unbindKey('all')
+
+        self.children['body']   = Rows(self.children['window'], '%s:Window:Body' % self.name, outerborder = False, innerborder = False)
+        self.children['body'].unbindKey('all')
+        self.children['window'].addRow(self.children['body'], 1, weight = 1)
+
+        self.children['tarea']  = TextEditor(self.children['body'], '%s:Window:Body:Message' % self.name, editable = False)
+        self.children['tarea'].setText(self.text)
+        self.children['body'].addRow(self.children['tarea'], 1, weight = 1)
+
+        self.children['blank']  = Label(self.children['body'], '%s:Window:Body:Blank' % self.name, '')
+        self.children['body'].addRow(self.children['blank'], 1, weight = 0)
+
+        self.children['ok'] = None
+        self.children['yesno'] = None
+        self.children['yes'] = None
+        self.children['no'] = None
+
+        if self.type == 'message':
+            self.children['ok'] = Button(self.children['body'], '%s:Window:Body:OK Button' % self.name, ' OK ')
+            self.children['ok'].bindKey('click', self._clickedOK)
+
+            self.children['body'].addRow(self.children['ok'], 1, weight = 0)
+            focus = self.children['ok']
+
+        else:
+            self.children['yesno'] = Columns(self.children['body'], '%s:Window:Body:YesNo' % self.name, outerborder = False, innerborder = False)
+
+            self.children['yes']   = Button(self.children['yesno'], '%s:Window:Body:YesNo:Yes' % self.name, ' Yes ')
+            self.children['no']    = Button(self.children['yesno'], '%s:Window:Body:YesNo:No' % self.name,  ' No ')
+
+            self.children['yes'].bindKey('click', self._clickedYes)
+            self.children['no'].bindKey('click',  self._clickedNo)
+
+            self.children['yesno'].addColumn(self.children['yes'], 7)
+            self.children['yesno'].addColumn(self.children['no'],  7)
+
+            self.children['body'].addRow(self.children['yesno'], 1, weight = 0)
+            focus = self.children['yes']
+
+
+        self.setSize(self.y, self.x, self.h, self.w)
+
+
+    def setSize(self, y, x, h, w):
+        if getattr(self, 'text', None)  is None or \
+           getattr(self, 'title', None) is None or \
+           getattr(self, 'type', None)  is None:
+            return
+
+
+
         # set our size to the full screen (don't worry, we won't
         # draw over everything)
-        (sh, sw) = self.getEngine().getScreenSize()
-        self.setSize(0, 0, sh, sw)
+        (self.h, self.w) = self.getEngine().getScreenSize()
+        self.y = 0
+        self.x = 0
+
+        if self.h is None or self.w is None:
+            return
 
 
         if type(self.text) in (types.ListType, types.TupleType):
@@ -197,8 +304,8 @@ class Dialog(Drawable):
         width = int(8.0 * math.sqrt(chars / 12.0))
 
         # min width of dialog is 1/2 screen width - 2 (for border)
-        if width < (0.5 * (sw - 2)):
-            width = int(0.5 * (sw - 2))
+        if width < (0.5 * (self.w - 2)):
+            width = int(0.5 * (self.w - 2))
 
         wrapped = util.wrap(self.text, width)
         lines   = len(wrapped)
@@ -206,60 +313,21 @@ class Dialog(Drawable):
         # calculate screen positions
         height = 6 + lines
 
-        y = (sh - height) / 2
-        x = (sw - width)  / 2
+        y = (self.h - height) / 2
+        x = (self.w - width)  / 2
         
+        self.children['window'].setSize(y, x, height, width)
+
+        self.touch()
 
 
-        from Rows import Rows
-        from Columns import Columns
-        from Label import Label
-        from TextEditor import TextEditor
-        from Button import Button
-
-        window = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = True)
-        title  = Label(window, '%s:Window:Title' % self.name, text = self.title)
-        window.addRow(title, 1, weight = 0)
-        window.unbindKey('all')
-
-        body   = Rows(window, '%s:Window:Body' % self.name, outerborder = False, innerborder = False)
-        body.unbindKey('all')
-        window.addRow(body, 1, weight = 1)
-
-        tarea  = TextEditor(body, '%s:Window:Body:Message' % self.name, editable = False)
-        tarea.setText(self.text)
-        body.addRow(tarea, 1, weight = 1)
-
-        blank  = Label(body, '%s:Window:Body:Blank' % self.name, '')
-        body.addRow(blank, 1, weight = 0)
-
-        if self.type == 'message':
-            ok = Button(body, '%s:Window:Body:OK Button' % self.name, ' OK ')
-            ok.bindKey('click', self._clickedOK)
-
-            body.addRow(ok, 1, weight = 0)
-            focus = ok
-
-        else:
-            yesno = Columns(body, '%s:Window:Body:YesNo' % self.name, outerborder = False, innerborder = False)
-
-            yes   = Button(yesno, '%s:Window:Body:YesNo:Yes' % self.name, ' Yes ')
-            no    = Button(yesno, '%s:Window:Body:YesNo:No' % self.name,  ' No ')
-
-            yes.bindKey('click', self._clickedYes)
-            no.bindKey('click',  self._clickedNo)
-
-            yesno.addColumn(yes, 7)
-            yesno.addColumn(no,  7)
-
-            body.addRow(yesno, 1, weight = 0)
-            focus = yes
+    def drawContents(self):
+        self.children['window'].drawContents()
 
 
+    def render(self):
+        if not self.sizeSet(self):
+            self.setSize(0, 0, 0, 0)
+            self.sizeSet = True
 
-        window.setSize(y, x, height, width)
-        self.getEngine().pushFocus(focus)
-        window.drawContents()
-
-
-        self.untouch()
+        super(Dialog, self).render()

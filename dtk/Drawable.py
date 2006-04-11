@@ -35,8 +35,8 @@ class Drawable(InputHandler, object):
         # register with the parent
         self.parent.register(self)
 
-        # whether to redraw?
-        self.touched = True
+        # redraw yourself the first time
+        self.touch()
 
     def __str__(self):
         """
@@ -45,18 +45,6 @@ class Drawable(InputHandler, object):
         """
         return self.name
 
-        """
-        # split off the package name
-        name = str(self.__class__).split('.')
-        # return only the class name
-        return name[-1]
-        """
-
-    def getName(self):
-        """
-        returns the Drawable's name
-        """
-        return self.name
 
     def log(self, what, who = None):
         """
@@ -127,7 +115,6 @@ class Drawable(InputHandler, object):
             self.x = x
             self.h = h
             self.w = w
-
 
     def focus(self):
         """

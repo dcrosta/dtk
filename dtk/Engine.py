@@ -236,7 +236,7 @@ class Engine(InputHandler, object):
         initializer. this makes handling keyboard input through
         Engine possible.
         """
-        self.drawables[drawable.getName()] = drawable
+        self.drawables[drawable.name] = drawable
 
         # if this is the first drawable we get registered,
         # it is by default the focused root drawable

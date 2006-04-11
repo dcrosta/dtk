@@ -47,4 +47,4 @@ class Stack(Drawable):
 
     def drawContents(self):
         if len(self.stack):
-            self.stack[-1].render()
+            self.stack[-1].drawContents()

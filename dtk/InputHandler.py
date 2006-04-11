@@ -64,9 +64,6 @@ class InputHandler(object):
         have the effect of calling the given method with
         the given arguments and keyword arguments
         """
-        if key in self.keybindings:
-            self.log("overwriting existing keybinding for `%s' in `%s'" % (key, self.getName()))
-
         self.keybindings[key] = (method, args, kwargs)
 
 

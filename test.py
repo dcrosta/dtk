@@ -214,9 +214,8 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
 
     def showDialog():
         e.log('showDialog()')
-        # e.setRoot(d)
-        e.pushFocus(d)
-        d.touch()
+        # e.pushFocus(d)
+        d.show()
 
     b.bindKey('click', showDialog)
 

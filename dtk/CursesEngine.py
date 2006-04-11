@@ -346,9 +346,13 @@ class CursesEngine(Engine):
 
     def getScreenSize(self):
         """
-        return a tuple (height, width) of the current screen size
+        return a tuple (height, width) of the current screen size,
+        or (None, None) if curses hasn't been initialized
         """
-        return self.scr.getmaxyx()
+        if self.cursesInitialized:
+            return self.scr.getmaxyx()
+        else:
+            return (None, None)
 
 
     def setTitle(self, title):

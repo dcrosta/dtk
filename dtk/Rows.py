@@ -154,8 +154,8 @@ class Rows(Drawable):
         for child in self.rows:
             child.drawable.drawContents()
 
-        # draw borders through render() if necessary
-        super(Rows, self).drawContents()
+        # draw borders through render()
+        self.render()
 
     def render(self):
         """

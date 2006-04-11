@@ -30,5 +30,4 @@ class Button(Label):
         If focused, we draw with the highlight attribute (usually
         reverse-colors)
         """
-
         self.draw('[%s]' % self.text, 0, 0, highlight = (self.focused == True))
