@@ -1,4 +1,4 @@
-
+import curses
 
 class InputHandler(object):
     """
@@ -44,8 +44,12 @@ class InputHandler(object):
 
         if 'printable' in self.keybindings and self.isprintable(input):
             (method, args, kwargs) = self.keybindings['printable']
+
             if len(input) > 1:
                 input = self.printableVersion[input] # map things like 'space' => ' '
+
+            args = list(args)
+            args[0:0] = input
 
         elif input in self.keybindings:
             (method, args, kwargs) = self.keybindings[input]

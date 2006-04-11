@@ -47,7 +47,7 @@ class Dialog(Drawable):
 
     def setType(self, type):
         """
-        sets the type of the dialog: 'message' or 'yesno'
+        sets the type of the dialog: 'message', 'yesno' or 'input'
 
         a 'message' dialog box displays the given text message
         with an 'OK' button to dismis the dialog.
@@ -57,17 +57,21 @@ class Dialog(Drawable):
         getResult() method returns True if the user chose 'yes'
         or False if the user chose 'no'.
 
-        @param type: the type of the dialog, either 'message' or 'yesno'
+        an 'input' dialog displays the given text message and
+        prompts the user for input with a text field.
+
+        @param type: the type of the dialog, 'message', 'yesno'
+            or 'input'
         @type  type: string
         """
 
         type = type.lower()
         self.returned = False
 
-        if type in ('message', 'yesno'):
+        if type in ('message', 'yesno', 'input'):
             self.type = type
         else:
-            raise ValueError, "setType() expects 'message' or 'yesno' only"
+            raise ValueError, "setType() expects 'message', 'yesno' or 'input' only"
 
         self._setup()
         self.touch()
@@ -80,13 +84,15 @@ class Dialog(Drawable):
 
         in 'message' dialogs, the result is always True if the dialog
         has been dismissed. in 'yesno' dialogs, the result is True if
-        the user chose 'yes', and False if the user chose 'no'
+        the user chose 'yes', and False if the user chose 'no'. in
+        'input' dialogs, returns the text entered by the user
 
         @return: for 'yesno' dialogs, True if the user chose 'yes',
             False if the user chose 'no'; for 'message' dialogs, 'True'
-            if the user has closed the dialog; for both types, None if
-            the dialog has not been dismissed yet
-        @rtype: boolean or None
+            if the user has closed the dialog; for 'input' dialogs,
+            the string value entered by the user. for all types, None 
+            if the dialog has not been dismissed yet
+        @rtype: boolean, string or None
         """
         if self.returned:
             return self.result
@@ -160,6 +166,8 @@ class Dialog(Drawable):
 
         if self.type == 'message':
             engine.pushFocus(self.children['ok'])
+        elif self.type == 'input':
+            engine.pushFocus(self.children['input'])
         else:
             engine.pushFocus(self.children['yes'])
 
@@ -178,6 +186,8 @@ class Dialog(Drawable):
         called when the user clicks the 'OK' button in a message dialog
         """
         self.returned = True
+        if self.type == 'input':
+            self.result = self.children['input'].getText()
 
         self._dismissed()
 
@@ -222,6 +232,7 @@ class Dialog(Drawable):
         from Columns import Columns
         from Label import Label
         from TextEditor import TextEditor
+        from TextField import TextField
         from Button import Button
 
         self.children['window'] = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = True)
@@ -251,6 +262,14 @@ class Dialog(Drawable):
 
             self.children['body'].addRow(self.children['ok'], 1, weight = 0)
             focus = self.children['ok']
+
+        elif self.type == 'input':
+            self.children['input'] = TextField(self.children['body'], '%s:Window:Body:Input' % self.name)
+            self.children['input'].bindKey('enter', self._clickedOK)
+
+            self.children['body'].addRow(self.children['input'], 1, weight = 0)
+
+            focus = self.children['input']
 
         else:
             self.children['yesno'] = Columns(self.children['body'], '%s:Window:Body:YesNo' % self.name, outerborder = False, innerborder = False)

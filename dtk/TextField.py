@@ -29,7 +29,17 @@ class TextField(Drawable):
         self.bindKey('end', self.moveToEnd)
         self.bindKey('backspace', self.backspace)
         self.bindKey('delete', self.delete)
-    
+
+
+    def setText(self, text):
+        self.buffer = text
+        self.touch()
+
+
+    def getText(self):
+        return self.buffer
+   
+   
     def moveLeft(self):
         self.cursor -= 1
         if self.cursor < 0:
