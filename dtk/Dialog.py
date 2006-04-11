@@ -322,6 +322,7 @@ class Dialog(Drawable):
 
 
     def drawContents(self):
+        # delegate drawContents to the 'window' child
         self.children['window'].drawContents()
 
 

@@ -146,11 +146,17 @@ class Engine(InputHandler, object):
             drawable = self.drawables[drawable]
 
         if isinstance(drawable, Drawable):
+            toFocus = None
             for d in self.drawables.values():
                 if d == drawable:
-                    d.focus()
+                    toFocus = d
                 elif d.focused:
                     d.unfocus()
+
+            # do this last, so that the unfocusing 
+            # happens first
+            if toFocus is not None: toFocus.focus()
+
         else:
             raise TypeError, "setFocus expects a dtk.Drawable or the name of a registered Drawable"
 
@@ -179,10 +185,6 @@ class Engine(InputHandler, object):
         self.focusStack.append(drawable)
 
         self._setFocus(drawable)
-        
-        # XXX: hack!
-        self.drawables[self.focusStack[-1]].drawContents()
-
 
 
     def popFocus(self, drawable = None):
