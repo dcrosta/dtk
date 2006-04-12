@@ -330,6 +330,8 @@ class CursesEngine(Engine):
         # save the program mode
         curses.def_prog_mode()
 
+        self.root.clear()
+
         # this drops us to shell mode...
         # the next call to curses.refresh() will
         # return to curses mode
