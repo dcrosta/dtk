@@ -28,10 +28,21 @@ class Stack(Drawable):
         self.touch()
 
 
-    def pop(self):
+    def pop(self, forceFocus = None):
+        """
+        pop the top element off the stack. if forceFocus is
+        set to True, the element below will be set to the
+        focused element regardless of previous focus. if it
+        is set to False, it will not be set to focus regardless
+        of previous focus. if set to None, then it will be set
+        to focus only if the previous top stack item had focus.
+        """
         drawable = self.stack.pop()
 
-        if drawable.focused and len(self.stack):
+        if forceFocus:
+            self.getEngine().setFocus(self.stack[-1])
+
+        elif forceFocus is None and drawable.focused and len(self.stack):
             self.getEngine()._setFocus(self.stack[-1])
 
         if len(self.stack):
