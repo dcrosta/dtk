@@ -118,16 +118,22 @@ class Drawable(InputHandler, object):
 
     def focus(self):
         """
-        called when this Drawable gets focus
+        called when this Drawable gets focus. spawns
+        the 'focused' psuedo-key.
         """
         self.focused = True
+        self.handleInput('focused')
+
         self.touch()
 
     def unfocus(self):
         """
-        called when this Drawable loses focus
+        called when this Drawable loses focus. spawns
+        the 'unfocused' psuedo-key.
         """
         self.focused = False
+        self.handleInput('unfocused')
+
         self.touch()
 
     def getParent(self):

@@ -9,11 +9,20 @@ class Button(Label):
     hitting <enter>)
     """
 
-    def __init__(self, parent, name, text = None):
+    def __init__(self, parent, name, text = None, decoration = '[%s]'):
         super(Button, self).__init__(parent, name, text)
 
-        self.onClick = None
+        self.setDecoration(decoration)
         self.bindKey('enter', self._doClick)
+
+
+    def setDecoration(self, decoration):
+        """
+        sets the 'button decoration'. this should
+        be a format string with a single string
+        format conversion.
+        """
+        self.decoration = decoration
 
 
     def _doClick(self):
@@ -30,4 +39,4 @@ class Button(Label):
         If focused, we draw with the highlight attribute (usually
         reverse-colors)
         """
-        self.draw('[%s]' % self.text, 0, 0, highlight = (self.focused == True))
+        self.draw(self.decoration % self.text, 0, 0, highlight = (self.focused == True))

@@ -10,16 +10,20 @@ class Columns(Drawable):
     """
 
     class Column:
-        """
-        struct class
-        """
-
         def __init__(self, drawable, minwidth, maxwidth, weight):
             self.drawable = drawable
             self.minwidth = minwidth
             self.maxwidth = maxwidth
             self.weight = weight
             self.width = None 
+
+    class Separator:
+        def __init__(self, type):
+            self.minwidth = 1
+            self.width = 1 
+            self.weight = 0
+            self.type = type
+
 
     def __init__(self, parent, name, outerborder = True, innerborder = True):
         """
@@ -50,6 +54,19 @@ class Columns(Drawable):
         are taken into account.
         """
         self.columns.append(self.Column(drawable, minwidth, maxwidth, weight))
+        self.touch()
+
+    def addSeparator(self, type = 'line'):
+        """
+        adds a 'separator row', which contains a horizontal line
+        akin to those drawn when internal borders are enabled.
+
+        @param type: 'line' draws a vertical line like the borders;
+            'space' leaves a blank column 1 character wide
+        @type  type: string
+        """
+        self.columns.append(self.Separator(type))
+        self.touch()
 
     def insertColumn(self, index, drawable, minwidth, maxwidth = None, weight = 1):
         """
@@ -70,6 +87,7 @@ class Columns(Drawable):
         after minimum and maximum are taken into account.
         """
         self.columns.insert(index, self.Column(drawable, minwidth, maxwidth, weight))
+        self.touch()
 
     def setSize(self, y, x, h, w):
         """
@@ -98,7 +116,7 @@ class Columns(Drawable):
         required = sum([col.minwidth for col in self.columns])
 
         if required > available:
-            raise Exception, "more space is required than available"
+            raise Exception, "more space is required than available\n\n%s" % [col.minwidth for col in self.columns]
 
 
 
@@ -109,7 +127,8 @@ class Columns(Drawable):
         for child in self.columns:
             child.width = child.minwidth + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
 
-            child.drawable.setSize(y, x, h, child.width)
+            if isinstance(child, self.Column):
+                child.drawable.setSize(y, x, h, child.width)
 
             x += child.width
             if self.innerborder:
@@ -130,7 +149,8 @@ class Columns(Drawable):
         call drawContents() on each of our children
         """
         for child in self.columns:
-            child.drawable.drawContents()
+            if isinstance(child, self.Column):
+                child.drawable.drawContents()
 
         # draw borders through render()
         self.render()
@@ -139,23 +159,25 @@ class Columns(Drawable):
         """
         draw the borders
         """
+        attr = {}
         if self.outerborder:
             self.box(0, 0, self.w, self.h)
+            attr['topEnd'] = curses.ACS_TTEE
+            attr['bottomEnd'] = curses.ACS_BTEE
 
-        if self.innerborder:
-            x = self.x
+        x = 0
 
-            # 1 if true, 0 if false
-            borders = int(self.outerborder) 
+        borders = int(self.outerborder)
 
-            for child in self.columns[:-1]:
-                if self.outerborder:
-                    self.lineDown(x + borders + child.width, self.y, self.h, topEnd = curses.ACS_TTEE, bottomEnd = curses.ACS_BTEE)
-                else:
-                    self.lineDown(x + borders + child.width, self.y, self.h)
+        for child in self.columns[:-1]:
+            if isinstance(child, self.Separator) and child.type == 'line':
+                self.lineDown(x, 0, self.h)
 
-                x += child.width
-                borders += 1
+            if self.innerborder:
+                    self.lineDown(x + borders + child.width - 1, 0, self.h, **attr)
+                    x += 1 # for the inner border
+
+            x += child.width
 
 
     def focusedColumnIndex(self):

@@ -10,16 +10,20 @@ class Rows(Drawable):
     """
 
     class Row:
-        """
-        struct class
-        """
-
         def __init__(self, drawable, minheight, maxheight, weight):
             self.drawable = drawable
             self.minheight = minheight
             self.maxheight = maxheight
             self.weight = weight
             self.height = None 
+
+    class Separator:
+        def __init__(self, type):
+            self.minheight = 1
+            self.height = 1 
+            self.weight = 0
+            self.type = type
+
 
     def __init__(self, parent, name, outerborder = True, innerborder = True):
         """
@@ -50,7 +54,18 @@ class Rows(Drawable):
         are taken into account.
         """
         self.rows.append(self.Row(drawable, minheight, maxheight, weight))
-        self.setSize(self.y, self.x, self.h, self.w)
+        self.touch()
+
+    def addSeparator(self, type = 'line'):
+        """
+        adds a 'separator row', which contains a horizontal line
+        akin to those drawn when internal borders are enabled.
+
+        @param type: 'line' draws a horizontal line like the borders;
+            'space' leaves a blank row 1 character high
+        @type  type: string
+        """
+        self.rows.append(self.Separator(type))
         self.touch()
 
     def insertRow(self, index, drawable, minheight, maxheight = None, weight = 1):
@@ -72,7 +87,6 @@ class Rows(Drawable):
         after minimum and maximum are taken into account.
         """
         self.rows.insert(index, self.Row(drawable, minheight, maxheight, weight))
-        self.setSize(self.y, self.x, self.h, self.w)
         self.touch()
 
 
@@ -84,7 +98,6 @@ class Rows(Drawable):
         self.rows[index].drawable.clear()
 
         self.rows[index] = self.Row(drawable, minheight, maxheight, weight)
-        self.setSize(self.y, self.x, self.h, self.w)
         self.touch()
 
 
@@ -131,7 +144,8 @@ class Rows(Drawable):
         for child in self.rows:
             child.height = child.minheight + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
 
-            child.drawable.setSize(y, x, child.height, w)
+            if isinstance(child, self.Row):
+                child.drawable.setSize(y, x, child.height, w)
 
             y += child.height
             if self.innerborder:
@@ -152,7 +166,8 @@ class Rows(Drawable):
         call drawContents() on each of our children
         """
         for child in self.rows:
-            child.drawable.drawContents()
+            if isinstance(child, self.Row):
+                child.drawable.drawContents()
 
         # draw borders through render()
         self.render()
@@ -161,23 +176,26 @@ class Rows(Drawable):
         """
         draw the borders
         """
+        attr = {}
         if self.outerborder:
             self.box(0, 0, self.w, self.h)
+            attr['leftEnd'] = curses.ACS_LTEE
+            attr['rightEnd'] = curses.ACS_RTEE
 
-        if self.innerborder:
-            y = 0
+        y = 0
 
-            # 1 if true, 0 if false
-            borders = int(self.outerborder) 
+        # 1 if true, 0 if false
+        borders = int(self.outerborder) 
 
-            for child in self.rows[:-1]:
-                if self.outerborder:
-                    self.line(0, y + borders + child.height, self.w, leftEnd = curses.ACS_LTEE, rightEnd = curses.ACS_RTEE)
-                else:
-                    self.line(0, y + child.height, self.w)
+        for child in self.rows[:-1]:
+            if isinstance(child, self.Separator) and child.type == 'line':
+                self.line(0, y, self.w)
 
-                y += child.height
-                borders += 1
+            if self.innerborder:
+                self.line(0, y + borders + child.height, self.w, **attr)
+                y += 1 # for ther inner border
+
+            y += child.height
 
         
 
