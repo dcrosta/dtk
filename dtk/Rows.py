@@ -90,17 +90,6 @@ class Rows(Drawable):
         self.touch()
 
 
-    def setRow(self, index, drawable, minheight, maxheight = None, weight = 1):
-        """
-        similar to insertRow, but will overwrite a row that already
-        exists with the given index.
-        """
-        self.rows[index].drawable.clear()
-
-        self.rows[index] = self.Row(drawable, minheight, maxheight, weight)
-        self.touch()
-
-
     def setSize(self, y, x, h, w):
         """
         calculate children's sizes, then call setSize on each of them
@@ -153,11 +142,13 @@ class Rows(Drawable):
 
             spaceleft -= child.height
 
-        # fudge the last row
+        # find the last row which has a Drawable,
+        # and add remaining space to that row
+        index = max([index for index in range(len(self.rows)) if isinstance(self.rows[index], self.Row)])
         if spaceleft:
-            self.rows[-1].height += spaceleft
+            self.rows[index].height += spaceleft
             # dangerous, maybe
-            self.rows[-1].drawable.h += spaceleft
+            self.rows[index].drawable.h += spaceleft
 
 
 
@@ -208,7 +199,7 @@ class Rows(Drawable):
         drawable = self.getEngine().getFocusedDrawable()
 
         # a list of the drawables in each row
-        rowdrawables = [row.drawable for row in self.rows]
+        rowdrawables = [row.drawable for row in self.rows if isinstance(row, self.Row)]
 
         return rowdrawables.index(drawable)
 

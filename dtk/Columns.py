@@ -136,11 +136,13 @@ class Columns(Drawable):
 
             spaceleft -= child.width
 
-        # fudge the last column
+        # find the last row which has a Drawable,
+        # and add remaining space to that row
+        index = max([index for index in range(len(self.columns)) if isinstance(self.columns[index], self.Column)])
         if spaceleft:
-            self.columns[-1].width += spaceleft
+            self.columns[index].width += spaceleft
             # dangerous, maybe
-            self.columns[-1].drawable.w += spaceleft
+            self.columns[index].drawable.w += spaceleft
 
 
 
@@ -189,7 +191,7 @@ class Columns(Drawable):
         drawable = self.getEngine().getFocusedDrawable()
 
         # a list of the drawables in each column
-        coldrawables = [col.drawable for col in self.columns]
+        coldrawables = [col.drawable for col in self.columns if isinstance(col, self.Column)]
 
         return coldrawables.index(drawable)
 
