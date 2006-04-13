@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import dtk
+import dtk, dtk.util
 import time
 import sys
 
@@ -12,6 +12,17 @@ def add_item():
     indices1.append(-1)
     
     lb1.append('Your mom.')
+
+if len(sys.argv) > 1 and sys.argv[1] == 'wrap':
+    text = """This helps staff gauge the importance of this issue to you, the user. "High" severity means you can't get important work done, or can't log in; "medium" means you've found a problem with an SCCS service or want to request a new piece of software be installed; "low" covers annoyances or minor hangups that you would like to see resolved but can work around easily enough. You may also leave this field blank.
+
+Hey y'all, welcome to the SCCS Staff Wiki. Here we're going to gather together little bits and pieces of documentation over time so we don't have to bother each other with "how do i..." or "wtf is..." questions on staffmail. If you're unfamiliar with Wikis, read on below, otherwise let's get to work. If you add something new and cool, put a link to it (or to some category organization page or something like that) here on the front page. Also remember to attribute anything useful you say with your name (see below). And make a user page so we don't have lots of dead links flying about. If you can't find anything here, check the StaffDiary."""
+    
+    wrapped = dtk.util.wrap(text, 78)
+    import pprint
+    pprint.PrettyPrinter().pprint(wrapped)
+
+    sys.exit()
 
 e = dtk.Engine(name='dtk Test App', log=file('log.txt','a'))
 

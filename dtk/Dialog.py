@@ -176,7 +176,9 @@ class Dialog(Drawable):
         """
         called when any button is clicked
         """
-        self.getEngine().popFocus(self)
+        engine = self.getEngine()
+        engine.popFocus(self)
+        engine.touchAll()
 
         self.handleInput('dismissed')
 

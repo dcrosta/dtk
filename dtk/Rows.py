@@ -170,7 +170,7 @@ class Rows(Drawable):
                 child.drawable.drawContents()
 
         # draw borders through render()
-        self.render()
+        super(Rows, self).drawContents()
 
     def render(self):
         """

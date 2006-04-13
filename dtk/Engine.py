@@ -323,6 +323,12 @@ class Engine(InputHandler, object):
         """
         pass
 
+    def touchAll(self):
+        """
+        causes all drawables to be re-drawn on the next refresh
+        """
+        pass
+
     def _draw(self, str, row, col, drawable, **kwargs):
         """
         draws the string at the position given by row and col, with

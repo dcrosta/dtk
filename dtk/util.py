@@ -623,49 +623,54 @@ def wrap(line, width):
         width wide
     @rtype: list of strings
     """
-    out = ['']
-    x = 0
 
-    words = re.split('([\s]*)', line)
+    lines = line.split('\n')
+    outlines = []
 
-    # allow hyphens to split
-    newwords = []
-    for word in words:
-        split = word.split('-')
-        
-        for part in split[:-1]:
-            newwords.append('%s-' % part)
-        newwords.append(split[-1])
+    for line in lines:
+        out = ['']
+        x = 0
 
-            
-    words = newwords
-
+        words = re.split('(\s*)', line)
     
-    for i in range(len(words)):
-        word = words[i]
+        # allow hyphens to split
+        newwords = []
+        for word in words:
+            split = word.split('-')
+            
+            for part in split[:-1]:
+                newwords.append('%s-' % part)
+            newwords.append(split[-1])
+    
+        words = newwords
+    
+        for i in range(len(words)):
+            word = words[i]
+    
+            l = len(word)
+            iswhitespace = (re.match('\s*$', word) is not None)
+    
+            if x + l <= width or iswhitespace:
+                out[-1] += word
+                x += l
+    
+            # this case needs to be made smarter
+            elif l > width:
+                # split the word in two
+                first  = word[:width - x]
+                second = word[width - x:]
+    
+                out[-1] += first
+                out.append(second)
+                # i -= 1
+    
+                x = len(second) 
+    
+            else:
+                out.append(word)
+                x = l
 
-        l = len(word)
-        iswhitespace = (re.match('\s+$', word) is not None)
+        outlines.extend(out)
 
-        if x + l <= width or iswhitespace:
-            out[-1] += word
-            x += l
-
-        # this case needs to be made smarter
-        elif l > width:
-            # split the word in half
-            first  = word[:width - x]
-            second = word[width - x:]
-
-            out[-1] += first
-            out.append(second)
-            # i -= 1
-
-            x = len(second) 
-
-        else:
-            out.append(word)
-            x = l
-
-    return out
+    return outlines
 

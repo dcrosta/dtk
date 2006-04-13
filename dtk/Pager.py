@@ -14,8 +14,6 @@ class Pager(Drawable):
         self.text = None
         self.lines = None
 
-        self.bindKey
-
         self.bindKey('down', self.moveDown)
         self.bindKey('up', self.moveUp)
         self.bindKey('page down', self.pageDown)
@@ -32,16 +30,12 @@ class Pager(Drawable):
         """
         set the pager text to the given text.
 
-        @param text: the text to use, either a
-            newline formatted string or a list
-            thereof
-        @type  text: string or list of strings
+        @param text: the text to use, as a
+            newline formatted string
+        @type  text: string
         """
         # normalize it
-        if type(text) in (types.ListType, types.TupleType):
-            self.text = '\n'.join(list(text))
-        else:
-            self.text = text
+        self.text = text
 
 
     def moveToTop(self):
@@ -117,10 +111,14 @@ class Pager(Drawable):
         if self.lines is None:
             self.lines = util.wrap(self.text, self.w)
 
+            self.log('wrapped to %d: \n\n%s' % (self.w, self.lines))
+
         self.clear()
 
         for i in range(self.firstVisible, min(len(self.lines), self.firstVisible + self.h)):
             line = str(self.lines[i])
+            if len(line) > self.w:
+                line = line[:self.w]
 
             # pad the line with spaces
             if len(line) < self.w:

@@ -445,6 +445,13 @@ class CursesEngine(Engine):
         else:
             self.doWhenCursesInitialized.append(self.showCursor)
 
+    def touchAll(self):
+        """
+        causes all drawables to be re-drawn on the next refresh
+        """
+        for drawable in self.drawables.values():
+            drawable.touch()
+
 
     def quit(self):
         self.done = True

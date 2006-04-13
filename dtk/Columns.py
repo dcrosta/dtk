@@ -153,7 +153,7 @@ class Columns(Drawable):
                 child.drawable.drawContents()
 
         # draw borders through render()
-        self.render()
+        super(Columns, self).drawContents()
 
     def render(self):
         """
