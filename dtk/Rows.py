@@ -146,7 +146,7 @@ class Rows(Drawable):
         if most < available:
             self.log('sum of max heights less than available space, using those heights')
 
-            for row in rows:
+            for row in self.rows:
                 child.height = child.maxheight
 
         else:
