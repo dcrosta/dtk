@@ -34,8 +34,19 @@ class Pager(Drawable):
             newline formatted string
         @type  text: string
         """
-        # normalize it
+        self.lines = None
         self.text = text
+        self.touch()
+
+    
+    def getText(self):
+        """
+        return the text as given us
+
+        @return: the text in the pager
+        @rtype:  string
+        """
+        return self.text
 
 
     def moveToTop(self):
@@ -110,8 +121,6 @@ class Pager(Drawable):
 
         if self.lines is None:
             self.lines = util.wrap(self.text, self.w)
-
-            self.log('wrapped to %d: \n\n%s' % (self.w, self.lines))
 
         self.clear()
 

@@ -60,8 +60,6 @@ class Engine(InputHandler, object):
         self.focusStack = []
         self.root = None
 
-        self.hideCursor()
-
     def __str__(self):
         return 'Engine'
     
@@ -282,12 +280,6 @@ class Engine(InputHandler, object):
         """
         pass
             
-
-    def hideCursor(self):
-        """
-        hides the cursor, if possible
-        """
-        pass
 
     def quit(self):
         """

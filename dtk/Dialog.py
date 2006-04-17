@@ -42,6 +42,8 @@ class Dialog(Drawable):
         self.setText(text)
         self.setType(type)
 
+        self.sizeSet = False
+
         self._setup()
     
 
@@ -250,8 +252,7 @@ class Dialog(Drawable):
         self.children['tarea'].setText(self.text)
         self.children['body'].addRow(self.children['tarea'], 1, weight = 1)
 
-        self.children['blank']  = Label(self.children['body'], '%s:Window:Body:Blank' % self.name, '')
-        self.children['body'].addRow(self.children['blank'], 1, weight = 0)
+        self.children['body'].addSeparator(type = 'space')
 
         self.children['ok'] = None
         self.children['yesno'] = None
@@ -343,13 +344,12 @@ class Dialog(Drawable):
 
 
     def drawContents(self):
+        super(Dialog, self).drawContents()
+
         # delegate drawContents to the 'window' child
         self.children['window'].drawContents()
 
 
     def render(self):
-        if not self.sizeSet(self):
-            self.setSize(0, 0, 0, 0)
-            self.sizeSet = True
-
+        self.clear()
         super(Dialog, self).render()

@@ -154,12 +154,6 @@ class Drawable(InputHandler, object):
         """
         self.parent.hideCursor()
 
-    def showCursor(self):
-        """
-        call parent's showCursor method
-        """
-        self.parent.showCursor()
-
     def register(self, drawable):
         """
         registers the drawable with the Engine, by calling up the
@@ -198,6 +192,12 @@ class Drawable(InputHandler, object):
         call draw up the stack
         """
         self.parent._draw(str, row, col, drawable = self, **kwargs)
+
+    def drawDown(self, str, row, col, **kwargs):
+        self.parent._drawDown(str, row, col, drawable = self, **kwargs)
+
+    def _drawDown(self, str, row, col, drawable, **kwargs):
+        self.parent._drawDown(str, row, col, drawable = self, **kwargs)
 
     def _box(self, x, y, w, h, drawable, **kwargs):
         """
@@ -252,11 +252,6 @@ class Drawable(InputHandler, object):
         """
         self.parent._clear(self)
 
-    # XXX: this is slightly confusing and should be changed:
-    # this is not the same as the curses (or other) 'cursor,'
-    # but a separate cursor-like indicator drawn to screen
-    # by dtk. will need to change the name of one or the other
-    # at some point
     def _showCursor(self, y, x, drawable):
         """
         see _draw()

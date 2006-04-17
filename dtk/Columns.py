@@ -38,8 +38,11 @@ class Columns(Drawable):
         # the column definitions
         self.columns = []
 
+        # the column we're currently targeted on
+        self.targetCol = 0
+
         # keybindings
-        self.bindKey('tab', self.switchColumn)
+        self.bindKey('tab', self.nextColumn)
 
     def __str__(self):
         return 'Columns'
@@ -62,7 +65,7 @@ class Columns(Drawable):
         akin to those drawn when internal borders are enabled.
 
         @param type: 'line' draws a vertical line like the borders;
-            'space' leaves a blank column 1 character wide
+            'blank' leaves a blank column 1 character wide
         @type  type: string
         """
         self.columns.append(self.Separator(type))
@@ -125,7 +128,10 @@ class Columns(Drawable):
         available -= required
 
         for child in self.columns:
-            child.width = child.minwidth + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
+            if totalweight > 0:
+                child.width = child.minwidth + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
+            else:
+                child.width = child.minwidth
 
             if isinstance(child, self.Column):
                 child.drawable.setSize(y, x, h, child.width)
@@ -172,36 +178,28 @@ class Columns(Drawable):
         borders = int(self.outerborder)
 
         for child in self.columns[:-1]:
-            if isinstance(child, self.Separator) and child.type == 'line':
-                self.lineDown(x, 0, self.h)
+            if isinstance(child, self.Separator):
+                if child.type == 'line':
+                    self.lineDown(x, 0, self.h)
+                elif child.type == 'blank':
+                    self.drawDown(' ' * (self.h - 2 * borders), 0, 0)
 
             if self.innerborder:
                     self.lineDown(x + borders + child.width - 1, 0, self.h, **attr)
                     x += 1 # for the inner border
 
-            x += child.width
+            x += child.width or 0
 
 
-    def focusedColumnIndex(self):
-        """
-        returns the index of the column in self.columns which
-        has internal focus (it may not have focus as far as
-        the Engine is concerned
-        """
-        drawable = self.getEngine().getFocusedDrawable()
+    def nextColumn(self):
+        self.switchColumn(self.targetCol + 1)
 
-        # a list of the drawables in each column
-        coldrawables = [col.drawable for col in self.columns if isinstance(col, self.Column)]
 
-        return coldrawables.index(drawable)
+    def prevColumn(self):
+        self.switchColumn(self.targetCol - 1)
 
-    def focusedColumn(self):
-        """
-        returns the Column that has internal focus
-        """
-        return self.columns[self.getFocusedColumnIndex()]
 
-    def switchColumn(self, index = None):
+    def switchColumn(self, index):
         """
         switches internal focus to the given column index, if it's
         in range. otherwise, switches the focused column one to the
@@ -214,16 +212,17 @@ class Columns(Drawable):
         get spuriously called from random points in the code.
         """
         
-        if index is None:
-            index = self.focusedColumnIndex()
+        self.targetCol = index
 
-        newindex = (index + 1) % len(self.columns)
-        
-        # tell engine to focus on this one
-        col = self.columns[newindex]
+        cols = [col for col in self.columns if isinstance(col, self.Column)]
+        self.targetCol %= len(cols)
+
+        col = cols[self.targetCol]
 
         engine = self.getEngine()
         if engine.peekFocus() is not None:
             engine.pushFocus(col.drawable)
         else:
             engine.setFocus(col.drawable)
+
+        self.touch()

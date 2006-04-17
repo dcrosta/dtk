@@ -14,12 +14,13 @@ class Rows(Drawable):
             self.drawable = drawable
             self.minheight = minheight
             self.maxheight = maxheight
-            self.weight = weight
+            self.weight = float(weight)
             self.height = None 
 
     class Separator:
         def __init__(self, type):
             self.minheight = 1
+            self.maxheight = 1
             self.height = 1 
             self.weight = 0
             self.type = type
@@ -38,8 +39,11 @@ class Rows(Drawable):
         # the row definitions
         self.rows = []
 
+        # the row we're currently targeted on
+        self.targetRow = 0
+
         # keybindings
-        self.bindKey('tab', self.switchRow)
+        self.bindKey('tab', self.nextRow)
 
     def __str__(self):
         return 'Rows'
@@ -62,7 +66,7 @@ class Rows(Drawable):
         akin to those drawn when internal borders are enabled.
 
         @param type: 'line' draws a horizontal line like the borders;
-            'space' leaves a blank row 1 character high
+            'blank' leaves a blank row 1 character high
         @type  type: string
         """
         self.rows.append(self.Separator(type))
@@ -101,14 +105,22 @@ class Rows(Drawable):
         if y == 0 and x == 0 and h == 0 and w == 0:
             return
 
+        self.log('setSize(%d, %d, %d, %d)' % (y, x, h, w))
+
+        # use the values from parent's setSize()
+        y = self.y
+        x = self.x
+        h = self.h
+        w = self.w
+
         # start from available height
-        available = self.h
+        available = h
 
         # adjust for borders, if they're to be drawn
         if self.outerborder:
             available -= 2
 
-            # pushes the starting x over by 1
+            # pushes the starting y down by 1
             y += 1
             
             # outer border will also shrink our available horizontal area
@@ -121,35 +133,49 @@ class Rows(Drawable):
 
         required = sum([row.minheight for row in self.rows])
 
+        maxheights = [row.maxheight for row in self.rows]
+        if None not in maxheights:
+            most = sum([row.maxheight for row in self.rows])
+        else:
+            most = available
+
+
         if required > available:
             raise Exception, "more space is required than available"
 
+        if most < available:
+            self.log('sum of max heights less than available space, using those heights')
 
+            for row in rows:
+                child.height = child.maxheight
 
-        totalweight = sum([row.weight for row in self.rows])
-        spaceleft = available
-        available -= required
+        else:
+            totalweight = float(sum([row.weight for row in self.rows]))
+            spaceleft = available
+            available -= required
 
-        for child in self.rows:
-            child.height = child.minheight + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
-
-            if isinstance(child, self.Row):
-                child.drawable.setSize(y, x, child.height, w)
-
-            y += child.height
-            if self.innerborder:
-                y += 1
-
-            spaceleft -= child.height
-
-        # find the last row which has a Drawable,
-        # and add remaining space to that row
-        index = max([index for index in range(len(self.rows)) if isinstance(self.rows[index], self.Row)])
-        if spaceleft:
-            self.rows[index].height += spaceleft
-            # dangerous, maybe
-            self.rows[index].drawable.h += spaceleft
-
+            for child in self.rows:
+                if totalweight > 0:
+                    child.height = child.minheight + int(min(child.weight / totalweight * available, spaceleft, child.maxheight or available))
+                else:
+                    child.height = child.minheight
+    
+                if isinstance(child, self.Row):
+                    child.drawable.setSize(y, x, child.height, w)
+    
+                y += child.height
+                if self.innerborder:
+                    y += 1
+    
+                spaceleft -= child.height
+    
+            # find the last row which has a Drawable,
+            # and add remaining space to that row
+            index = max([index for index in range(len(self.rows)) if isinstance(self.rows[index], self.Row)])
+            if spaceleft:
+                self.rows[index].height += spaceleft
+                # dangerous, maybe
+                self.rows[index].drawable.h += spaceleft
 
 
     def drawContents(self):
@@ -173,66 +199,50 @@ class Rows(Drawable):
             attr['leftEnd'] = curses.ACS_LTEE
             attr['rightEnd'] = curses.ACS_RTEE
 
-        y = 0
-
         # 1 if true, 0 if false
         borders = int(self.outerborder) 
 
+        y = borders
+
         for child in self.rows[:-1]:
-            if isinstance(child, self.Separator) and child.type == 'line':
-                self.line(0, y, self.w)
+            self.log('@%2d child is %s' % (y, child))
+            if isinstance(child, self.Separator):
+                if child.type == 'line':
+                    self.line(borders, y, self.w - 2 * borders)
+                elif child.type == 'space':
+                    self.draw(' ' * (self.w - 2 * borders), y, borders)
+
+            y += child.height or 0
 
             if self.innerborder:
-                self.line(0, y + borders + child.height, self.w, **attr)
+                self.line(0, y, self.w, **attr)
                 y += 1 # for ther inner border
 
-            y += child.height
 
+    def nextRow(self):
+        self.switchRow(self.targetRow + 1)
+
+
+    def prevRow(self):
+        self.switchRow(self.targetRow - 1)
         
 
-    def focusedRowIndex(self):
+    def switchRow(self, index):
         """
-        returns the index of the row in self.rows which
-        has internal focus (it may not have focus as far as
-        the Engine is concerned
+        TODO
         """
-        drawable = self.getEngine().getFocusedDrawable()
-
-        # a list of the drawables in each row
-        rowdrawables = [row.drawable for row in self.rows if isinstance(row, self.Row)]
-
-        return rowdrawables.index(drawable)
-
-    def focusedRow(self):
-        """
-        returns the Row that has internal focus
-        """
-        return self.rows[self.getFocusedRowIndex()]
-
-
-    def switchRow(self, index = None):
-        """
-        switches internal focus to the given row index, if it's
-        in range. otherwise, switches the focused row one to the
-        right, wrapping around if the rightmost row is currently
-        selected.
-
-        bad things will happen if you call this while focus isn't
-        on a child of this Columns instance, probably! so don't!
-        only call it from within a bindKey binding, that way it won't
-        get spuriously called from random points in the code.
-        """
-        
-        if index is None:
-            index = self.focusedRowIndex()
-
-        newindex = (index + 1) % len(self.rows)
+        self.targetRow = index 
         
         # tell engine to focus on this one
-        row = self.rows[newindex]
+        rows = [row for row in self.rows if isinstance(row, self.Row)]
+
+        self.targetRow %= len(rows) 
+        row = rows[self.targetRow]
 
         engine = self.getEngine()
         if engine.peekFocus() is not None:
             engine.pushFocus(row.drawable)
         else:
             engine.setFocus(row.drawable)
+
+        self.touch()

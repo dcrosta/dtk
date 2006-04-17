@@ -101,4 +101,7 @@ class TextField(Drawable):
         self.clear()
 
         self.draw(self.buffer[self.start:], 0, 0)
-        self.showCursor(0, self.cursor - self.start)
+        if self.focused:
+            self.showCursor(0, self.cursor - self.start)
+        else:
+            self.hideCursor()

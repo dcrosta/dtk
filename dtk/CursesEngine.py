@@ -204,9 +204,6 @@ class CursesEngine(Engine):
                 self.scr.clrtobot()
                 self.scr.refresh()
 
-                # XXX: minor hack!
-                self.showCursor()
-                self.hideCursor()
                 
             # wait until i say so to update the screen state
             self.scr.noutrefresh()
@@ -222,11 +219,11 @@ class CursesEngine(Engine):
 
 
             # draw the cursor if it's valid
-            if self.cursorpos != (-1, -1):
-                self.showCursor()
-                self.scr.move(self.cursorpos[0], self.cursorpos[1])
+            if self.cursorpos == (-1, -1):
+                self.scr.move(self.h - 1, self.w - 1)
             else:
-                self.hideCursor()
+                self.scr.move(self.cursorpos[0], self.cursorpos[1])
+
 
             curses.doupdate()
 
@@ -343,7 +340,7 @@ class CursesEngine(Engine):
         returns to dtk mode (from shell mode) and restarts the main
         loop. opposite of shellMode()
         """
-        pass
+        self.touchAll()
 
 
     def getScreenSize(self):
@@ -429,21 +426,8 @@ class CursesEngine(Engine):
         """
         hides the cursor, if possible
         """
-        if self.cursesInitialized:
-            if curses.tigetstr('civis') is not None:
-                curses.curs_set(0)
-        else:
-            self.doWhenCursesInitialized.append(self.hideCursor)
+        self.cursorpos = (-1, -1)
 
-    def showCursor(self):
-        """
-        shows the cursor, if it's hidden
-        """
-        if self.cursesInitialized:
-            if curses.tigetstr('cnorm') is not None:
-                curses.curs_set(1)
-        else:
-            self.doWhenCursesInitialized.append(self.showCursor)
 
     def touchAll(self):
         """
@@ -507,9 +491,31 @@ class CursesEngine(Engine):
 
         # now draw it
         try:
+            self.log('draw: (%d, %d, %s, %d)' % (row, col, str, self.cursesAttr(kwargs)))
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
+
+
+    def _drawDown(self, str, row, col, drawable, **kwargs):
+        """
+        draws the string at the position given by row and col, with
+        the drawing style defined by arguments given in **kwargs.
+        these will often include things like face attributes (bold,
+        underline, etc), colors, and other things specific to the
+        Engine. capabilities() should list all the possibilities.
+        """
+
+        if row > drawable.h or col < 0 or col > drawable.w:
+            return
+
+        attr = self.cursesAttr(kwargs)
+
+        row += drawable.y
+
+        for char, r in zip(str, range(row, min(drawable.y + drawable.h, self.h))):
+            self.scr.addstr(r, col, char, attr)
+
 
         
     def _box(self, x, y, w, h, drawable, **kwargs):
@@ -659,7 +665,7 @@ class CursesEngine(Engine):
         draws a "cursor" to the given screen position, or none at all
         if (x, y) is outside the area allowed for the drawable
         """
-        if  x - drawable.x < 0 or x - drawable.x > drawable.w or y - drawable.y < 0 or y - drawable.y > drawable.h:
+        if x < 0 or x > drawable.w or y < 0 or y > drawable.h:
             self.cursorpos = (-1, -1)
         else:
             self.cursorpos = (drawable.y + y, drawable.x + x)
