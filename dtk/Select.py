@@ -38,14 +38,24 @@ class Select(Drawable):
         if self.value in self.options:
             index = self.options.index(self.value)
             self.setValue(self.options[(index + 1) % len(self.options)])
-            self.touch()
+
+        else:
+            self.value = self.options[0]
+
+        self.touch()
+        self.log('set value to "%s"' % self.value)
 
 
     def prevOption(self):
         if self.value in self.options:
             index = self.options.index(self.value)
             self.setValue(self.options[(index - 1) % len(self.options)])
-            self.touch()
+
+        else:
+            self.value = self.options[0]
+
+        self.touch()
+        self.log('set value to "%s"' % self.value)
 
 
     def render(self):
