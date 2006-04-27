@@ -280,6 +280,12 @@ class ListBox(Drawable):
         if self.len == 0:
             return None
         return self.items[self.highlighted]
+    
+    def getSelectedItems(self):
+        """
+        return a list of the selected items
+        """
+        return [item for (item, index) in zip(self.items, range(len(self.items))) if index in self.selected]
 
     def setSelectionType(self, selectionType):
         """
