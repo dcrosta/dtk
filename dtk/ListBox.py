@@ -17,16 +17,45 @@ class ListBox(Drawable):
     views the list.
     """
 
-    def __init__(self, parent, name, selection = 'multiple', vimlike = False):
+    def __init__(self, parent, name, selection = 'multiple', vimlike = False, 
+            hstyle = {'highlight':True}, sstyle = {'bold':True}, ustyle = {},
+            scheck = '', ucheck = ''):
         """
         Initialize the ListBox.
 
-        @param parent   : the parent class
-        @param name     : the name of this ListBox (used, eg, in logging)
+        @param parent: the parent class
+        @type  parent: dtk.Drawable
+
+        @param name: the name of this ListBox (used, eg, in logging)
+        @type  name: string
+
         @param selection: the type of selection to be supported by this
             ListBox. one of 'multiple', 'single' or 'none'
-        @param vimlike  : whether this ListBox should support vimlike
+        @type  selection: string
+
+        @param vimlike: whether this ListBox should support vimlike
             keybindings. Currently binds 'j' to moveDown and 'k' to moveUp
+        @type  vimlink: boolean
+
+        @param hstyle: the style to be applied to the highlighted item. see
+            setDrawStyle()
+        @type  sttyle: dict
+
+        @param sstyle: the style to be applied to selected items. see
+            setDrawStyle()
+        @type  sttyle: dict
+
+        @param ustyle: the style to be applied to unselected items. see
+            setDrawStyle()
+        @type  ustyle: dict
+
+        @param scheck: the check mark to be applied to selected items. see
+            setDrawStyle()
+        @type  scheck: string
+
+        @param ucheck: the check mark to be applied to unselected items.
+            see setDrawStyle()
+        @type  ucheck: string
         """
         super(ListBox, self).__init__(parent, name)
 
@@ -42,6 +71,8 @@ class ListBox(Drawable):
         # remember the selection type
         self.setSelectionType(selection)
 
+        # set the selection style
+        self.setDrawStyle(hstyle, sstyle, ustyle, scheck, ucheck)
 
         # sensible defaults 
         self.firstVisible = 0
@@ -316,6 +347,46 @@ class ListBox(Drawable):
             self.multipleSelection = False
 
 
+    def setDrawStyle(self, hstyle = {'highlight':True}, sstyle = {'bold':True}, ustyle = {}, scheck = '', ucheck = ''):
+        """
+        Set the drawing style. sstyle and ustyle are lists of drawing
+        attribute keywords (eg 'bold' or 'green'). scheck and ucheck are
+        strings which, if either is not none, are prepended to all
+        items in the list box when drawn.
+
+        @param hstyle: the style to be applied to the highlighted item. this
+            is added to/overrides the style defined by sstyle or ustyle for
+            the line which is highlighted.
+        @type  sttyle: dict
+
+        @param sstyle: the style to be applied to selected items
+        @type  sttyle: dict
+
+        @param ustyle: the style to be applied to unselected items
+        @type  yttyle: dict
+
+        @param scheck: the check mark to be applied to selected items
+        @type  scheck: string
+
+        @param ucheck: the check mark to be applied to unselected items
+        @type  ucheck: string
+        """
+        self.hstyle = hstyle
+        self.sstyle = sstyle
+        self.ustyle = ustyle
+        self.scheck = scheck
+        self.ucheck = ucheck
+
+        if self.ucheck != '' or self.scheck != '':
+            self.prefixlen = max([len(self.ucheck), len(self.scheck)])
+
+            # pad them both to prefixlen with spaces
+            self.scheck += ' ' * (self.prefixlen - len(self.scheck))
+            self.ucheck += ' ' * (self.prefixlen - len(self.ucheck))
+        else:
+            self.prefixlen = 0
+
+
     def toggleSelect(self):
         """
         if the highlighted item is not selected, select it,
@@ -350,13 +421,20 @@ class ListBox(Drawable):
         for i in range(self.firstVisible, min(len(self.items), self.firstVisible + self.h)):
             item = str(self.items[i])
 
+            if i in self.selected:
+                attr = self.sstyle.copy()
+                prefix = self.scheck
+            else:
+                attr = self.ustyle.copy()
+                prefix = self.ucheck
+
+            if self.prefixlen:
+                item = prefix + item 
+
             if len(item) < self.w:
                 item += ' ' * (self.w - len(item))
 
-            attr = {}
-            if i in self.selected:
-                attr['bold'] = True
             if self.focused and i == self.highlighted:
-                attr['highlight'] = True
+                attr.update(self.hstyle)
 
             self.draw(item, i - self.firstVisible, 0, **attr);
