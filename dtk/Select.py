@@ -43,7 +43,6 @@ class Select(Drawable):
             self.value = self.options[0]
 
         self.touch()
-        self.log('set value to "%s"' % self.value)
 
 
     def prevOption(self):
@@ -55,7 +54,6 @@ class Select(Drawable):
             self.value = self.options[0]
 
         self.touch()
-        self.log('set value to "%s"' % self.value)
 
 
     def render(self):
@@ -67,8 +65,11 @@ class Select(Drawable):
             self.draw('[', 0, 0)
             x = 1
             for option in self.options:
-                self.draw(option, 0, x, highlight = (option == self.value))
-                x += len(option)
+                label = option
+                if option == '':
+                    label = '<No Value>'
+                self.draw(label, 0, x, highlight = (option == self.value))
+                x += len(label)
                 self.draw(' ', 0, x)
                 x += 1
 
