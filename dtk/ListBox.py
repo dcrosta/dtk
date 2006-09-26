@@ -35,15 +35,15 @@ class ListBox(Drawable):
 
         @param vimlike: whether this ListBox should support vimlike
             keybindings. Currently binds 'j' to moveDown and 'k' to moveUp
-        @type  vimlink: boolean
+        @type  vimlike: boolean
 
         @param hstyle: the style to be applied to the highlighted item. see
             setDrawStyle()
-        @type  sttyle: dict
+        @type  hstyle: dict
 
         @param sstyle: the style to be applied to selected items. see
             setDrawStyle()
-        @type  sttyle: dict
+        @type  sstyle: dict
 
         @param ustyle: the style to be applied to unselected items. see
             setDrawStyle()
