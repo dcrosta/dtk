@@ -6,7 +6,7 @@ dtk
 """
 __docformat__ = 'epytext en'
 
-__version__ = '0.1.%s' % ('$Rev$'.split(' ')[1])
+__version__ = '0.1'
 __url__ = 'https://firefly.student.swarthmore.edu/trac/wiki/Dtk'
 __copyright__ = '(C) 2006 Dan Crosta'
 __license__ = 'BSD'
