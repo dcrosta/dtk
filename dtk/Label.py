@@ -22,14 +22,14 @@ class Label(Drawable):
 
     def getText(self):
         """
-        sets the Label's text to be the given text
+        gets the Label's text
         """
         return self.text
 
 
     def setText(self, text):
         """
-        sets the Label's text to be the given text
+        sets the Label's text
         """
         self.text = text
         self.clear()
