@@ -48,7 +48,7 @@ class CursesEngine(Engine):
                               107: "+"},
                       None: "esc", # if we get a 27, followed by nothing,
                                    # it's an ESC
-                      91  : { 49  : { 49  :  { 126 : "F1"},
+                      91  : { 49  : { 49  : { 126 : "F1"},
                                       50  : { 126 : "F2"},
                                       51  : { 126 : "F3"},
                                       52  : { 126 : "F4"},
