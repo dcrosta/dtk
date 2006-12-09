@@ -105,7 +105,7 @@ class Rows(Drawable):
         if y == 0 and x == 0 and h == 0 and w == 0:
             return
 
-        self.log('setSize(%d, %d, %d, %d)' % (y, x, h, w))
+        self.log.debug('setSize(%d, %d, %d, %d)' % (y, x, h, w))
 
         # use the values from parent's setSize()
         y = self.y
@@ -144,7 +144,7 @@ class Rows(Drawable):
             raise Exception, "more space is required than available"
 
         if most < available:
-            self.log('sum of max heights less than available space, using those heights')
+            self.log.debug('sum of max heights less than available space, using those heights')
 
             for row in self.rows:
                 child.height = child.maxheight
@@ -205,7 +205,7 @@ class Rows(Drawable):
         y = borders
 
         for child in self.rows[:-1]:
-            self.log('@%2d child is %s' % (y, child))
+            self.log.debug('@%2d child is %s' % (y, child))
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.line(borders, y, self.w - 2 * borders)

@@ -1,6 +1,7 @@
 import string
 import types
 import time
+import logging
 
 from Drawable import Drawable
 from InputHandler import InputHandler
@@ -36,7 +37,7 @@ class Engine(InputHandler, object):
         import CursesEngine
         return object.__new__(CursesEngine.CursesEngine)
 
-    def __init__(self, name = 'dtk Application', log = None):
+    def __init__(self, name = 'dtk Application', log = False, **kwargs):
         """
         Initialize a new Engine. Engine will create a console environment
         and everything, so you don't need to do that outside or pass
@@ -50,11 +51,18 @@ class Engine(InputHandler, object):
         # initially...
         self.title = self.name
 
-        if log is not None:
-            self.logfile = log
-            self.log = self._log
-        else:
-            self.log = self.ignore
+        self.log = logging.getLogger('dtk')
+        if log is True:
+            if 'logfile' in kwargs:
+                self.hndlr = logging.FileHandler(kwargs['logfile'])
+            else:
+                self.hndlr = logging.FileHandler('log.txt')
+            self.log.addHandler(self.hndlr)
+
+            if 'loglevel' in kwargs:
+                self.log.setLevel(kwargs['loglevel'])
+            else:
+                self.log.setLevel(logging.ERROR)
 
         self.drawables = {}
         self.focusStack = []
@@ -62,16 +70,6 @@ class Engine(InputHandler, object):
 
     def __str__(self):
         return 'Engine'
-    
-    def _log(self, what, who = None):
-        """
-        handles logging for the application
-        """
-        if who is None:
-            who = self.__str__()
-
-        self.logfile.write("[%s] %s: %s\n" % (time.strftime('%H:%M:%S'), who, what))
-        self.logfile.flush()
 
 
     def ignore(self, *args):
@@ -122,7 +120,7 @@ class Engine(InputHandler, object):
                 f.append(drawable)
 
         if len(f) is not 1:
-            self.log("focused drawables: %s" % f)
+            self.log.debug("focused drawables: %s" % f)
             raise Exception, "Number of focused drawables is not exactly 1."
 
         return f[0]

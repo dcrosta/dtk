@@ -38,6 +38,9 @@ class Drawable(InputHandler, object):
         # redraw yourself the first time
         self.touch()
 
+        # get the logger from the Engine
+        self.log = self.getEngine().log
+
     def __str__(self):
         """
         returns the type of class this is. use getName() to
@@ -45,17 +48,6 @@ class Drawable(InputHandler, object):
         """
         return self.name
 
-
-    def log(self, what, who = None):
-        """
-        sends the message up to the parent's log function. if who
-        is None, then it is set to self.__str__() before calling the
-        parent's log method
-        """
-        if who is None:
-            who = self.name
-
-        self.parent.log(what, who)
 
     def touch(self):
         """

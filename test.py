@@ -3,6 +3,7 @@
 import dtk, dtk.util
 import time
 import sys
+import logging
 
 items1 = None
 indices1 = None
@@ -24,7 +25,7 @@ Hey y'all, welcome to the SCCS Staff Wiki. Here we're going to gather together l
 
     sys.exit()
 
-e = dtk.Engine(name='dtk Test App', log=file('log.txt','a'))
+e = dtk.Engine(name='dtk Test App', log = True, logfile = 'log.txt', loglevel = logging.INFO)
 
 if len(sys.argv) > 1 and sys.argv[1] == 't':
     tf = dtk.TextField(e, 'textfield')

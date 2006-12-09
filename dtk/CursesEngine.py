@@ -8,6 +8,9 @@ import time
 from Engine import Engine
 
 
+class NoInputCharException(Exception):
+    pass
+
 
 class CursesEngine(Engine):
     """
@@ -17,6 +20,7 @@ class CursesEngine(Engine):
     its own logic to determine occlusion, etc, for everything
     else.
     """
+
 
     # attributes for drawing
     attrs = {
@@ -32,81 +36,51 @@ class CursesEngine(Engine):
     colors = None
 
 
-    # since we handle complicated (non-printable) input
-    # by getting a series of 7-bit characters from curses,
-    # we can use a nested dictionary to look up various
-    # keycode sequences to see if they are valid input
-    # tokens or not.
-    keymap = { 9   : "tab",
-               10  : "enter",
-               27  : { 79 : { 77 : "enter",
-                              80 : "F1",
-                              81 : "F2",
-                              82 : "F3",
-                              83 : "F4",
-                              109: "-",
-                              107: "+"},
-                      None: "esc", # if we get a 27, followed by nothing,
-                                   # it's an ESC
-                      91  : { 49  : { 49  : { 126 : "F1"},
-                                      50  : { 126 : "F2"},
-                                      51  : { 126 : "F3"},
-                                      52  : { 126 : "F4"},
-                                      53  : { 126 : "F5"},
-                                      55  : { 126 : "F6" },
-                                      56  : { 126 : "F7" },
-                                      57  : { 126 : "F8" },
-                                      126 : "home" },
-                              50  : { 48  : { 126 : "F9" },
-                                      49  : { 126 : "F10" },
-                                      51  : { 126 : "F11" },
-                                      52  : { 126 : "F12" },
-                                      126 : "insert" },
-                              51  : { 126 : "delete" },
-                              52  : { 126 : "end" },
-                              53  : { 126 : "page up" },
-                              54  : { 126 : "page down" },
-                              55  : { 126 : "home" },
-                              56  : { 126 : "end" },
-                              65  : "up",
-                              66  : "down",
-                              67  : "right",
-                              68  : "left",
-                              70  : "end",
-                              72  : "home",
-                              90  : "tab",
-                              91  : { 65  : "F1",
-                                      66  : "F2",
-                                      67  : "F3",
-                                      68  : "F4",
-                                      69  : "F5" } } },
-               32  : "space",
-               127 : "backspace",
+    # this map is used to handle non-printable input characters
+    # from the curses module with the keypad(True) method called.
+    # in theory input values are meant to be in [0-255], but
+    # python's curses module seems to give back some values
+    # that are more than one byte, but that might be OK as long
+    # as it is consistent.
+    
+    keymap = { 
+               # these don't seem to have curses key names
+               9  : "tab",
+               10 : "enter", # regular "return" key
+               27 : "esc",
 
-               # occasionally (though maybe not any more, or not
-               # on all systems) we get non-7 bit inputs... so
-               # we handle them just in case
-               258 : "down",
-               259 : "up",
-               260 : "left",
-               261 : "right",
-               265 : "F1",
-               266 : "F2",
-               267 : "F3",
-               268 : "F4",
-               269 : "F5",
-               270 : "F6",
-               271 : "F7",
-               272 : "F8",
-               273 : "F9",
-               274 : "F10",
-               275 : "F11",
-               276 : "F12",
-               330 : "delete",
-               331 : "insert",
-               338 : "page down",
-               339 : "page up",
+               # this is the numpad enter key
+               curses.KEY_ENTER  : "enter",
+
+               curses.KEY_UP    : "up",
+               curses.KEY_DOWN  : "down",
+               curses.KEY_LEFT  : "left",
+               curses.KEY_RIGHT : "right",
+
+               curses.KEY_HOME  : "home",
+               curses.KEY_NPAGE : "page down",
+               curses.KEY_PPAGE : "page up",
+               curses.KEY_END   : "end",
+
+               curses.KEY_BACKSPACE : "backspace",
+
+               curses.KEY_IC : "insert",
+               curses.KEY_DC : "delete",
+
+               curses.KEY_F1  : "F1",
+               curses.KEY_F2  : "F2",
+               curses.KEY_F3  : "F3",
+               curses.KEY_F4  : "F4",
+               curses.KEY_F5  : "F5",
+               curses.KEY_F6  : "F6",
+               curses.KEY_F7  : "F7",
+               curses.KEY_F8  : "F8",
+               curses.KEY_F9  : "F9",
+               curses.KEY_F10 : "F10",
+               curses.KEY_F11 : "F11",
+               curses.KEY_F12 : "F12",
                } 
+
 
 
     def __init__(self, *args, **kwargs):
@@ -114,6 +88,11 @@ class CursesEngine(Engine):
         self.cursesInitialized = False
         self.doWhenCursesInitialized = []
 
+        try:
+            wantslog = kwargs['wantslog']
+        except KeyError:
+            wantslog = False
+        
         super(CursesEngine, self).__init__(*args, **kwargs)
 
         # initially, we are tiny!
@@ -152,9 +131,9 @@ class CursesEngine(Engine):
         # our terminating condition
         self.done = False
 
-        # this ensures that we always get things as multi-character
-        # input for special keys (arrows, etc)...
-        self.scr.keypad(False)
+        # ask curses to parse the input for us into
+        # single integers at a time
+        self.scr.keypad(True)
         
         # this doesn't always work in all terms, but will never
         # fail in such a way as to break anything. by default
@@ -181,7 +160,7 @@ class CursesEngine(Engine):
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        curses.halfdelay(2)
+        curses.halfdelay(1)
 
         while not self.done:
             # first try to detect and handle a terminal resize
@@ -237,8 +216,11 @@ class CursesEngine(Engine):
             # input at a time, and must maintain its state
             # (ie location in keymap) somehow
             input = self.scr.getch()
-            input = self.parseInput(input)
-
+            try:
+                input = self.parseInput(input)
+            except NoInputCharException:
+                input = None
+                
             # after this, input will be a convenient string
             # such as 'a' or 'space', or None, which means
             # we're waiting on further multi-byte input
@@ -270,52 +252,42 @@ class CursesEngine(Engine):
         if it's one of the special curses characters (for things
         like arrow keys, combinations, etc) then we will try
         our best to figure out what it was and return that instead.
+
+        Ths method has been ruined by Peter Norton
+
+        Now with logging
         """
 
-        # if we use half-delay mode (where curses blocks only for
-        # a short time on getch()) then we get -1 as the return
-        # from getch(), and that indicates that we should reset
-        # the state for parseInput()
+        # In half-delay mode with 8-bit (and more! BONUS BITS!)  input
+        # python curses' screen.getch() will return -1 to indicate
+        # that no key was pressed. It's documented as raising an
+        # exception, but I'm happy to get something consistant in this
+        # all-too-underdocumented module.
+        #
+        # XXX report the documentation inconsistancy to get it fixed?
+        #
+        # -PN
         if char == -1:
-            try:
-                # 'esc', and possibly others, use chars that are
-                # prefixes of other non-printable chars (ugh), so
-                # we check that here first
-                char = self.curmap[None]
-            except KeyError:
-                char = None
+            # return # awwww... heck, raise an exception
+            raise NoInputCharException
 
-            # reset things
-            self.curmap = self.keymap
-
-            return char
-
-        # otherwise, we look for the char in self.curmap,
-        # which always corresponds to one of the nested
-        # dictionaries in self.keymap. if we find the char
-        # in the curmap, then we either return the friendly
-        # string representation if it's a "leaf" of the nested
-        # dict data structure, or update curmap to point to
-        # the new dictionary if it's an internal point, and
-        # return None
-        if char in self.curmap.keys():
-            if type(self.curmap[char]) == types.DictType:
-                self.curmap = self.curmap[char]
-                return None
-            else:
-                char = self.curmap[char]
-                self.curmap = self.keymap
-                return char
-
+        # If it's the decimal representation of
+        # a printable character... HEY! THAT'S EASY!
         elif curses.ascii.isprint(char):
-            # in case we screwed something up...
-            self.curmap = self.keymap
-
+            self.log.info("Returning char %s" % chr(char))
             return chr(char)
 
+        # If it's in keymap via a direct lookup, we're golden
+        elif char in self.keymap:
+            self.log.info("Returning char %d as %s (curses name %s)" % (char, self.keymap[char], curses.keyname(char)))
+            return(self.keymap[char])
+
+        # If we got here, bad user, bad user
         else:
-            self.log("couldn't parse char: %d" % char)
-            return None
+            self.log.info("couldn't parse char: %d" % char)
+            # return None
+            raise NoInputCharException
+
     
     def shellMode(self):
         """
@@ -491,7 +463,7 @@ class CursesEngine(Engine):
 
         # now draw it
         try:
-            self.log('draw: (%d, %d, %s, %d)' % (row, col, str, self.cursesAttr(kwargs)))
+            self.log.debug('draw: (%d, %d, %s, %d)' % (row, col, str, self.cursesAttr(kwargs)))
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
@@ -657,7 +629,7 @@ class CursesEngine(Engine):
                     if r == drawable.y + drawable.h - 1 and c == drawable.x + drawable.w - 1:
                         pass
                     else:
-                        self.log("exception at (%d, %d)" % (r, c))
+                        self.log.debug("exception at (%d, %d)" % (r, c))
                         raise e
 
     def _showCursor(self, y, x, drawable):
@@ -669,3 +641,4 @@ class CursesEngine(Engine):
             self.cursorpos = (-1, -1)
         else:
             self.cursorpos = (drawable.y + y, drawable.x + x)
+
