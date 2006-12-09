@@ -321,7 +321,7 @@ class CursesEngine(Engine):
         """
         pauses the main loop and returns the terminal to the shell
         mode it was in before starting the Engine. opposite of
-        shellMode()
+        dtkMode()
         """
 
         # save the program mode
