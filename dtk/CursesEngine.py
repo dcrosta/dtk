@@ -44,13 +44,10 @@ class CursesEngine(Engine):
     # as it is consistent.
     
     keymap = { 
-               # these don't seem to have curses key names
-               9  : "tab",
-               10 : "enter", # regular "return" key
-               27 : "esc",
-
-               # this is the numpad enter key
-               curses.KEY_ENTER  : "enter",
+               curses.ascii.ESC : "esc",
+               curses.ascii.TAB : "tab",
+               curses.ascii.NL  : "enter", # regular "return" key
+               curses.KEY_ENTER : "enter", # the numpad enter key
 
                curses.KEY_UP    : "up",
                curses.KEY_DOWN  : "down",
@@ -64,8 +61,9 @@ class CursesEngine(Engine):
 
                curses.KEY_BACKSPACE : "backspace",
 
-               curses.KEY_IC : "insert",
-               curses.KEY_DC : "delete",
+               curses.KEY_IC    : "insert",
+               curses.KEY_DC    : "delete",
+               curses.ascii.DEL : "delete",
 
                curses.KEY_F1  : "F1",
                curses.KEY_F2  : "F2",
@@ -268,18 +266,18 @@ class CursesEngine(Engine):
         #
         # -PN
         if char == -1:
-            # return # awwww... heck, raise an exception
+            # awwww... heck, raise an exception
             raise NoInputCharException
 
         # If it's the decimal representation of
         # a printable character... HEY! THAT'S EASY!
         elif curses.ascii.isprint(char):
-            self.log.info("Returning char %s" % chr(char))
+            self.log.debug("Returning char %s" % chr(char))
             return chr(char)
 
         # If it's in keymap via a direct lookup, we're golden
         elif char in self.keymap:
-            self.log.info("Returning char %d as %s (curses name %s)" % (char, self.keymap[char], curses.keyname(char)))
+            self.log.debug("Returning char %d as %s (curses name %s)", char, self.keymap[char], curses.keyname(char))
             return(self.keymap[char])
 
         # If we got here, bad user, bad user
