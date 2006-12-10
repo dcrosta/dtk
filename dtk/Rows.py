@@ -231,6 +231,7 @@ class Rows(Drawable):
         """
         TODO
         """
+        self.log.debug('switching row from %s to %s' % (self.targetRow, index))
         self.targetRow = index 
         
         # tell engine to focus on this one

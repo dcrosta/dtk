@@ -6,7 +6,7 @@ import logging
 from Drawable import Drawable
 from InputHandler import InputHandler
 
-class Engine(InputHandler, object):
+class Engine(InputHandler):
     """
     Engine handles the main event loop of dtk, manages
     a list of Drawables, and handles input parsing and
@@ -58,6 +58,9 @@ class Engine(InputHandler, object):
             else:
                 self.hndlr = logging.FileHandler('log.txt')
             self.log.addHandler(self.hndlr)
+
+            fmt = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
+            self.hndlr.setFormatter(fmt)
 
             if 'loglevel' in kwargs:
                 self.log.setLevel(kwargs['loglevel'])
@@ -241,6 +244,16 @@ class Engine(InputHandler, object):
         if len(self.drawables) == 1:
             self.setRoot(drawable)
             self.setFocus(drawable)
+
+
+        try:
+            drawable.log.addHandler(self.hndlr)
+            self.log.debug("added handler to logger for %s [%s]", drawable.name, drawable.__class__.__name__)
+
+        except:
+            # if the drawable has no .log attribute
+            # there's nothing we can do
+            pass
 
     def setRoot(self, drawable):
         """

@@ -2,7 +2,7 @@
 
 import dtk, dtk.util
 import time
-import sys
+import sys, os
 import logging
 
 items1 = None
@@ -25,7 +25,18 @@ Hey y'all, welcome to the SCCS Staff Wiki. Here we're going to gather together l
 
     sys.exit()
 
-e = dtk.Engine(name='dtk Test App', log = True, logfile = 'log.txt', loglevel = logging.INFO)
+levels = {'debug':logging.DEBUG,
+          'info' :logging.INFO,
+          'warn' :logging.WARN,
+          'error':logging.ERROR,
+          'critical':logging.CRITICAL
+          }
+if 'DTKDEBUG' in os.environ:
+    level = levels[os.environ['DTKDEBUG']]
+else:
+    level = levels['error']
+
+e = dtk.Engine(name='dtk Test App', log = True, logfile = 'log.txt', loglevel = level)
 
 if len(sys.argv) > 1 and sys.argv[1] == 't':
     tf = dtk.TextField(e, 'textfield')

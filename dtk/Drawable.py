@@ -1,9 +1,10 @@
 import curses
 import types
+import logging
 
 from InputHandler import InputHandler
 
-class Drawable(InputHandler, object):
+class Drawable(InputHandler):
     """
     Drawable is the basic GUI unit of dtk. It contains methods
     to set onscreen position (which should only be called from
@@ -32,14 +33,14 @@ class Drawable(InputHandler, object):
         self.border = 0
         self.focused = False
 
+        # get the logger from the Engine
+        self.log = logging.getLogger('dtk.' + str(self.__class__.__name__))
+
         # register with the parent
         self.parent.register(self)
 
         # redraw yourself the first time
         self.touch()
-
-        # get the logger from the Engine
-        self.log = self.getEngine().log
 
     def __str__(self):
         """
