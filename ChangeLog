@@ -1,0 +1,6 @@
+DTK r150 (Dec 22, 2006)
+https://firefly.student.swarthmore.edu/src/trunk/dtk@150
+
+ * Now using new, much simpler sizing algorithm for Rows and Columns,
+   only supporting fixed size columns and weighted auto-sized columns,
+   so this is no longer backwards compatible to earlier versions.

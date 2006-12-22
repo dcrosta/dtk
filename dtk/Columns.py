@@ -1,5 +1,6 @@
 from Drawable import Drawable
 import curses
+import util
 
 class Columns(Drawable):
     """
@@ -10,25 +11,21 @@ class Columns(Drawable):
     """
 
     class Column:
-        def __init__(self, drawable, minwidth, maxwidth, weight):
+        def __init__(self, drawable, fixedsize, weight):
             self.drawable = drawable
-            self.minwidth = minwidth
-            self.maxwidth = maxwidth
+            self.fixedsize = fixedsize
             self.weight = weight
             self.width = None 
 
     class Separator:
         def __init__(self, type):
-            self.minwidth = 1
+            self.fixedsize = 1
             self.width = 1 
             self.weight = 0
             self.type = type
 
 
     def __init__(self, parent, name, outerborder = True, innerborder = True):
-        """
-        initialize the ColumnLayout
-        """
         super(Columns, self).__init__(parent, name)
 
         # save these for later use
@@ -47,7 +44,7 @@ class Columns(Drawable):
     def __str__(self):
         return 'Columns'
 
-    def addColumn(self, drawable, minwidth, maxwidth = None, weight = 1):
+    def addColumn(self, drawable, fixedsize = None, weight = 1):
         """
         add a column (will become the rightmost column) containing
         the given drawable (its parent should be this ColumnLayout),
@@ -56,7 +53,7 @@ class Columns(Drawable):
         how to distribute remaining space after minimum and maximum
         are taken into account.
         """
-        self.columns.append(self.Column(drawable, minwidth, maxwidth, weight))
+        self.columns.append(self.Column(drawable, fixedsize, weight))
         self.touch()
 
     def addSeparator(self, type = 'line'):
@@ -71,7 +68,7 @@ class Columns(Drawable):
         self.columns.append(self.Separator(type))
         self.touch()
 
-    def insertColumn(self, index, drawable, minwidth, maxwidth = None, weight = 1):
+    def insertColumn(self, drawable, fixedsize = None, weight = 1):
         """
         same mechanics as addColumn, but it inserts it in the indexth
         position in the column list. if index > num columns, it will
@@ -89,7 +86,7 @@ class Columns(Drawable):
         weight is used to calculate how to distribute remaining space
         after minimum and maximum are taken into account.
         """
-        self.columns.insert(index, self.Column(drawable, minwidth, maxwidth, weight))
+        self.columns.insert(index, self.Column(drawable, fixedsize, weight))
         self.touch()
 
     def setSize(self, y, x, h, w):
@@ -98,8 +95,21 @@ class Columns(Drawable):
         """
         super(Columns, self).setSize(y, x, h, w)
 
+        # this is the case when we're being resized before
+        # the Engine is initialized
+        if y == 0 and x == 0 and h == 0 and w == 0:
+            return
+
+        self.log.debug('setSize(%d, %d, %d, %d)' % (y, x, h, w))
+
+        # use the values from parent's setSize()
+        y = self.y
+        x = self.x
+        h = self.h
+        w = self.w
+
         # start from available width
-        available = self.w
+        available = w
 
         # adjust for borders, if they're to be drawn
         if self.outerborder:
@@ -116,22 +126,12 @@ class Columns(Drawable):
             available -= (len(self.columns) - 1)
 
 
-        required = sum([col.minwidth for col in self.columns])
+        items = [(item.fixedsize, item.weight) for item in self.columns]
 
-        if required > available:
-            raise Exception, "more space is required than available\n\n%s" % [col.minwidth for col in self.columns]
+        sizes = util.flexSize(items, available)
 
-
-
-        totalweight = sum([col.weight for col in self.columns])
-        spaceleft = available
-        available -= required
-
-        for child in self.columns:
-            if totalweight > 0:
-                child.width = child.minwidth + int(min(float(child.weight) / float(totalweight) * available, spaceleft))
-            else:
-                child.width = child.minwidth
+        for (child, size) in zip(self.columns, sizes):
+            child.width = size
 
             if isinstance(child, self.Column):
                 child.drawable.setSize(y, x, h, child.width)
@@ -139,18 +139,7 @@ class Columns(Drawable):
             x += child.width
             if self.innerborder:
                 x += 1
-
-            spaceleft -= child.width
-
-        # find the last row which has a Drawable,
-        # and add remaining space to that row
-        index = max([index for index in range(len(self.columns)) if isinstance(self.columns[index], self.Column)])
-        if spaceleft:
-            self.columns[index].width += spaceleft
-            # dangerous, maybe
-            self.columns[index].drawable.w += spaceleft
-
-
+        
 
     def drawContents(self):
         """
@@ -173,9 +162,10 @@ class Columns(Drawable):
             attr['topEnd'] = curses.ACS_TTEE
             attr['bottomEnd'] = curses.ACS_BTEE
 
-        x = 0
-
+        # 1 if true, 0 if false
         borders = int(self.outerborder)
+
+        x = borders 
 
         for child in self.columns[:-1]:
             if isinstance(child, self.Separator):
@@ -184,11 +174,11 @@ class Columns(Drawable):
                 elif child.type == 'blank':
                     self.drawDown(' ' * (self.h - 2 * borders), 0, 0)
 
-            if self.innerborder:
-                    self.lineDown(x + borders + child.width - 1, 0, self.h, **attr)
-                    x += 1 # for the inner border
-
             x += child.width or 0
+
+            if self.innerborder:
+                    self.lineDown(x, 0, self.h, **attr)
+                    x += 1 # for the inner border
 
 
     def nextColumn(self):

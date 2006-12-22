@@ -151,14 +151,14 @@ class CursesEngine(Engine):
 
 
         # these are all 0 so that we get a "resize" on the first time
-        # h = w = lasth = lastw = 0
+        lasth = lastw = 0
         self.resized = True
 
-        # handle input every 1/10th of a second
+        # handle input every 2/10th of a second
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        curses.halfdelay(1)
+        curses.halfdelay(2)
 
         while not self.done:
             # first try to detect and handle a terminal resize
@@ -170,6 +170,8 @@ class CursesEngine(Engine):
 
             if self.resized:
                 # a resize has happened
+                self.log.debug('screen resized to (%d, %d)', h, w)
+
                 self.root.setSize(0, 0, h, w)
                 
                 lasth = h

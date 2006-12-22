@@ -61,9 +61,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'r':
     lb3 = dtk.ListBox(c, 'listbox3')
     lb3.setItems(['Dog', 'Cat', 'Squirrel'], [7,8,9])
 
-    c.addRow(lb1, 5, weight = 1)
-    c.addRow(lb2, 10, weight = 2)
-    c.addRow(lb3, 5, weight = 2)
+    c.addRow(lb1, fixedsize=5)
+    c.addRow(lb2, fixedsize=10)
+    c.addRow(lb3, weight = 2)
 
     e.setFocus(lb1)
 
@@ -82,9 +82,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'c':
     lb3 = dtk.ListBox(c, 'listbox3')
     lb3.setItems(['Dog', 'Cat', 'Squirrel'], [7,8,9])
 
-    c.addColumn(lb1, 10, weight = 1)
-    c.addColumn(lb2, 20, weight = 2)
-    c.addColumn(lb3, 10, weight = 2)
+    c.addColumn(lb1, fixedsize = 15)
+    c.addColumn(lb2, weight = 1)
+    c.addColumn(lb3, weight = 2)
 
     e.setFocus(lb1)
 
@@ -289,4 +289,5 @@ else:
 
 
 e.bindKey('q', e.quit)
+e.bindKey('esc', e.quit)
 e.mainLoop()
