@@ -26,6 +26,7 @@ def flexSize(items, space):
         raise SizeException, "more space is required than available"
 
     remaining = space - required
+    unallocated = remaining
 
     sizes = []
     for (fixed, weight) in items:
@@ -33,7 +34,11 @@ def flexSize(items, space):
             sizes.append( fixed )
 
         else:
-            sizes.append( int(round( float(weight) / totalweight * remaining )) )
+            size = int(round( float(weight) / totalweight * remaining ))
+            size = min(size, unallocated)
+            sizes.append( size )
+            
+            unallocated -= size
 
 
     if sum( sizes ) != space:

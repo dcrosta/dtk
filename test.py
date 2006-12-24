@@ -241,7 +241,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
     d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
 
     def showDialog():
-        e.log('showDialog()')
+        e.log.debug('showDialog()')
         # e.pushFocus(d)
         d.show()
 

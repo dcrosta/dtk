@@ -238,21 +238,19 @@ class Dialog(Drawable):
         from TextEditor import TextEditor
         from TextField import TextField
         from Button import Button
+        from Drawable import Drawable
 
-        self.children['window'] = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = True)
-        self.children['title']  = Label(self.children['window'], '%s:Window:Title' % self.name, text = self.title)
-        self.children['window'].addRow(self.children['title'], 1, weight = 0)
+        self.children['window'] = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = False)
         self.children['window'].unbindKey('all')
 
-        self.children['body']   = Rows(self.children['window'], '%s:Window:Body' % self.name, outerborder = False, innerborder = False)
-        self.children['body'].unbindKey('all')
-        self.children['window'].addRow(self.children['body'], 1, weight = 1)
+        self.children['title'] = Label(self.children['window'], '%s:Window:Title' % self.name, text = self.title)
+        self.children['window'].addRow(self.children['title'], fixedsize = 1)
+        self.children['window'].addSeparator(type = 'line')
 
-        self.children['tarea']  = TextEditor(self.children['body'], '%s:Window:Body:Message' % self.name, editable = False)
+        self.children['tarea']  = TextEditor(self.children['window'], '%s:Window:Message' % self.name, editable = False)
         self.children['tarea'].setText(self.text)
-        self.children['body'].addRow(self.children['tarea'], 1, weight = 1)
-
-        self.children['body'].addSeparator(type = 'space')
+        self.children['window'].addRow(self.children['tarea'], weight = 1)
+        self.children['window'].addSeparator(type = 'blank')
 
         self.children['ok'] = None
         self.children['yesno'] = None
@@ -260,33 +258,36 @@ class Dialog(Drawable):
         self.children['no'] = None
 
         if self.type == 'message':
-            self.children['ok'] = Button(self.children['body'], '%s:Window:Body:OK Button' % self.name, ' OK ')
+            self.children['ok'] = Button(self.children['window'], '%s:Window:OK Button' % self.name, ' OK ')
             self.children['ok'].bindKey('click', self._clickedOK)
 
-            self.children['body'].addRow(self.children['ok'], 1, weight = 0)
+            self.children['window'].addRow(self.children['ok'], fixedsize = 1)
             focus = self.children['ok']
 
         elif self.type == 'input':
-            self.children['input'] = TextField(self.children['body'], '%s:Window:Body:Input' % self.name)
+            self.children['input'] = TextField(self.children['window'], '%s:Window:Input' % self.name)
             self.children['input'].bindKey('enter', self._clickedOK)
 
-            self.children['body'].addRow(self.children['input'], 1, weight = 0)
+            self.children['window'].addRow(self.children['input'], fixedsize = 1)
 
             focus = self.children['input']
 
         else:
-            self.children['yesno'] = Columns(self.children['body'], '%s:Window:Body:YesNo' % self.name, outerborder = False, innerborder = False)
+            self.children['yesno'] = Columns(self.children['window'], '%s:Window:YesNo' % self.name, outerborder = False, innerborder = False)
 
-            self.children['yes']   = Button(self.children['yesno'], '%s:Window:Body:YesNo:Yes' % self.name, ' Yes ')
-            self.children['no']    = Button(self.children['yesno'], '%s:Window:Body:YesNo:No' % self.name,  ' No ')
+            self.children['yes']   = Button(self.children['yesno'], '%s:Window:YesNo:Yes' % self.name, ' Yes ')
+            self.children['no']    = Button(self.children['yesno'], '%s:Window:YesNo:No' % self.name,  ' No ')
 
             self.children['yes'].bindKey('click', self._clickedYes)
             self.children['no'].bindKey('click',  self._clickedNo)
 
-            self.children['yesno'].addColumn(self.children['yes'], 7)
-            self.children['yesno'].addColumn(self.children['no'],  7)
+            self.children['yesno'].addColumn(self.children['yes'])
+            self.children['yesno'].addColumn(self.children['no'])
 
-            self.children['body'].addRow(self.children['yesno'], 1, weight = 0)
+            blank = Drawable(self.children['yesno'], 'blank')
+            #self.children['yesno'].addColumn(blank)
+
+            self.children['window'].addRow(self.children['yesno'], fixedsize = 1)
             focus = self.children['yes']
 
 

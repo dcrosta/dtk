@@ -134,6 +134,7 @@ class Rows(Drawable):
             child.height = size
 
             if isinstance(child, self.Row):
+                self.log.info('setting size of "%s" to (%d, %d, %d, %d)', child.drawable.name, y, x, child.height, w)
                 child.drawable.setSize(y, x, child.height, w)
 
             y += child.height
