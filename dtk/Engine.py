@@ -245,16 +245,6 @@ class Engine(InputHandler):
             self.setRoot(drawable)
             self.setFocus(drawable)
 
-
-        try:
-            drawable.log.addHandler(self.hndlr)
-            self.log.debug("added handler to logger for %s [%s]", drawable.name, drawable.__class__.__name__)
-
-        except:
-            # if the drawable has no .log attribute
-            # there's nothing we can do
-            pass
-
     def setRoot(self, drawable):
         """
         set the given drawable as the root drawable. this is
