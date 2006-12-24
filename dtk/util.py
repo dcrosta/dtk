@@ -37,7 +37,7 @@ def flexSize(items, space):
 
 
     if sum( sizes ) != space:
-        raise SizeException, "sum of fixed sizes != available space: %d != %d" % (sum(sizes), space)
+        raise SizeException, "sum of allocated sizes != available space: %d != %d" % (sum(sizes), space)
 
     return sizes
 

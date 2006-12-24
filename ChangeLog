@@ -1,3 +1,9 @@
+DTK r152 (Dec 24, 2006)
+https://firefly.student.swarthmore.edu/src/trunk/dtk@150
+
+ * Removed double-logging bug (r151)
+ * Added TextTable support for new sizing algorithm
+
 DTK r150 (Dec 22, 2006)
 https://firefly.student.swarthmore.edu/src/trunk/dtk@150
 

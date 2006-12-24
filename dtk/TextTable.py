@@ -5,34 +5,38 @@ from ListBox import ListBox
 
 class TextTable(ListBox):
     """
-    ColumnListBox extends the basic ListBox by adding support for
+    TextTable extends the basic ListBox by adding support for
     a multicolumn sortable interface by accepting sequences rather
     than single items for display (each element in the sequence will
     appear in its own column, subject to layout rules, etc).
     """
 
+    class TextColumn:
+        def __init__(self, fixedsize, weight, alignment):
+            self.fixedsize = fixedsize
+            self.weight = weight
+            self.alignment = alignment
+            self.width = None
+
     def __init__(self, parent, name, spacing = 1, **kwargs):
         super(TextTable, self).__init__(parent, name, **kwargs)
 
-        # this guy calculates our columns for us (easy!)
-        self.sizer = util.FlexSizer(spacing)
         self.colnames = []
 
         self.spacing = spacing
 
         self.format = None
-        self.cols = 0
+        self.cols = []
 
     def setSize(self, y, x, h, w):
         """
         clear the column cache, then call ListBox.setSize()
         """
         self.format = None
-        self.cols = 0
 
         ListBox.setSize(self, y, x, h, w)
 
-    def addColumn(self, minwidth, maxwidth = None, weight = 1, alignment = 'left', name = None):
+    def addColumn(self, fixedsize = None, weight = 1, alignment = 'left', name = None):
         """
         add a column (will become the rightmost column) containing
         the given drawable (its parent should be this ColumnLayout),
@@ -44,8 +48,10 @@ class TextTable(ListBox):
         if alignment != 'left' and alignment != 'right':
             raise ValueError, "'alignment' argument must be 'left' or 'right'"
 
-        self.sizer.addItem(minwidth, maxwidth, weight, sortOrder = None, sortPriority = None, alignment = alignment)
+        self.cols.append(self.TextColumn(fixedsize, weight, alignment))
         self.colnames.append(name)
+
+        self.touch()
 
     def render(self):
         """
@@ -59,14 +65,17 @@ class TextTable(ListBox):
         if self.format is None:
             self.format = ''
 
-            cols = self.sizer.calculate(self.w)
-            self.cols = len(cols)
+            sizeitems = [(c.fixedsize, c.weight) for c in self.cols]
+            self.log.debug('sizeitems: %s' % sizeitems)
+            sizes = util.flexSize(sizeitems, self.w)
 
-            for col in cols:
+            for (col, size) in zip(self.cols, sizes):
+                col.width = size
+
                 self.format += '%'
                 if col.alignment == 'left':
                     self.format += '-'
-                self.format += ('%d' % col.size) + ('.%d' % col.size) + 's'
+                self.format += ('%d' % col.width) + ('.%d' % col.width) + 's'
                 self.format += ' ' * self.spacing
 
             # trim off trailing space
@@ -97,9 +106,9 @@ class TextTable(ListBox):
             item = self.items[i]
 
             if len(item) < self.cols:
-                item += ' ' * (len(item) - self.cols)
+                item += ' ' * (len(item) - len(self.cols))
             elif len(item) > self.cols:
-                item = [item[i] for i in range(self.cols)]
+                item = item[:self.cols]
 
             attr = {}
             if i in self.selected:
