@@ -65,9 +65,10 @@ class TextTable(ListBox):
         if self.format is None:
             self.format = ''
 
+            availwidth = self.w - ((len(self.cols) - 1) * self.spacing)
+
             sizeitems = [(c.fixedsize, c.weight) for c in self.cols]
-            self.log.debug('sizeitems: %s' % sizeitems)
-            sizes = util.flexSize(sizeitems, self.w)
+            sizes = util.flexSize(sizeitems, availwidth)
 
             for (col, size) in zip(self.cols, sizes):
                 col.width = size
