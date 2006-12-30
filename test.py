@@ -88,48 +88,6 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'c':
 
     e.setFocus(lb1)
 
-elif len(sys.argv) > 1 and sys.argv[1] == 'hclb':
-    items = [
-        ['Radiohead', 'Kid A',  1, 'Everything In Its Right Place'],
-        ['Radiohead', 'Kid A',  2, 'Kid A'],
-        ['Radiohead', 'Kid A',  3, 'The National Anthem'],
-        ['Radiohead', 'Kid A',  4, 'How To Disappear Completely'],
-        ['Radiohead', 'Kid A',  5, 'Treefingers'],
-        ['Radiohead', 'Kid A',  6, 'Optimistic'],
-        ['Radiohead', 'Kid A',  7, 'In Limbo'],
-        ['Radiohead', 'Kid A',  8, 'Idioteque'],
-        ['Radiohead', 'Kid A',  9, 'Morning Bell'],
-        ['Radiohead', 'Kid A', 10, 'Motion Picture Sountrack'],
-        ['Radiohead', 'OK Computer',  1, 'Airbag'],
-        ['Radiohead', 'OK Computer',  2, 'Paranoid Android'],
-        ['Radiohead', 'OK Computer',  3, 'Subterranean Homesick Alien'],
-        ['Radiohead', 'OK Computer',  4, 'Exit Music (For a Film)'],
-        ['Radiohead', 'OK Computer',  5, 'Let Down'],
-        ['Radiohead', 'OK Computer',  6, 'Karma Police'],
-        ['Radiohead', 'OK Computer',  7, 'Fitter Happier'],
-        ['Radiohead', 'OK Computer',  8, 'Electioneering'],
-        ['Radiohead', 'OK Computer',  9, 'Climbing Up the Walls'],
-        ['Radiohead', 'OK Computer', 10, 'No Surprises'],
-        ['Radiohead', 'OK Computer', 11, 'Lucky'],
-        ['Radiohead', 'OK Computer', 12, 'The Tourist'],
-        ['Schneider TM', 'Zoomer', 1, 'Reality Check'],
-        ['Schneider TM', 'Zoomer', 2, 'Frogtoise'],
-        ['Schneider TM', 'Zoomer', 3, 'Abyss'],
-        ['Schneider TM', 'Zoomer', 4, 'DJ Guy?'],
-        ['Schneider TM', 'Zoomer', 5, 'Turn On'],
-        ['Schneider TM', 'Zoomer', 6, 'Hunger'],
-        ['Schneider TM', 'Zoomer', 7, '999'],
-        ['Schneider TM', 'Zoomer', 8, 'Cuba TM']
-        ]
-
-    clb = dtk.HierarchyColumnListBox(e, 'columnlistbox', vimlike = True)
-
-    clb.addColumn(5, weight = 1, primary = True, name = 'Artist')
-    clb.addColumn(5, weight = 1, primary = True, name = 'Album')
-    clb.addColumn(2, 2, alignment = 'right', name = 'Track Number')
-    clb.addColumn(5, weight = 2, name = 'Title')
-
-    clb.setItems(items, [i for i in range(len(items))])
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'table':
     items = [
