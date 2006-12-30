@@ -84,7 +84,7 @@ class Slideshow(Drawable):
         
     def _refresh(self):
         self._setChildSizes()
-        self.getEngine().setFocus(self.slides[self.currentSlide])
+        self.engine.setFocus(self.slides[self.currentSlide])
         self.clear()
 
     def nextSlide(self):
