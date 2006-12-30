@@ -27,17 +27,35 @@ class Engine(InputHandler):
     for the most part, Engine is an abstract class, that
     should have functionality implemented in a platform-
     specific way by a child class (eg CursesEngine)
+
+    Engine is an abstract class. CursesEngine is the concrete
+    implementation for the curses library.
+
+    Engine is a singleton. This means you don't need to ever
+    keep a reference to it, you can simply call
+
+      e = Engine()
+
+    at any time, and you will get the first-created instance
+    of Engine assigned to e.
     """
 
-    def __new__(self, *args, **kwargs):
-        """
-        depending on args[0], instantiate one of the correct
-        child classes as this Engine
-        """
-        import CursesEngine
-        return object.__new__(CursesEngine.CursesEngine)
+    _instance = None
+    _initialized = False
 
-    def __init__(self, name = 'dtk Application', log = False, **kwargs):
+    def __new__(clazz, *args, **kwargs):
+        """
+        Allocate or return the singleton instance of Engine. Currently
+        creates an instance of the concrete sublcass CursesEngine (no
+        other known concrete implementations exist).
+        """
+        if clazz._instance is None:
+            import CursesEngine
+            Engine._instance = object.__new__(CursesEngine.CursesEngine)
+
+        return clazz._instance
+
+    def __init__(self, **kwargs):
         """
         Initialize a new Engine. Engine will create a console environment
         and everything, so you don't need to do that outside or pass
@@ -45,44 +63,62 @@ class Engine(InputHandler):
         the main event loop.
         """
 
-        super(Engine, self).__init__()
+        if not Engine._initialized:
+            # _initialized is False the first time Engine() is
+            # allocated and initialized; subsequently it is True
+            Engine._initialized = True
 
-        self.name = name
-        # initially...
-        self.title = self.name
+            super(Engine, self).__init__()
 
-        self.log = logging.getLogger('dtk')
-        if log is True:
-            if 'logfile' in kwargs:
-                self.hndlr = logging.FileHandler(kwargs['logfile'])
-            else:
-                self.hndlr = logging.FileHandler('log.txt')
-            self.log.addHandler(self.hndlr)
+            self.name = 'dtk Application'
+            self.title = self.name
 
-            fmt = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
-            self.hndlr.setFormatter(fmt)
+            self.log = logging.getLogger('dtk')
+            self.log.setLevel(logging.NOTSET + 1) # log all messages
 
-            if 'loglevel' in kwargs:
-                self.log.setLevel(kwargs['loglevel'])
-            else:
-                self.log.setLevel(logging.ERROR)
+            self.drawables = {}
+            self.focusStack = []
+            self.root = None
 
-        self.drawables = {}
-        self.focusStack = []
-        self.root = None
 
     def __str__(self):
         return 'Engine'
 
 
-    def ignore(self, *args):
+    def beginLogging(self, file = None, level = logging.ERROR, formatter = None, handler = None):
         """
-        does nothing but handles potentially many arguments
-        (used when no logging is requested)
-        """
-        pass
+        configure the logging subsystem and begin logging
+        calls from within dtk.
 
-    
+        if `file` is not None, a FileHandler will be created
+        with the given filename. the level for this handler
+        will be that specified in `level`. if `formatter` is
+        not None, this formatter will be used in place of the
+        defailt formatter: 
+
+          logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
+
+        if `handler` is a log handler, it will used in addition
+        to any handler possibly created by other arguments
+        """ 
+
+        if file is not None:
+            fileHandler = logging.FileHandler(file)
+            fileHandler.setLevel(level)
+
+            if isinstance(formatter, logging.Formatter):
+                fileHandler.setFormatter(formatter)
+            else:
+                fileHandler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s"))
+
+            self.log.addHandler(fileHandler)
+            
+        if isinstance(handler, logging.Handler): 
+            self.log.addHandler(handler)
+
+        self.log.debug('Logging initialized')
+
+
     def getScreenSize(self):
         """
         return a tuple (height, width) of the current screen size
