@@ -36,29 +36,31 @@ if 'DTKDEBUG' in os.environ:
 else:
     level = levels['error']
 
-e = dtk.Engine(name='dtk Test App', log = True, logfile = 'log.txt', loglevel = level)
+e = dtk.Engine()
+e.beginLogging(file = 'log.txt', level = level)
 
 if len(sys.argv) > 1 and sys.argv[1] == 't':
-    tf = dtk.TextField(e, 'textfield')
+    tf = dtk.TextField()
+    e.setRoot(tf)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'te':
-    te = dtk.TextEditor(e, 'texteditor')
-
-    e.setFocus(te)
+    te = dtk.TextEditor()
+    e.setRoot(te)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'r':
-    c = dtk.Rows(e, 'rows')
+    c = dtk.Rows()
     c.bindKey('a', add_item)
+    e.setRoot(c)
 
     items1 = ['First item', 'Second item', 'Third Item']
     indices1 = [1, 2, 3]
-    lb1 = dtk.ListBox(c, 'listbox1')
+    lb1 = dtk.ListBox()
     lb1.setItems(items1, indices1)
 
-    lb2 = dtk.ListBox(c, 'listbox2')
+    lb2 = dtk.ListBox()
     lb2.setItems(['Fourth item', 'Fifth item', 'Sixth Item'], [4,5,6])
 
-    lb3 = dtk.ListBox(c, 'listbox3')
+    lb3 = dtk.ListBox()
     lb3.setItems(['Dog', 'Cat', 'Squirrel'], [7,8,9])
 
     c.addRow(lb1, fixedsize=5)
@@ -68,25 +70,22 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'r':
     e.setFocus(lb1)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'c':
-    c = dtk.Columns(e, 'columns')
+    c = dtk.Columns()
     c.bindKey('a', add_item)
+    e.setRoot(c)
 
-    items1 = ['First item', 'Second item', 'Third Item']
-    indices1 = [1, 2, 3]
-    lb1 = dtk.ListBox(c, 'listbox1')
-    lb1.setItems(items1, indices1)
+    lb1 = dtk.ListBox()
+    lb1.setItems(['First item', 'Second item', 'Third Item', id(lb1)])
 
-    lb2 = dtk.ListBox(c, 'listbox2')
-    lb2.setItems(['Fourth item', 'Fifth item', 'Sixth Item'], [4,5,6])
+    lb2 = dtk.ListBox()
+    lb2.setItems(['Fourth item', 'Fifth item', 'Sixth Item', id(lb2)])
 
-    lb3 = dtk.ListBox(c, 'listbox3')
-    lb3.setItems(['Dog', 'Cat', 'Squirrel'], [7,8,9])
+    lb3 = dtk.ListBox()
+    lb3.setItems(['Dog', 'Cat', 'Squirrel', id(lb3)])
 
     c.addColumn(lb1, fixedsize = 15)
     c.addColumn(lb2, weight = 1)
     c.addColumn(lb3, weight = 2)
-
-    e.setFocus(lb1)
 
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'table':
@@ -126,7 +125,8 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
         ['The Dandy Warhols', 'Thirteen Tales of Urban Bohemia', 3, 'Nietzsche'],
         ]
 
-    table = dtk.TextTable(e, 'texttable', vimlike = True)
+    table = dtk.TextTable(vimlike = True)
+    e.setRoot(table)
 
     table.addColumn(weight = 1, name = 'Artist')
     table.addColumn(weight = 1, name = 'Album')
@@ -137,25 +137,28 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
     table.setItems(items, [i for i in range(len(items))])
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'l':
-    l = dtk.Label(e, 'label', 'My Label Text')
+    l = dtk.Label('My Label Text')
+    e.setRoot(l)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 's':
-    s = dtk.Stack(e, 'stack')
+    s = dtk.Stack()
+    e.setRoot(s)
 
-    lbl = dtk.Label(s, 'label-0', 'Label 0')
+    lbl = dtk.Label('Label 0')
     s.push(lbl)
-    e.setFocus(lbl)
 
 
     def stackPush(stack):
-        lbl = dtk.Label(stack, 'label-%d' % len(stack.stack), 'Label %d' % len(stack.stack))
+        e.log.debug('creating "Label %d"', len(stack))
+        lbl = dtk.Label('Label %d' % len(stack))
         stack.push(lbl)
+        e.setFocus(stack)
 
     s.bindKey('page up', stackPush, s)
     s.bindKey('page down', s.pop)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'button':
-    r = dtk.Rows(e, 'rows', outerborder = False, innerborder = False)
+    r = dtk.Rows(outerborder = False, innerborder = False)
 
     def toggle(item):
         text = item.getText()
@@ -170,18 +173,19 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'button':
 
         item.setText('%s %s' % (split[0], dict[split[1]]))
 
-    b1 = dtk.Button(r, 'Button 1')
-    b2 = dtk.Button(r, 'Button 2')
-    b3 = dtk.Button(r, 'Button 3')
+    b1 = dtk.Button('Button 1')
+    b2 = dtk.Button('Button 2')
+    b3 = dtk.Button('Button 3')
 
     b1.bindKey('click', toggle, b1)
     b2.bindKey('click', toggle, b2)
     b3.bindKey('click', toggle, b3)
 
-    r.addRow(b1, 1)
-    r.addRow(b2, 1)
-    r.addRow(b3, 1)
+    r.addRow(b1)
+    r.addRow(b2)
+    r.addRow(b3)
 
+    e.setRoot(r)
     e.setFocus(b1)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
@@ -189,24 +193,23 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
     text = ''.join(fp.readlines())
     fp.close()
 
-    p = dtk.Pager(e, 'pager')
+    p = dtk.Pager()
     p.setText(text)
-    e.setFocus(p)
+    e.setRoot(p)
 
-    d = dtk.Dialog(e, 'dialog')
+    d = dtk.Dialog()
     d.setType('message')
     d.setTitle('Dialog Box')
     d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
 
     def showDialog():
-        e.log.debug('showDialog()')
-        # e.pushFocus(d)
         d.show()
 
     p.bindKey('enter', showDialog)
 
 else:
-    lb = dtk.ListBox(e, '+++', vimlike = True)
+    lb = dtk.ListBox(vimlike = True)
+    e.setRoot(lb)
     lb.setItems(
         ['Radiohead Kid A  1 Everything In Its Right Place',
         'Radiohead Kid A  2 Kid A',

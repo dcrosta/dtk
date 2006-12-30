@@ -9,8 +9,8 @@ class Button(Label):
     hitting <enter>)
     """
 
-    def __init__(self, parent, name, text = None, decoration = '[%s]'):
-        super(Button, self).__init__(parent, name, text)
+    def __init__(self, text = None, decoration = '[%s]', **kwargs):
+        super(Button, self).__init__(text, **kwargs)
 
         self.setDecoration(decoration)
         self.bindKey('enter', self._doClick)
@@ -35,8 +35,8 @@ class Button(Label):
 
     def render(self):
         """
-        Draw the text we're given, surrounded by '[' and ']'.
-        If focused, we draw with the highlight attribute (usually
-        reverse-colors)
+        Draw the text formatted with the decoration. If
+        focused, we draw with the highlight attribute
+        (usually reverse-colors)
         """
         self.draw(self.decoration % self.text, 0, 0, highlight = self.focused)

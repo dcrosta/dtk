@@ -2,8 +2,8 @@ from Drawable import Drawable
 
 class Select(Drawable):
 
-    def __init__(self, parent, name):
-        super(Select, self).__init__(parent, name)
+    def __init__(self, **kwargs):
+        super(Select, self).__init__(**kwargs)
 
         self.options = []
         self.setValue(None)

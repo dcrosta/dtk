@@ -17,9 +17,9 @@ class ListBox(Drawable):
     views the list.
     """
 
-    def __init__(self, parent, name, selection = 'multiple', vimlike = False, 
+    def __init__(self, selection = 'multiple', vimlike = False, 
             hstyle = {'highlight':True}, sstyle = {'bold':True}, ustyle = {},
-            scheck = '', ucheck = ''):
+            scheck = '', ucheck = '', **kwargs):
         """
         Initialize the ListBox.
 
@@ -57,7 +57,7 @@ class ListBox(Drawable):
             see setDrawStyle()
         @type  ucheck: string
         """
-        super(ListBox, self).__init__(parent, name)
+        super(ListBox, self).__init__(**kwargs)
 
         # the higlighted element is shown in reverse mode
         self.highlighted = 0

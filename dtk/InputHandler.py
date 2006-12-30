@@ -12,7 +12,7 @@ class InputHandler(object):
         }
 
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # keybindings dict
         self.keybindings = {}
 
@@ -30,13 +30,9 @@ class InputHandler(object):
         handling is finished, or else we return False to indicate that
         this InputHandler's parent should be asked to handle the
         input
-
-        some extra effort is taken to determine the type of callable
-        that we're given, and to call it properly. this lets users
-        specify the callback the way they think about it -- no need
-        to worry about whether it's a class method, a function on
-        its own, or a callable class
         """
+
+        self.log.debug("handleInput('%s')", input)
 
         method = None
         args   = []

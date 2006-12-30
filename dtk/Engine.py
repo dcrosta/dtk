@@ -3,8 +3,12 @@ import types
 import time
 import logging
 
-from Drawable import Drawable
 from InputHandler import InputHandler
+
+
+class EngineError(Exception):
+    pass
+
 
 class Engine(InputHandler):
     """
@@ -76,8 +80,7 @@ class Engine(InputHandler):
             self.log = logging.getLogger('dtk')
             self.log.setLevel(logging.NOTSET + 1) # log all messages
 
-            self.drawables = {}
-            self.focusStack = []
+            self.focusedDrawable = None
             self.root = None
 
 
@@ -152,17 +155,7 @@ class Engine(InputHandler):
         returns the drawable that has focus. raises an Exception
         if the number of focused drawables is not exactly 1
         """
-        f = []
-        for name in self.drawables:
-            drawable = self.drawables[name]
-            if drawable.focused:
-                f.append(drawable)
-
-        if len(f) is not 1:
-            self.log.debug("focused drawables: %s" % f)
-            raise Exception, "Number of focused drawables is not exactly 1."
-
-        return f[0]
+        return self.focusedDrawable
 
 
     def setFocus(self, drawable):
@@ -170,116 +163,13 @@ class Engine(InputHandler):
         sets the focus to be on the given drawable, given
         by name or reference
         """
+        if self.focusedDrawable is not None:
+            self.log.debug('unfocusing %s (%d)', self.focusedDrawable, id(self.focusedDrawable))
+            self.focusedDrawable.unfocus()
 
-        self.focusStack = []
-        self._setFocus(drawable)
-
-
-    def _setFocus(self, drawable):
-
-        if type(drawable) in types.StringTypes:
-            drawable = self.drawables[drawable]
-
-        if isinstance(drawable, Drawable):
-            toFocus = None
-            for d in self.drawables.values():
-                if d == drawable:
-                    toFocus = d
-                elif d.focused:
-                    d.unfocus()
-
-            # do this last, so that the unfocusing 
-            # happens first
-            if toFocus is not None: toFocus.focus()
-
-        else:
-            raise TypeError, "setFocus expects a dtk.Drawable or the name of a registered Drawable"
-
-
-    def pushFocus(self, drawable):
-        """
-        like setFocus, but retains the previous focused elements
-        in an internal stack. calls to popFocus undo this action
-        incrementally; calls to setFocus erase the stack.
-        """
-
-        # if we're pushing for the first time, prepend the name of the 
-        # currently focused drawable
-        if len(self.focusStack) == 0:
-            self.focusStack.append(self.getFocusedDrawable().name)
-
-        if isinstance(drawable, Drawable):
-            drawable = drawable.name
-
-        elif not type(drawable) in types.StringTypes:
-            raise TypeError, "pushFocus expects a dtk.Drawable or the name of a registered Drawable"
-
-        # make sure it only ends up in the stack once
-        if drawable in self.focusStack:
-            self.focusStack.remove(drawable)
-        self.focusStack.append(drawable)
-
-        self._setFocus(drawable)
-
-
-    def popFocus(self, drawable = None):
-        """
-        If there is more than one Drawable on the focused
-        elements stack, then the most recently pushed Drawable
-        is removed, and the next most recently focused one
-        is set to be the focused Drawable. Otherwise, no
-        action is taken
-
-        if the optional 'drawable' argument is set, the stack
-        is popped to the element just underneath the given
-        drawable, if it is in the stack
-        """
-        
-        if len(self.focusStack) > 1:
-            if isinstance(drawable, Drawable):
-                drawable = drawable.name
-    
-                if drawable in self.focusStack:
-                    spot = self.focusStack.index(drawable)
-        
-
-                    # remove the elements after spot
-                    del self.focusStack[spot:]
-
-
-            else:
-                self.focusStack.pop()
-    
-
-            self._setFocus(self.focusStack[-1])
-            self.root.clear()
-
-
-    def peekFocus(self, drawable = None):
-        """
-        returns the top element from the focus stack 
-        """
-        
-        if len(self.focusStack):
-            return self.focusStack[-1]
-
-        return None
-
-
-    def register(self, drawable):
-        """
-        registers the drawable with the Engine. this should not
-        be called directly, it is called by the Drawable's
-        initializer. this makes handling keyboard input through
-        Engine possible.
-        """
-        self.drawables[drawable.name] = drawable
-
-        # if this is the first drawable we get registered,
-        # it is by default the focused root drawable
-        if len(self.drawables) == 1:
-            self.setRoot(drawable)
-            self.setFocus(drawable)
+        self.log.debug('focusing %s (%d)', drawable, id(drawable))
+        self.focusedDrawable = drawable.focus()
+ 
 
     def setRoot(self, drawable):
         """
@@ -291,22 +181,12 @@ class Engine(InputHandler):
         """
         self.root = drawable
 
+
     def getRoot(self):
         """
         returns the root drawable, as set by setRoot()
         """
         return self.root
-
-    
-    def getDrawable(self, name):
-        """
-        returns the Drawable with the given name, or None if
-        Engine doesn't know about the given Drawable
-        """
-        try:
-            return self.drawables[name]
-        except:
-            return None
 
 
     def resize(self):
@@ -324,18 +204,21 @@ class Engine(InputHandler):
         """
         pass
 
-    def getEngine(self):
-        """
-        recursively call parent.getEngine() until the Engine
-        gets the call, and will return a reference to itself.
-        """
-        return self
 
     def capabilities(self):
         """
-        returns a list of the drawing capabilities of this Engine
+        Returns a dict of lists of the capabilities of this
+        Engine instance. Returned dict will have at least
+        'attributes' and 'keynames':
+
+          attributes: list of drawing attributes supported
+            by drawing functions
+          keynames: list of symbolic key names understood
+            by the input system in addition to standard
+            printable characters
         """
         pass
+
 
     def shellMode(self):
         """
@@ -345,6 +228,7 @@ class Engine(InputHandler):
         """
         pass
 
+
     def dtkMode(self):
         """
         returns to dtk mode (from shell mode) and restarts the main
@@ -352,13 +236,26 @@ class Engine(InputHandler):
         """
         pass
 
+
     def touchAll(self):
         """
         causes all drawables to be re-drawn on the next refresh
         """
         pass
 
-    def _draw(self, str, row, col, drawable, **kwargs):
+
+    def draw(self, str, row, col, drawable, **kwargs):
+        """
+        draws the string at the given row and column,
+        relative to the drawing area for the drawable, with
+        the drawing style defined in **kwargs. if drawing
+        should continue out of the area the drawable is allowed
+        to draw in, it will be clipped
+        """
+        pass
+
+
+    def drawDown(self, str, row, col, drawable, **kwargs):
         """
         draws the string at the position given by row and col, with
         the drawing style defined by arguments given in **kwargs.
@@ -368,50 +265,45 @@ class Engine(InputHandler):
         """
         pass
 
-    def _drawDown(self, str, row, col, drawable, **kwargs):
+        
+    def box(self, row, col, w, h, drawable, **kwargs):
         """
-        draws the string at the position given by row and col, with
-        the drawing style defined by arguments given in **kwargs.
-        these will often include things like face attributes (bold,
-        underline, etc), colors, and other things specific to the
-        Engine. capabilities() should list all the possibilities.
-        """
-        pass
-
-    def _box(self, x, y, w, h, drawable, **kwargs):
-        """
-        draws a line using border characters appropriate to the 
-        underlying technology, starting at the location given by
-        (x, y) with the given width and height.
+        draws a line using border characters, starting at the location
+        (row, col) with the given width and height. fails silently if
+        any part of the box is outside the Drawable's bounds
         """
         pass
 
-    def _line(self, x, y, len, drawable, **kwargs):
+
+    def line(self, row, col, len, drawable, **kwargs):
         """
-        draws a line starting at (x, y) and going to the right for
-        len cells. ending characters may be specified with the
-        leftEnd and rightEnd attributes
+        Draw the string starting at (row, col) relative to the
+        upper left of this Drawable and going down. Drawing 
+        will be bounded to stay within the Drawable's size.
         """
         pass
 
-    def _lineDown(self, x, y, len, drawable, **kwargs):
+
+    def lineDown(self, row, col, len, drawable, **kwargs):
         """
-        draws a line starting at (x, y) and going down for
-        len cells. ending characters may be specified with the
-        topEnd and bottomEnd attributes. line is clipped to
-        the available area.
+        Draw a line starting at (row, col) relative to the upper
+        left of this Drawable and going down for len characters.
+        Ending characters may be specified with the topEnd and
+        bottomEnd attributes.
         """
         pass
 
-    def _clear(self, drawable):
+
+    def clear(self, drawable):
         """
         clears the whole drawable
         """
         pass
 
-    def _showCursor(self, y, x, drawable):
+
+    def showCursor(self, y, x, drawable):
         """
-        draws a cursor to the given screen position, or none at all
+        draws a "cursor" to the given screen position, or none at all
         if (x, y) is outside the area allowed for the drawable
         """
         pass

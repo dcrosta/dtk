@@ -10,14 +10,10 @@ class Label(Drawable):
     to change at some later point.
     """
 
-    def __init__(self, parent, name, text = None):
-        super(Label, self).__init__(parent, name)
+    def __init__(self, text = None, **kwargs):
+        super(Label, self).__init__(**kwargs)
 
-        # if text is None, use the name as label text
-        if text is None:
-            self.setText(name)
-        else:
-            self.setText(text)
+        self.setText(text)
 
 
     def getText(self):
@@ -39,8 +35,6 @@ class Label(Drawable):
     def render(self):
         """
         simply draw the text we have starting at the first position, and
-        going on for as long as we can (Engine enforces clipping of the text
-        string)
+        going on for as long as we can (Engine clips the text)
         """
         self.draw(self.text, 0, 0)
-

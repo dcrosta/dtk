@@ -18,8 +18,8 @@ class TextTable(ListBox):
             self.alignment = alignment
             self.width = None
 
-    def __init__(self, parent, name, spacing = 1, **kwargs):
-        super(TextTable, self).__init__(parent, name, **kwargs)
+    def __init__(self, spacing = 1, **kwargs):
+        super(TextTable, self).__init__(**kwargs)
 
         self.colnames = []
 
@@ -89,7 +89,7 @@ class TextTable(ListBox):
         if max(self.colnames):
             # then we must render the header
             self.draw(self.format % tuple(map(lambda x: x or '', self.colnames)), 0, 0, bold = True)
-            self.line(0, 1, self.w)
+            self.line(1, 0, self.w)
 
             offset = 2
         

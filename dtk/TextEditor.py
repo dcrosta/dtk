@@ -11,8 +11,8 @@ class TextEditor(Drawable):
     A simple multi-line text edtor/viewer that does smart things.
     """
 
-    def __init__(self, parent, name, editable = True):
-        super(TextEditor, self).__init__(parent, name)
+    def __init__(self, editable = True, **kwargs):
+        super(TextEditor, self).__init__(**kwargs)
 
         # the buffer of lines
         self.buffer = ['']

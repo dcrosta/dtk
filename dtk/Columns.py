@@ -25,8 +25,8 @@ class Columns(Drawable):
             self.type = type
 
 
-    def __init__(self, parent, name, outerborder = True, innerborder = True):
-        super(Columns, self).__init__(parent, name)
+    def __init__(self, outerborder = True, innerborder = True, **kwargs):
+        super(Columns, self).__init__(**kwargs)
 
         # save these for later use
         self.outerborder = outerborder
@@ -43,6 +43,16 @@ class Columns(Drawable):
 
     def __str__(self):
         return 'Columns'
+
+    def handleInput(self, input):
+        """
+        Pass input to the current column
+        """
+        consumed = self.columns[self.targetCol].drawable.handleInput(input)
+        if not consumed:
+            consumed = super(Columns, self).handleInput(input)
+
+        return consumed
 
     def addColumn(self, drawable, fixedsize = None, weight = 1):
         """
@@ -170,14 +180,14 @@ class Columns(Drawable):
         for child in self.columns[:-1]:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.lineDown(x, 0, self.h)
+                    self.lineDown(0, x, self.h)
                 elif child.type == 'blank':
-                    self.drawDown(' ' * (self.h - 2 * borders), 0, 0)
+                    self.drawDown(' ' * (self.h - 2 * borders), 0, x)
 
             x += child.width or 0
 
             if self.innerborder:
-                    self.lineDown(x, 0, self.h, **attr)
+                    self.lineDown(0, x, self.h, **attr)
                     x += 1 # for the inner border
 
 
@@ -209,10 +219,17 @@ class Columns(Drawable):
 
         col = cols[self.targetCol]
 
-        engine = self.getEngine()
-        if engine.peekFocus() is not None:
-            engine.pushFocus(col.drawable)
-        else:
-            engine.setFocus(col.drawable)
+        self.engine.setFocus(col.drawable)
 
         self.touch()
+
+
+    def focus(self):
+        """
+        call setFocus on the correct column
+        """
+        cols = [col for col in self.columns if isinstance(col, self.Column)]
+        if len(cols):
+            child = cols[self.targetCol].drawable
+            self.log.debug('handing focus to %s', child)
+            return child.focus()

@@ -1,7 +1,6 @@
-import curses
-import types
 import logging
 
+from Engine import Engine
 from InputHandler import InputHandler
 
 class Drawable(InputHandler):
@@ -13,34 +12,39 @@ class Drawable(InputHandler):
     by extending InputHandler), and the like.
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, **kwargs):
         """
         the only thing a drawable absolutely has to have is a
         reference to the parent object. the base Drawable will
         have the Engine as its parent.
         """
 
-        super(Drawable, self).__init__()
-
-        # the parent pointer
-        self.parent = parent
-
-        # our name
-        self.name = name
+        super(Drawable, self).__init__(**kwargs)
 
         # initialize sane default values
         self.y = self.x = self.h = self.w = 0
         self.border = 0
-        self.focused = False
 
-        # get the logger from the Engine
+        # child of the 'dtk' logger, so Engine's handler if
+        # any, will handle logging calls against self.log
         self.log = logging.getLogger('dtk.' + str(self.__class__.__name__))
 
-        # register with the parent
-        self.parent.register(self)
+        self.name = self.__class__.__name__
+        if 'name' in kwargs:
+            self.name = name
 
-        # redraw yourself the first time
-        self.touch()
+        self.engine = Engine()
+
+
+    # `self.focused` is a property that checks whether
+    # this is the Engine's current focused drawable; this
+    # ensures that only one drawable can ever be focused
+    def _setFocused(self, value):
+        pass
+    def _getFocused(self):
+        return self.engine.getFocusedDrawable() == self
+    focused = property(_getFocused, _setFocused)
+
 
     def __str__(self):
         """
@@ -48,6 +52,16 @@ class Drawable(InputHandler):
         get the name of the instance
         """
         return self.name
+
+
+    def handleInput(self, input):
+        """
+        Container-type drawables should override this to call
+        handleInput on the correct child or children. For other,
+        "regular" drawables, we just invoke InputHandler's
+        handleInput here, and everything works.
+        """
+        return super(Drawable, self).handleInput(input)
 
 
     def touch(self):
@@ -58,6 +72,7 @@ class Drawable(InputHandler):
         """
         self.touched = True
 
+
     def untouch(self):
         """
         marks the drawable as not needing a redraw. this is usually
@@ -67,15 +82,32 @@ class Drawable(InputHandler):
         self.touched = False
 
 
+    def focus(self):
+        """
+        this drawable has just gotten focus. return a reference
+        to self to indicate to engine which drawable currently
+        has focus (allows container-type drawables to hand focus
+        to others)
+        """
+        self.log.debug('got focus (%d)', id(self))
+        self.touch()
+
+        return self
+
+
+    def unfocus(self):
+        """
+        this drawable has just lost focus
+        """
+        self.log.debug('lost focus (%d)', id(self))
+        self.touch()
+
+
     def drawContents(self):
         """
-        this function is called by Engine (and through the stack
-        of Drawables) to get the curses Window objects that are
-        going to be drawn. this is not implemented in Drawable.
-        subclasses of Drawable should not return window objects
-        that are outside of the bounds specified by self.y, self.x
-        (the upper-left corner) and self.w, self.h (the width and
-        height)
+        if this drawable needs redrawing (because someone called
+        touch() on it) then redraw using the render() method.
+        otherwise, do nothing.
         """
         if self.touched:
             self.render()
@@ -84,9 +116,8 @@ class Drawable(InputHandler):
 
     def render(self):
         """
-        here's where all the redrawing gets done. this is split off
-        from getContents() to simplify redrawing logic so that it
-        only needs to happen here in Drawable
+        Drawable-specific render function. Should use self's
+        draw*(), line*(), clear(), etc methods for drawing.
         """
         pass
 
@@ -117,150 +148,76 @@ class Drawable(InputHandler):
             self.touch()
             self.h = h
 
-    def focus(self):
-        """
-        called when this Drawable gets focus. spawns
-        the 'focused' psuedo-key.
-        """
-        self.focused = True
-        self.handleInput('focused')
 
-        self.touch()
+    # drawables should use these methods for drawing rather than
+    # directly calling Engine's equivalents, since these will
+    # pass a reference to this Drawable to the Engine for bounding
 
-    def unfocus(self):
+    def showCursor(self, row, col):
         """
-        called when this Drawable loses focus. spawns
-        the 'unfocused' psuedo-key.
+        Move the cursor to (row, col) relative to this Drawable's
+        upper left, and show it if it is currently hidden.
         """
-        self.focused = False
-        self.handleInput('unfocused')
-
-        self.touch()
-
-    def getParent(self):
-        """
-        returns the Drawable's parent
-        """
-        return self.parent
-
-
-    # these functions are provided as a convenience so 
-    # that Drawables need not keep around a reference
-    # to the Engine. recursion is a little slow, but the
-    # GUI tree depth should never be prohibitively tall
+        self.engine.showCursor(row, col, drawable = self)
+        
 
     def hideCursor(self):
         """
-        call parent's hideCursor method
+        call Engine's hideCursor method
         """
-        self.parent.hideCursor()
+        self.engine.hideCursor()
 
-    def register(self, drawable):
-        """
-        registers the drawable with the Engine, by calling up the
-        stack until we get to Engine.register(). this should not
-        be called directly, it is called by the Drawable's
-        initializer. this makes handling keyboard input through
-        Engine possible.
-        """
-        self.parent.register(drawable)
-
-    def getEngine(self):
-        """
-        recursively call parent.getEngine() until the Engine
-        gets the call, and will return a reference to itself.
-        """
-        return self.parent.getEngine()
-    
-    def _draw(self, str, row, col, drawable, **kwargs):
-        """
-        because we can't have an argument's defuault value
-        be self (itself an argument which therefore isn't bound
-        when evaluating default arg values), we have a slightly
-        hackish pair-of-functions for the drawing things. it
-        seems to work well enough. don't want to force extra
-        arguments on the user (ie, don't want them to have to
-        type 'drawable = self' in each call to draw())
-
-        _draw is necessary in Drawable, since Layouts and other
-        container-type GUI components inherit Drawable, and can
-        be parents for other Drawables
-        """
-        self.parent._draw(str, row, col, drawable, **kwargs)
 
     def draw(self, str, row, col, **kwargs):
         """
-        call draw up the stack
+        Draw the string starting at (row, col) relative to the
+        upper left of this Drawable. Drawing will be bounded
+        to stay within this Drawable's size.
         """
-        self.parent._draw(str, row, col, drawable = self, **kwargs)
+        self.engine.draw(str, row, col, drawable = self, **kwargs)
 
+    
     def drawDown(self, str, row, col, **kwargs):
-        self.parent._drawDown(str, row, col, drawable = self, **kwargs)
+        """
+        Draw the string starting at (row, col) relative to the
+        upper left of this Drawable and going down. Drawing 
+        will be bounded to stay within the Drawable's size.
+        """
+        self.engine.draw(str, row, col, drawable = self, **kwargs)
 
-    def _drawDown(self, str, row, col, drawable, **kwargs):
-        self.parent._drawDown(str, row, col, drawable = self, **kwargs)
 
-    def _box(self, x, y, w, h, drawable, **kwargs):
+    def box(self, row, col, w, h, **kwargs):
         """
-        see _draw()
+        Draw a box of border characters, beginning at (row, col)
+        relative to the upper left of this Drawable, extending
+        for w characters wide (inclusive of both borders) and
+        h characters high (inclusive of both borders).
         """
-        self.parent._box(x, y, w, h, drawable, **kwargs)
+        self.engine.box(row, col, w, h, drawable = self, **kwargs)
 
-    def box(self, x, y, w, h, **kwargs):
-        """
-        call box up the stack.
-        """
-        self.parent._box(x, y, w, h, drawable = self, **kwargs)
 
-    def _line(self, x, y, len, drawable, **kwargs):
+    def line(self, row, col, len, **kwargs):
         """
-        see _draw()
+        Draw a line starting at (row, col) relative to this
+        Drawable's upper-left and going right for len characters.
+        Ending characters may be specified with the leftEnd and
+        rightEnd attributes.
         """
-        self.parent._line(x, y, len, drawable, **kwargs)
+        self.engine.line(row, col, len, drawable = self, **kwargs)
 
-    def line(self, x, y, len, **kwargs):
-        """
-        draws a line starting at (x, y) and going to the right for
-        len cells. ending characters may be specified with the
-        leftEnd and rightEnd attributes
-        """
-        self.parent._line(x, y, len, drawable = self, **kwargs)
 
-    def _lineDown(self, x, y, len, drawable, **kwargs):
+    def lineDown(self, row, col, len, **kwargs):
         """
-        see _draw()
+        Draw a line starting at (row, col) relative to the upper
+        left of this Drawable and going down for len characters.
+        Ending characters may be specified with the topEnd and
+        bottomEnd attributes.
         """
-        self.parent._lineDown(x, y, len, drawable, **kwargs)
+        self.engine.lineDown(row, col, len, drawable = self, **kwargs)
 
-    def lineDown(self, x, y, len, **kwargs):
-        """
-        draws a line starting at (x, y) and going down for
-        len cells. ending characters may be specified with the
-        topEnd and bottomEnd attributes. line is clipped to
-        the available area.
-        """
-        self.parent._lineDown(x, y, len, drawable = self, **kwargs)
-
-    def _clear(self, drawable):
-        """
-        see _draw()
-        """
-        self.parent._clear(drawable)
 
     def clear(self):
         """
         clears the whole drawable
         """
-        self.parent._clear(self)
-
-    def _showCursor(self, y, x, drawable):
-        """
-        see _draw()
-        """
-        self.parent._showCursor(y, x, drawable)
-
-    def showCursor(self, y, x):
-        """
-        show a cursor at the position (y, x)
-        """
-        self.parent._showCursor(y, x, self)
+        self.engine.clear(self)

@@ -5,7 +5,7 @@ import types
 import os
 import time
 
-from Engine import Engine
+from Engine import Engine, EngineError
 
 
 class NoInputCharException(Exception):
@@ -60,10 +60,10 @@ class CursesEngine(Engine):
                curses.KEY_END   : "end",
 
                curses.KEY_BACKSPACE : "backspace",
+               curses.ascii.DEL : "backspace",
 
                curses.KEY_IC    : "insert",
                curses.KEY_DC    : "delete",
-               curses.ascii.DEL : "delete",
 
                curses.KEY_F1  : "F1",
                curses.KEY_F2  : "F2",
@@ -82,27 +82,41 @@ class CursesEngine(Engine):
 
 
     def __init__(self, *args, **kwargs):
-        # some things can only be done once curses.init_scr has been called
-        self.cursesInitialized = False
-        self.doWhenCursesInitialized = []
+        if not self._initialized:
+            # some things can only be done once curses.init_scr has been called
+            self.cursesInitialized = False
+            self.doWhenCursesInitialized = []
 
-        try:
-            wantslog = kwargs['wantslog']
-        except KeyError:
-            wantslog = False
-        
-        super(CursesEngine, self).__init__(*args, **kwargs)
+            try:
+                wantslog = kwargs['wantslog']
+            except KeyError:
+                wantslog = False
+            
+            super(CursesEngine, self).__init__(*args, **kwargs)
 
-        # initially, we are tiny!
-        self.w = 0
-        self.h = 0
-        self.resized = True
+            # initially, we are tiny!
+            self.w = 0
+            self.h = 0
+            self.resized = False
 
-        # cursor position
-        self.cursorpos = (-1, -1)
+            # cursor position
+            self.cursorpos = (-1, -1)
 
-        # for input handling
-        self.curmap = self.keymap
+
+    def capabilities(self):
+        """
+        Returns a dict of lists of the capabilities of this
+        Engine instance. Returned dict will have at least
+        'attributes' and 'keynames':
+
+          attributes: list of drawing attributes supported
+            by drawing functions
+          keynames: list of symbolic key names understood
+            by the input system in addition to standard
+            printable characters
+        """
+        return {'attributes': self.attrs.keys(),
+                'keynames': self.keymap.values() }
 
 
     def mainLoop(self):
@@ -110,6 +124,10 @@ class CursesEngine(Engine):
         initializes curses, and asks it to run the
         actual main event loop function
         """
+
+        # check things we need
+        if self.root is None:
+            raise EngineError, "Must set a root drawable with setRoot()"
 
         curses.wrapper(self.cursesMainLoop)
 
@@ -121,7 +139,6 @@ class CursesEngine(Engine):
         """
 
         self.scr = scr
-
         (self.h, self.w) = self.scr.getmaxyx()
         
         self.setTitle(self.title)
@@ -149,6 +166,11 @@ class CursesEngine(Engine):
             else:
                 foo()
 
+        # re-set focus on the root drawable; if the
+        # root is a container, this will cause it to
+        # set focus on the proper child drawable
+        self.log.debug('cursesMainLoop setting focus on root drawable')
+        self.setFocus(self.root)
 
         # these are all 0 so that we get a "resize" on the first time
         lasth = lastw = 0
@@ -158,7 +180,7 @@ class CursesEngine(Engine):
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        curses.halfdelay(2)
+        curses.halfdelay(3)
 
         while not self.done:
             # first try to detect and handle a terminal resize
@@ -169,14 +191,15 @@ class CursesEngine(Engine):
             self.resized = self.resized or h != lasth or w != lastw
 
             if self.resized:
+                self.resized = False
+
                 # a resize has happened
-                self.log.debug('screen resized to (%d, %d)', h, w)
+                self.log.debug('screen resized (%d, %d) => (%d, %d)', lasth, lastw, h, w)
 
                 self.root.setSize(0, 0, h, w)
                 
                 lasth = h
                 lastw = w
-                self.resized = False
 
                 # try to erase everything (necessary in some terms)
                 self.scr.move(0,0)
@@ -188,19 +211,11 @@ class CursesEngine(Engine):
             self.scr.noutrefresh()
 
 
-            # tell children to draw
             self.root.drawContents()
-
-            if len(self.focusStack):
-                # draw from the bottom up
-                for name in self.focusStack:
-                    self.drawables[name].drawContents()
 
 
             # draw the cursor if it's valid
-            if self.cursorpos == (-1, -1):
-                self.scr.move(self.h - 1, self.w - 1)
-            else:
+            if self.cursorpos != (-1, -1):
                 self.scr.move(self.cursorpos[0], self.cursorpos[1])
 
 
@@ -226,23 +241,8 @@ class CursesEngine(Engine):
             # we're waiting on further multi-byte input
 
             if input is not None:
-                drawable = self.getFocusedDrawable()
-
-                # we hand the input off to the focused Drawable,
-                # and recurse up the implicit stack until
-                # 'drawable' is the Engine. if we haven't gotten
-                # a positive acknowledgement that the input was
-                # handled, then we try the Engine's bindings
-                # as a last resort
-                handled = False
-                while drawable is not self:
-                    handled = drawable.handleInput(input)
-                    if handled:
-                        break
-                    
-                    drawable = drawable.getParent()
-
-                if not handled:
+                self.log.debug('calling handleInput on %s', self.root)
+                if not self.root.handleInput(input):
                     self.handleInput(input)
                 
 
@@ -398,6 +398,8 @@ class CursesEngine(Engine):
         """
         hides the cursor, if possible
         """
+        import traceback
+        self.log.debug('hideCursor() :: %s', str(traceback.extract_stack()))
         self.cursorpos = (-1, -1)
 
 
@@ -436,7 +438,7 @@ class CursesEngine(Engine):
         return attr
 
 
-    def _draw(self, str, row, col, drawable, **kwargs):
+    def draw(self, str, row, col, drawable, **kwargs):
         """
         draws the string at the given row and column,
         relative to the drawing area for the drawable, with
@@ -463,13 +465,13 @@ class CursesEngine(Engine):
 
         # now draw it
         try:
-            self.log.debug('draw: (%d, %d, %s, %d)' % (row, col, str, self.cursesAttr(kwargs)))
+            self.log.debug('addstr(%d, %d, "%s", %s)', row, col, str, kwargs)
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
 
 
-    def _drawDown(self, str, row, col, drawable, **kwargs):
+    def drawDown(self, str, row, col, drawable, **kwargs):
         """
         draws the string at the position given by row and col, with
         the drawing style defined by arguments given in **kwargs.
@@ -490,149 +492,144 @@ class CursesEngine(Engine):
 
 
         
-    def _box(self, x, y, w, h, drawable, **kwargs):
+    def box(self, row, col, w, h, drawable, **kwargs):
         """
-        draws a line using border characters appropriate to the 
-        underlying technology, starting at the location given by
-        (x, y) with the given width and height. fails silently if
-        any part of the box is to be drawn is outside the area
-        allowed by the drawable.
+        draws a line using border characters, starting at the location
+        (row, col) with the given width and height. fails silently if
+        any part of the box is outside the Drawable's bounds
         """
 
         # check bounds
-        if x < 0 or y < 0 or x + w > drawable.w or y + h > drawable.h:
+        if col < 0 or row < 0 or col + w > drawable.w or row + h > drawable.h:
             return
 
-        x += drawable.x
-        y += drawable.y
+        col += drawable.x
+        row += drawable.y
 
         attr = self.cursesAttr(kwargs)
 
         # draw corners
-        self.scr.addch(y, x, curses.ACS_ULCORNER, attr)
-        self.scr.addch(y, x + w - 1, curses.ACS_URCORNER, attr)
-        self.scr.addch(y + h - 1, x, curses.ACS_LLCORNER, attr)
+        self.scr.addch(row, col, curses.ACS_ULCORNER, attr)
+        self.scr.addch(row, col + w - 1, curses.ACS_URCORNER, attr)
+        self.scr.addch(row + h - 1, col, curses.ACS_LLCORNER, attr)
         try:
-            self.scr.addch(y + h - 1, x + w - 1, curses.ACS_LRCORNER, attr)
+            self.scr.addch(row + h - 1, col + w - 1, curses.ACS_LRCORNER, attr)
         except _curses.error, e:
             pass
 
         # draw edges
         if attr:
-            # if we have an attribute, we have to draw char-by-char
-            for r in range(x + 1, x + w - 1):
-                self.scr.addch(y, r, curses.ACS_HLINE, attr)
-                self.scr.addch(y + h - 1, r, curses.ACS_HLINE, attr)
+            # if we have an attribute, we have to draw char-brow-char
+            for r in range(col + 1, col + w - 1):
+                self.scr.addch(row, r, curses.ACS_HLINE, attr)
+                self.scr.addch(row + h - 1, r, curses.ACS_HLINE, attr)
     
-            for c in range(y + 1, y + h - 1):
-                self.scr.addch(c, x, curses.ACS_VLINE, attr)
-                self.scr.addch(c, x + w - 1, curses.ACS_VLINE, attr)
+            for c in range(row + 1, row + h - 1):
+                self.scr.addch(c, col, curses.ACS_VLINE, attr)
+                self.scr.addch(c, col + w - 1, curses.ACS_VLINE, attr)
 
         else:
-            # else we can use these functions which are probably quicker
-            self.scr.hline(y, x + 1, curses.ACS_HLINE, w - 2)
-            self.scr.hline(y + h - 1, x + 1, curses.ACS_HLINE, w - 2)
+            # else we can use these functions which are probablrow quicker
+            self.scr.hline(row, col + 1, curses.ACS_HLINE, w - 2)
+            self.scr.hline(row + h - 1, col + 1, curses.ACS_HLINE, w - 2)
 
-            self.scr.vline(y + 1, x, curses.ACS_VLINE, h - 2)
-            self.scr.vline(y + 1, x + w - 1, curses.ACS_VLINE, h - 2)
+            self.scr.vline(row + 1, col, curses.ACS_VLINE, h - 2)
+            self.scr.vline(row + 1, col + w - 1, curses.ACS_VLINE, h - 2)
 
 
-    def _line(self, x, y, len, drawable, **kwargs):
+    def line(self, row, col, len, drawable, **kwargs):
         """
-        draws a line starting at (x, y) and going across for
-        len cells. ending characters may be specified with the
-        leftEnd and rightEnd attributes. line is clipped to
-        the available area.
+        Draw the string starting at (row, col) relative to the
+        upper left of this Drawable and going down. Drawing 
+        will be bounded to stay within the Drawable's size.
         """
+        self.log.debug('line(row=%d, col=%d, len=%d, drawable="%s", rightEnd = %s, leftEnd = %s)', row, col, len, drawable, kwargs.get('rightEnd', None), kwargs.get('leftEnd', None))
 
         # invisible line
-        if y < 0 or y > drawable.h:
+        if row < 0 or row > drawable.h:
             return
 
-        if x < 0:
-            len += x
-            x = 0
-        if x + len > drawable.w:
+        if col < 0:
+            len += col
+            col = 0
+        if col + len > drawable.w:
             len -= (drawable.w - len)
 
-        x += drawable.x
-        y += drawable.y
+        col += drawable.x
+        row += drawable.y
 
         attr = self.cursesAttr(kwargs)
 
         if 'leftEnd' in kwargs:
-            self.scr.addch(y, x, kwargs['leftEnd'], attr)
+            self.scr.addch(row, col, kwargs['leftEnd'], attr)
             len -= 1
-            x += 1
+            col += 1
 
         if 'rightEnd' in kwargs:
-            self.scr.addch(y, x + len - 1, kwargs['rightEnd'], attr)
+            self.scr.addch(row, col + len - 1, kwargs['rightEnd'], attr)
             len -= 1
 
         if attr:
-            for c in range(x, x + len):
-                self.scr.addch(y, c, curses.ACS_HLINE, attr)
+            for c in range(col, col + len):
+                self.scr.addch(row, c, curses.ACS_HLINE, attr)
         else:
-            self.scr.hline(y, x, curses.ACS_HLINE, len)
+            self.scr.hline(row, col, curses.ACS_HLINE, len)
 
 
 
-    def _lineDown(self, x, y, len, drawable, **kwargs):
+    def lineDown(self, row, col, len, drawable, **kwargs):
         """
-        draws a line starting at (x, y) and going down for
-        len cells. ending characters may be specified with the
-        topEnd and bottomEnd attributes. line is clipped to
-        the available area.
+        Draw a line starting at (row, col) relative to the upper
+        left of this Drawable and going down for len characters.
+        Ending characters may be specified with the topEnd and
+        bottomEnd attributes.
         """
+        self.log.debug('lineDown(row=%d, col=%d, len=%d, drawable="%s", topEnd = %s, bottomEnd = %s)', row, col, len, drawable, kwargs.get('topEnd', None), kwargs.get('bottomEnd', None))
 
         # invisible line
-        if x < 0 or x > drawable.w:
+        if col < 0 or col > drawable.w:
             return
 
-        if y < 0:
-            len += y
-            y = 0
-        if y + len > drawable.h:
+        if row < 0:
+            len += row
+            row = 0
+        if row + len > drawable.h:
             len -= (drawable.h - len)
 
-        x += drawable.x
-        y += drawable.y
+        col += drawable.x
+        row += drawable.y
 
         attr = self.cursesAttr(kwargs)
 
         if 'topEnd' in kwargs:
-            self.scr.addch(y, x, kwargs['topEnd'], attr)
+            self.scr.addch(row, col, kwargs['topEnd'], attr)
             len -= 1
-            y += 1
+            row += 1
 
         if 'bottomEnd' in kwargs:
-            self.scr.addch(y + len - 1, x, kwargs['bottomEnd'], attr)
+            self.scr.addch(row + len - 1, col, kwargs['bottomEnd'], attr)
             len -= 1
 
         if attr:
-            for r in range(y, y + len):
-                self.scr.addch(r, x, curses.ACS_VLINE, attr)
+            for r in range(row, row + len):
+                self.scr.addch(r, col, curses.ACS_VLINE, attr)
         else:
-            self.scr.vline(y, x, curses.ACS_VLINE, len)
+            self.scr.vline(row, col, curses.ACS_VLINE, len)
 
 
-    def _clear(self, drawable):
+    def clear(self, drawable):
         """
         clears the whole drawable
         """
 
         for r in range(drawable.y, drawable.y + drawable.h):
-            for c in range(drawable.x, drawable.x + drawable.w):
-                try:
-                    self.scr.addch(r, c, ' ')
-                except _curses.error, e:
-                    if r == drawable.y + drawable.h - 1 and c == drawable.x + drawable.w - 1:
-                        pass
-                    else:
-                        self.log.debug("exception at (%d, %d)" % (r, c))
-                        raise e
+            try:
+                self.scr.addstr(r, 0, ' ' * (drawable.w))
+            except:
+                pass
 
-    def _showCursor(self, y, x, drawable):
+
+    def showCursor(self, y, x, drawable):
         """
         draws a "cursor" to the given screen position, or none at all
         if (x, y) is outside the area allowed for the drawable

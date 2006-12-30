@@ -11,8 +11,8 @@ class Slideshow(Drawable):
     one at a time.
     """
 
-    def __init__(self, parent, name):
-        super(Slideshow, self).__init__(parent, name)
+    def __init__(self, **kwargs):
+        super(Slideshow, self).__init__(**kwargs)
         
         # the slides
         self.slides = []
@@ -23,14 +23,29 @@ class Slideshow(Drawable):
         # todo this key is not good.
         self.bindKey('s', self.nextSlide)
 
+
+    def handleInput(self, input):
+        """
+        give input to the current slide
+        """
+        consumed = self.slides[self.currentSlide].handleInput(input)
+        if not consumed:
+            consumed = super(Slideshow, self).handleInput(input)
+
+        return consumed
+    
+
     def focus(self):
         self.slides[self.currentSlide].focus()
+
 
     def unfocus(self):
         self.slides[self.currentSlide].unfocus()
 
+
     def __str__(self):
         return 'Slideshow'
+
 
     def addSlide(self, drawable):
         """
@@ -39,6 +54,7 @@ class Slideshow(Drawable):
         """                
         self.slides.append(drawable)
         drawable.setSize(0, 0, 0, 0)
+
 
     def _setChildSizes(self):
         """
@@ -54,6 +70,7 @@ class Slideshow(Drawable):
                 self.slides[i].setSize(y, x, h, w)
             else:
                 self.slides[i].setSize(0, 0, 0, 0)
+
 
     def setSize(self, y, x, h, w):
         super(Slideshow, self).setSize(y, x, h, w)

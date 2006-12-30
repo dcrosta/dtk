@@ -14,8 +14,8 @@ class TextField(Drawable):
     'escape' you must bind it yourself from outside the TextField
     """
 
-    def __init__(self, parent, name):
-        super(TextField, self).__init__(parent, name)
+    def __init__(self, **kwargs):
+        super(TextField, self).__init__(**kwargs)
 
         self.buffer = ''
         self.cursor = 0

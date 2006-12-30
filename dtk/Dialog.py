@@ -26,7 +26,7 @@ class Dialog(Drawable):
     as any other key (eg with bindKey).
     """
 
-    def __init__(self, parent, name, title = '', text = '', type = 'message'):
+    def __init__(self, title = '', text = '', type = 'message', **kwargs):
         """
         Dialog constructor.
 
@@ -34,7 +34,7 @@ class Dialog(Drawable):
         @type  parent: dtk.Drawable
 
         """
-        super(Dialog, self).__init__(parent, name)
+        super(Dialog, self).__init__(**kwargs)
 
         self.children = {}
 
@@ -45,6 +45,8 @@ class Dialog(Drawable):
         self.sizeSet = False
 
         self._setup()
+
+        self.prevFocused = None
     
 
     def setType(self, type):
@@ -163,22 +165,38 @@ class Dialog(Drawable):
             if child is not None:
                 child.touch()
         
-        engine = self.getEngine()
-        engine.pushFocus(self)
+        self.prevFocused = self.engine.getFocusedDrawable()
+        self.engine.setFocus(self)
 
-        if self.type == 'message':
-            engine.pushFocus(self.children['ok'])
-        elif self.type == 'input':
-            engine.pushFocus(self.children['input'])
+
+    def focus(self):
+        """
+        depending on type, set the focus on the proper input element
+        """
+        if self.type == 'input':
+            self.engine.setFocus(self.children['input'])
+        elif self.type == 'message':
+            self.engine.setFocus(self.children['ok'])
         else:
-            engine.pushFocus(self.children['yes'])
+            self.engine.setFocus(self.children['yes'])
+
+
+    def handleInput(self, input):
+        """
+        pass the input along to the proper child. 
+        """
+        consumed = self.children['window'].handleInput(input)
+        if not consumed:
+            consumed = super(Dialog, self).handleInput(input)
+
+        return consumed
 
     
     def _dismissed(self):
         """
         called when any button is clicked
         """
-        engine = self.getEngine()
+        engine = self.engine
         engine.popFocus(self)
         engine.touchAll()
 
@@ -240,14 +258,14 @@ class Dialog(Drawable):
         from Button import Button
         from Drawable import Drawable
 
-        self.children['window'] = Rows(self, '%s:Window' % self.name, outerborder = True, innerborder = False)
+        self.children['window'] = Rows(outerborder = True, innerborder = False)
         self.children['window'].unbindKey('all')
 
-        self.children['title'] = Label(self.children['window'], '%s:Window:Title' % self.name, text = self.title)
+        self.children['title'] = Label(text = self.title)
         self.children['window'].addRow(self.children['title'], fixedsize = 1)
         self.children['window'].addSeparator(type = 'line')
 
-        self.children['tarea']  = TextEditor(self.children['window'], '%s:Window:Message' % self.name, editable = False)
+        self.children['tarea']  = TextEditor(editable = False)
         self.children['tarea'].setText(self.text)
         self.children['window'].addRow(self.children['tarea'], weight = 1)
         self.children['window'].addSeparator(type = 'blank')
@@ -258,14 +276,14 @@ class Dialog(Drawable):
         self.children['no'] = None
 
         if self.type == 'message':
-            self.children['ok'] = Button(self.children['window'], '%s:Window:OK Button' % self.name, ' OK ')
+            self.children['ok'] = Button(' OK ')
             self.children['ok'].bindKey('click', self._clickedOK)
 
             self.children['window'].addRow(self.children['ok'], fixedsize = 1)
             focus = self.children['ok']
 
         elif self.type == 'input':
-            self.children['input'] = TextField(self.children['window'], '%s:Window:Input' % self.name)
+            self.children['input'] = TextField()
             self.children['input'].bindKey('enter', self._clickedOK)
 
             self.children['window'].addRow(self.children['input'], fixedsize = 1)
@@ -273,19 +291,16 @@ class Dialog(Drawable):
             focus = self.children['input']
 
         else:
-            self.children['yesno'] = Columns(self.children['window'], '%s:Window:YesNo' % self.name, outerborder = False, innerborder = False)
+            self.children['yesno'] = Columns(outerborder = False, innerborder = False)
 
-            self.children['yes']   = Button(self.children['yesno'], '%s:Window:YesNo:Yes' % self.name, ' Yes ')
-            self.children['no']    = Button(self.children['yesno'], '%s:Window:YesNo:No' % self.name,  ' No ')
+            self.children['yes']   = Button(' Yes ')
+            self.children['no']    = Button(' No ')
 
             self.children['yes'].bindKey('click', self._clickedYes)
             self.children['no'].bindKey('click',  self._clickedNo)
 
             self.children['yesno'].addColumn(self.children['yes'])
             self.children['yesno'].addColumn(self.children['no'])
-
-            blank = Drawable(self.children['yesno'], 'blank')
-            #self.children['yesno'].addColumn(blank)
 
             self.children['window'].addRow(self.children['yesno'], fixedsize = 1)
             focus = self.children['yes']
@@ -304,7 +319,7 @@ class Dialog(Drawable):
 
         # set our size to the full screen (don't worry, we won't
         # draw over everything)
-        (self.h, self.w) = self.getEngine().getScreenSize()
+        (self.h, self.w) = self.engine.getScreenSize()
         self.y = 0
         self.x = 0
 

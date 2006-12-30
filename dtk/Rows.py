@@ -25,8 +25,8 @@ class Rows(Drawable):
             self.type = type
 
 
-    def __init__(self, parent, name, outerborder = True, innerborder = True):
-        super(Rows, self).__init__(parent, name)
+    def __init__(self, outerborder = True, innerborder = True, **kwargs):
+        super(Rows, self).__init__(**kwargs)
 
         self.outerborder = outerborder
         self.innerborder = innerborder
@@ -42,6 +42,18 @@ class Rows(Drawable):
 
     def __str__(self):
         return 'Rows'
+
+
+    def handleInput(self, input):
+        """
+        Pass input to the current row
+        """
+        consumed = self.rows[self.targetRow].drawable.handleInput(input)
+        if not consumed:
+            consumed = super(Rows, self).handleInput(input)
+
+        return consumed
+    
 
     def addRow(self, drawable, fixedsize = None, weight = 1):
         """
@@ -134,7 +146,7 @@ class Rows(Drawable):
             child.height = size
 
             if isinstance(child, self.Row):
-                self.log.info('setting size of "%s" to (%d, %d, %d, %d)', child.drawable.name, y, x, child.height, w)
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.drawable.name, y, x, child.height, w)
                 child.drawable.setSize(y, x, child.height, w)
 
             y += child.height
@@ -171,14 +183,14 @@ class Rows(Drawable):
         for child in self.rows[:-1]:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.line(borders, y, self.w - 2 * borders)
+                    self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
-                    self.draw(' ' * (self.w - 2 * borders), y, borders)
+                    self.draw(' ' * (self.w - 2 * borders), borders, y)
 
             y += child.height or 0
 
             if self.innerborder:
-                self.line(0, y, self.w, **attr)
+                self.line(y, 0, self.w, **attr)
                 y += 1 # for ther inner border
 
 
@@ -191,22 +203,24 @@ class Rows(Drawable):
         
 
     def switchRow(self, index):
-        """
-        TODO
-        """
         self.log.debug('switching row from %s to %s' % (self.targetRow, index))
         self.targetRow = index 
         
         # tell engine to focus on this one
         rows = [row for row in self.rows if isinstance(row, self.Row)]
+        if len(rows):
+            self.targetRow %= len(rows) 
 
-        self.targetRow %= len(rows) 
-        row = rows[self.targetRow]
+            self.engine.setFocus(rows[self.targetRow].drawable)
+            self.touch()
 
-        engine = self.getEngine()
-        if engine.peekFocus() is not None:
-            engine.pushFocus(row.drawable)
-        else:
-            engine.setFocus(row.drawable)
 
-        self.touch()
+    def focus(self):
+        """
+        call setFocus on the correct row
+        """
+        rows = [row for row in self.rows if isinstance(row, self.Row)]
+        if len(rows):
+            child = rows[self.targetRow].drawable
+            self.log.debug('handing focus to %s', child)
+            return child.focus() 

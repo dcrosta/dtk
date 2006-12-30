@@ -4,10 +4,15 @@ import util
 from Drawable import Drawable
 
 class Pager(Drawable):
+    """
+    A simple drawable that displays a scrollable, optionally
+    line-wrapped piece of text, similar to the less program.
+    No editing features are provided.
+    """
 
 
-    def __init__(self, parent, name, vimlike = False):
-        super(Pager, self).__init__(parent, name)
+    def __init__(self, vimlike = False, **kwargs):
+        super(Pager, self).__init__(**kwargs)
 
         self.firstVisible = 0
 
@@ -113,10 +118,8 @@ class Pager(Drawable):
 
     def render(self):
         """
-        if this gets called, then one of our functions has indicated
-        that it's time for a redraw (through self.touch()), so we're
-        going to re-draw what's in the visible range, based on our
-        size and what is currently firstVisible
+        redraw what's in the visible range, based on our
+        size and firstVisible
         """
 
         if self.lines is None:
@@ -125,12 +128,4 @@ class Pager(Drawable):
         self.clear()
 
         for i in range(self.firstVisible, min(len(self.lines), self.firstVisible + self.h)):
-            line = str(self.lines[i])
-            if len(line) > self.w:
-                line = line[:self.w]
-
-            # pad the line with spaces
-            if len(line) < self.w:
-                line += ' ' * (self.w - len(line))
-
-            self.draw(line, i - self.firstVisible, 0);
+            self.draw(self.lines[i], i - self.firstVisible, 0);
