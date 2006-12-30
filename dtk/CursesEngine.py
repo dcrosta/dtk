@@ -215,7 +215,12 @@ class CursesEngine(Engine):
 
 
             # draw the cursor if it's valid
-            if self.cursorpos != (-1, -1):
+            if self.cursorpos == (-1, -1):
+                if curses.tigetstr('civis') is not None:
+                    curses.curs_set(0)
+            else:
+                if curses.tigetstr('cnorm') is not None:
+                    curses.curs_set(1)
                 self.scr.move(self.cursorpos[0], self.cursorpos[1])
 
 
