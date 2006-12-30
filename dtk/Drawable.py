@@ -91,7 +91,7 @@ class Drawable(InputHandler):
         pass
 
 
-    def setSize(self, y, x, h, w):
+    def setSize(self, y = None, x = None, h = None, w = None):
         """
         sets the size fields to those given. fields which
         are not assigned, or which are assigned None, are
@@ -101,13 +101,21 @@ class Drawable(InputHandler):
         if y < 0 or x < 0:
             raise ValueError, "y and x arguments to setSize must be non-negative"
 
-        if y != self.y or x != self.x or h != self.h or w != self.w:
+        if y is not None and y != self.y:
             self.touch()
-
             self.y = y
+
+        if x is not None and x != self.x:
+            self.touch()
             self.x = x
-            self.h = h
+
+        if w is not None and w != self.w:
+            self.touch()
             self.w = w
+
+        if h is not None and h != self.h:
+            self.touch()
+            self.h = h
 
     def focus(self):
         """

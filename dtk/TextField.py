@@ -87,8 +87,8 @@ class TextField(Drawable):
 
         self.touch()
 
-    def typing(self, input):
-        self.buffer = self.buffer[:self.cursor] + input + self.buffer[self.cursor:]
+    def typing(self, _input_key):
+        self.buffer = self.buffer[:self.cursor] + _input_key + self.buffer[self.cursor:]
         self.moveRight()
 
         self.touch()

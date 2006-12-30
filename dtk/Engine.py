@@ -305,7 +305,7 @@ class Engine(InputHandler):
         """
         pauses the main loop and returns the terminal to the shell
         mode it was in before starting the Engine. opposite of
-        shellMode()
+        dtkMode()
         """
         pass
 

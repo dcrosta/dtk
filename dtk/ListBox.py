@@ -83,7 +83,7 @@ class ListBox(Drawable):
         self.bindKey('page down', self.pageDown)
         self.bindKey('page up', self.pageUp)
         if self.allowSelection:
-            self.bindKey('space', self.toggleSelect)
+            self.bindKey(' ', self.toggleSelect)
         self.bindKey('home', self.moveToTop)
         self.bindKey('end', self.moveToBottom)
 
@@ -144,6 +144,20 @@ class ListBox(Drawable):
 
     def __setitem__(self, key, item):
         raise Exception, "not implemented yet"
+
+    def _get_repr(self, item):
+        """
+        get the printable string for this list item. 
+        if the item has defined a __dtk_str__, use that (or its return value)
+        otherwise just use str(item)
+        """
+        str_rep = getattr(item, "__dtk_str__", None)
+        if str_rep:
+            if callable(str_rep): 
+                str_rep = str_rep()
+        else:
+            str_rep = str(item)
+        return str_rep
 
     def append(self, item):
         """
@@ -318,6 +332,9 @@ class ListBox(Drawable):
         """
         return [item for (item, index) in zip(self.items, range(len(self.items))) if index in self.selected]
 
+    def getHighlightedItem(self):
+        return self.items[self.highlighted]
+
     def setSelectionType(self, selectionType):
         """
         Set the selection type for this ListBox. If changing from
@@ -419,7 +436,7 @@ class ListBox(Drawable):
             self.firstVisible = self.highlighted
 
         for i in range(self.firstVisible, min(len(self.items), self.firstVisible + self.h)):
-            item = str(self.items[i])
+            item = self._get_repr(self.items[i])
 
             if i in self.selected:
                 attr = self.sstyle.copy()
