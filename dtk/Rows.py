@@ -169,7 +169,7 @@ class Rows(Container):
                 if child.type == 'line':
                     self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
-                    self.draw(' ' * (self.w - 2 * borders), borders, y)
+                    self.draw(' ' * (self.w - 2 * borders), y, borders)
             else:
                 y += child._meta['height']
 
