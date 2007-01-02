@@ -167,6 +167,7 @@ class Drawable(InputHandler):
 
         self.engine = Engine()
 
+        self._meta = dict()
 
     # `self.focused` is a property that checks whether
     # this is the Engine's current focused drawable; this
@@ -177,7 +178,7 @@ class Drawable(InputHandler):
         return self.engine.getFocusedDrawable() == self
     focused = property(_getFocused, _setFocused)
 
-
+    
     def __str__(self):
         """
         returns the type of class this is. use getName() to
