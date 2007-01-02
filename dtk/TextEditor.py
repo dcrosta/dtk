@@ -44,12 +44,13 @@ class TextEditor(Drawable):
     moveToHome = moveToEnd = pageUp = pageDown = dopass
 
 
-    def typing(self, input):
+    def typing(self, _input_key):
         """
         handles printable input and updates the cursor position
         for normal typing
         """
 
+        input = _input_key
         # if the input is 'enter', then insert a new line into the 
         # buffer and move the cursor to it
         if input == 'enter':
