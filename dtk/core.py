@@ -396,16 +396,9 @@ class Container(Drawable):
     The default state of active for a Container is up to the
     container to decide; pick something sensible for each.
 
-    Additionally, containers need specialized InputHandler methods
-    which work with this tree of Drawables:
-
-    * handleInput(input):
-       * call handleInput(input) on the active child
-       * if this call returns True, return True
-       * if this call returns False, see if self wants the input
-         by using the superclass's handleInput(input)
-       * if that call returns True, return True
-       * otherwise return False 
+    Additionally, containers need to define a drawContents()
+    method which calls the container's children's drawContents()
+    methods as appropriate to the container.
 
     Containers should also override setSize(...) from Drawable
     in a way appropriate to the container.
@@ -421,6 +414,13 @@ class Container(Drawable):
         self.children = []
         self.active = None
 
+    def drawContents(self):
+        """
+        Draws the contents of the container.  The proper drawing
+        behavior is defined differently by each Container subclass
+        and is not defined for the Container interface
+        """
+        raise ContainerException("drawContents method not implemented")
 
     def setActiveDrawable(self, drawable):
         """
