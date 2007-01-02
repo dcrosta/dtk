@@ -1,8 +1,8 @@
-from core import Drawable
+from core import Drawable, Container, ContainerException
 import curses
 import util
 
-class Columns(Drawable):
+class Columns(Container):
     """
     implements a flexible, resizable (hopefully!) layout
     scheme for Drawables. Supports a border option, which
@@ -10,12 +10,12 @@ class Columns(Drawable):
     or between the columns, or both.
     """
 
-    class Column:
-        def __init__(self, drawable, fixedsize, weight):
-            self.drawable = drawable
-            self.fixedsize = fixedsize
-            self.weight = weight
-            self.width = None 
+#    class Column:
+#        def __init__(self, drawable, fixedsize, weight):
+#            self.drawable = drawable
+#            self.fixedsize = fixedsize
+#            self.weight = weight
+#            self.width = None 
 
     class Separator:
         def __init__(self, type):
@@ -32,27 +32,7 @@ class Columns(Drawable):
         self.outerborder = outerborder
         self.innerborder = innerborder
 
-        # the column definitions
-        self.columns = []
-
-        # the column we're currently targeted on
-        self.targetCol = 0
-
-        # keybindings
         self.bindKey('tab', self.nextColumn)
-
-    def __str__(self):
-        return 'Columns'
-
-    def handleInput(self, input):
-        """
-        Pass input to the current column
-        """
-        consumed = self.columns[self.targetCol].drawable.handleInput(input)
-        if not consumed:
-            consumed = super(Columns, self).handleInput(input)
-
-        return consumed
 
     def addColumn(self, drawable, fixedsize = None, weight = 1):
         """
@@ -63,7 +43,10 @@ class Columns(Drawable):
         how to distribute remaining space after minimum and maximum
         are taken into account.
         """
-        self.columns.append(self.Column(drawable, fixedsize, weight))
+        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        if not len([c for c in self.children if isinstance(c, Drawable)]):
+            self.active = drawable
+        self.children.append(drawable)
         self.touch()
 
     def addSeparator(self, type = 'line'):
@@ -75,7 +58,7 @@ class Columns(Drawable):
             'blank' leaves a blank column 1 character wide
         @type  type: string
         """
-        self.columns.append(self.Separator(type))
+        self.children.append(self.Separator(type))
         self.touch()
 
     def insertColumn(self, drawable, fixedsize = None, weight = 1):
@@ -96,7 +79,8 @@ class Columns(Drawable):
         weight is used to calculate how to distribute remaining space
         after minimum and maximum are taken into account.
         """
-        self.columns.insert(index, self.Column(drawable, fixedsize, weight))
+        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        self.children.insert(index, drawable)
         self.touch()
 
     def setSize(self, y, x, h, w):
@@ -133,20 +117,21 @@ class Columns(Drawable):
             h -= 2
 
         if self.innerborder:
-            available -= (len(self.columns) - 1)
+            available -= (len(self.children) - 1)
 
 
-        items = [(item.fixedsize, item.weight) for item in self.columns]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children if isinstance(item, Drawable)]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip(self.columns, sizes):
-            child.width = size
+        for (child, size) in zip([child for child in self.children if isinstance(child, Drawable)], sizes):
+            child._meta['width'] = size
 
-            if isinstance(child, self.Column):
-                child.drawable.setSize(y, x, h, child.width)
+            if isinstance(child, Drawable):
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
+                child.setSize(y, x, h, child._meta['width'])
 
-            x += child.width
+            x += child._meta['width']
             if self.innerborder:
                 x += 1
         
@@ -155,12 +140,15 @@ class Columns(Drawable):
         """
         call drawContents() on each of our children
         """
-        for child in self.columns:
-            if isinstance(child, self.Column):
-                child.drawable.drawContents()
+        for child in self.children:
+            if isinstance(child, Drawable):
+                child.drawContents()
 
         # draw borders through render()
-        super(Columns, self).drawContents()
+        #super(Columns, self).drawContents()
+        # this is not ideal, but Container.drawContents throws an exception, so.
+        Drawable.drawContents(self)
+
 
     def render(self):
         """
@@ -177,14 +165,17 @@ class Columns(Drawable):
 
         x = borders 
 
-        for child in self.columns[:-1]:
+        for child in self.children[:-1]:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.lineDown(0, x, self.h)
                 elif child.type == 'blank':
                     self.drawDown(' ' * (self.h - 2 * borders), 0, x)
 
-            x += child.width or 0
+        try:
+            x += child._meta['width']
+        except:
+            x += 0
 
             if self.innerborder:
                     self.lineDown(0, x, self.h, **attr)
@@ -192,11 +183,14 @@ class Columns(Drawable):
 
 
     def nextColumn(self):
-        self.switchColumn(self.targetCol + 1)
+        index = self.children.index(self.active) + 1
+        if index >= len(self.children):
+            index = 0
+        self.switchColumn(index)
 
 
     def prevColumn(self):
-        self.switchColumn(self.targetCol - 1)
+        self.switchColumn(self.children.index(self.active) - 1)
 
 
     def switchColumn(self, index):
@@ -211,25 +205,30 @@ class Columns(Drawable):
         only call it from within a bindKey binding, that way it won't
         get spuriously called from random points in the code.
         """
-        
-        self.targetCol = index
-
-        cols = [col for col in self.columns if isinstance(col, self.Column)]
-        self.targetCol %= len(cols)
-
-        col = cols[self.targetCol]
-
-        self.engine.setFocus(col.drawable)
-
+        self.active.touch()
+        self.active = self.children[index]
         self.touch()
+        self.active.touch()
+
+# good point, line 216 .. why does this work?
+#        self.targetCol = index
+#
+#        cols = [col for col in self.columns if isinstance(col, self.Column)]
+#        self.targetCol %= len(cols)
+#
+#        col = cols[self.targetCol]
+#
+#        self.engine.setFocus(col.drawable)
+#
+#        self.touch()
 
 
     def focus(self):
         """
         call setFocus on the correct column
         """
-        cols = [col for col in self.columns if isinstance(col, self.Column)]
+        cols = [col for col in self.children if isinstance(col, Drawable)]
         if len(cols):
-            child = cols[self.targetCol].drawable
+            child = self.active
             self.log.debug('handing focus to %s', child)
             return child.focus()
