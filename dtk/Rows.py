@@ -31,6 +31,7 @@ class Rows(Container):
 
         self.outerborder = outerborder
         self.innerborder = innerborder
+        self.separators = []
 
         self.bindKey('tab', self.nextRow)
 
@@ -44,7 +45,7 @@ class Rows(Container):
         are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len([c for c in self.children if isinstance(c, Drawable)]):
+        if not len(self.children):
             self.active = drawable
         self.children.append(drawable)
         self.touch()
@@ -58,7 +59,7 @@ class Rows(Container):
             'blank' leaves a blank row 1 character high
         @type  type: string
         """
-        self.children.append(self.Separator(type))
+        self.separators.append(self.Separator(type))
         self.touch()
 
     def insertRow(self, drawable, fixedsize = None, weight = 1):
@@ -121,16 +122,15 @@ class Rows(Container):
             available -= (len(self.children) - 1)
 
 
-        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children if isinstance(item, Drawable)]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip([child for child in self.children if isinstance(child, Drawable)], sizes):
+        for (child, size) in zip([child for child in self.children], sizes):
             child._meta['height'] = size
 
-            if isinstance(child, Drawable):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
-                child.setSize(y, x, child._meta['height'], w)
+            self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
+            child.setSize(y, x, child._meta['height'], w)
 
             y += child._meta['height']
             if self.innerborder:
@@ -142,8 +142,7 @@ class Rows(Container):
         call drawContents() on each of our children
         """
         for child in self.children:
-            if isinstance(child, Drawable):
-                child.drawContents()
+            child.drawContents()
 
         # draw borders through render()
         #super(Rows, self).drawContents()
@@ -165,21 +164,18 @@ class Rows(Container):
 
         y = borders
 
-        for child in self.children[:-1]:
+        for child in self.children[:-1] + self.separators:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
                     self.draw(' ' * (self.w - 2 * borders), borders, y)
-
-            try:
+            else:
                 y += child._meta['height']
-            except:
-                y += 0
 
-            if self.innerborder:
-                self.line(y, 0, self.w, **attr)
-                y += 1 # for ther inner border
+        if self.innerborder:
+            self.line(y, 0, self.w, **attr)
+            y += 1 # for ther inner border
 
 
     def nextRow(self):
@@ -213,7 +209,7 @@ class Rows(Container):
         """
         call setFocus on the correct row
         """
-        rows = [row for row in self.children if isinstance(row, Drawable)]
+        rows = self.children
         if len(rows):
             child = self.active
             self.log.debug('handing focus to %s', child)
