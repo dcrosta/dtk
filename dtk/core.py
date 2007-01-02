@@ -315,7 +315,7 @@ class Drawable(InputHandler):
         upper left of this Drawable and going down. Drawing 
         will be bounded to stay within the Drawable's size.
         """
-        self.engine.draw(str, row, col, drawable = self, **kwargs)
+        self.engine.drawDown(str, row, col, drawable = self, **kwargs)
 
 
     def box(self, row, col, w, h, **kwargs):
