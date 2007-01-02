@@ -1,4 +1,5 @@
-from Drawable import Drawable
+from core import Drawable
+
 import curses
 import util
 

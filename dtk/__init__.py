@@ -52,6 +52,9 @@ for name in os.listdir(mod_path):
     if ext == '.py' and (not base == '__init__'):
         modules.append(base)
 
+# first get the core classes
+from core import *
+
 # import into 'dtk' namespace only those things
 # with the same name as the file they appear in,
 # and then only if it begins with a capital letter

@@ -2,7 +2,7 @@ import types
 import math
 
 import util
-from Drawable import Drawable
+from core import Drawable
 
 class Dialog(Drawable):
     """

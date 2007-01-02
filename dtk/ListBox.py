@@ -1,6 +1,6 @@
 import types
 
-from Drawable import Drawable
+from core import Drawable
 
 class ListBox(Drawable):
     """

@@ -34,7 +34,7 @@ levels = {'debug':logging.DEBUG,
 if 'DTKDEBUG' in os.environ:
     level = levels[os.environ['DTKDEBUG']]
 else:
-    level = levels['error']
+    level = levels['debug']
 
 e = dtk.Engine()
 e.beginLogging(file = 'log.txt', level = level)

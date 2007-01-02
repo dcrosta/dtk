@@ -1,4 +1,4 @@
-from Drawable import Drawable
+from core import Drawable
 
 class Select(Drawable):
 

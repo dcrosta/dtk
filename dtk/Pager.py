@@ -1,7 +1,7 @@
 import types
 
 import util
-from Drawable import Drawable
+from core import Drawable
 
 class Pager(Drawable):
     """
