@@ -172,7 +172,7 @@ class Drawable(InputHandler):
     # this is the Engine's current focused drawable; this
     # ensures that only one drawable can ever be focused
     def _setFocused(self, value):
-        pass
+        raise EngineException("Do not set focus on a Drawable directly.  Call Engine::setFocus instead.")
     def _getFocused(self):
         return self.engine.getFocusedDrawable() == self
     focused = property(_getFocused, _setFocused)
