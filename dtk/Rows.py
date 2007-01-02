@@ -173,9 +173,9 @@ class Rows(Container):
             else:
                 y += child._meta['height']
 
-        if self.innerborder:
-            self.line(y, 0, self.w, **attr)
-            y += 1 # for ther inner border
+            if self.innerborder:
+                self.line(y, 0, self.w, **attr)
+                y += 1 # for ther inner border
 
 
     def nextRow(self):
