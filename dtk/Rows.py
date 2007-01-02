@@ -126,7 +126,7 @@ class Rows(Container):
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip([child for child in self.children], sizes):
+        for (child, size) in zip(self.children, sizes):
             child._meta['height'] = size
 
             self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
