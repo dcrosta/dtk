@@ -444,12 +444,15 @@ class Container(Drawable):
 
         for child in self.children:
             if child is drawable:
+                self.log.debug('setting active to drawable == %s', drawable)
                 self.active = child
                 success = True
                 break
 
             elif isinstance(child, Container):
+                self.log.debug('calling setActiveDrawable on %s', child)
                 if child.setActiveDrawable(drawable):
+                    self.active = child
                     success = True
                     break
 
