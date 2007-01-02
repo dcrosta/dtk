@@ -80,7 +80,7 @@ class Rows(Container):
         after minimum and maximum are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        self.rows.insert(index, drawable)
+        self.children.insert(index, drawable)
         self.touch()
 
 
