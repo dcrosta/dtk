@@ -139,7 +139,7 @@ class Drawable(InputHandler):
     """
     Drawable is the basic GUI unit of dtk. It contains methods
     to set onscreen position (which should only be called from
-    Engine -- use Layout & children to position elements), get
+    Engine -- use Containers & children to position elements), get
     the contents that should be drawn, input handling (provided
     by extending InputHandler), and the like.
     """
@@ -416,7 +416,7 @@ class Container(Drawable):
     variables.
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.children = []
         self.active = None
 
