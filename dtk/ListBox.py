@@ -68,6 +68,8 @@ class ListBox(Drawable):
         self.multipleSelection = False
         self.selected = []
 
+        self.len = 0
+
         # remember the selection type
         self.setSelectionType(selection)
 
