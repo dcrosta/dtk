@@ -24,7 +24,7 @@ class InputHandler(object):
         }
 
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         # keybindings dict
         self.keybindings = {}
 
@@ -144,14 +144,14 @@ class Drawable(InputHandler):
     by extending InputHandler), and the like.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         the only thing a drawable absolutely has to have is a
         reference to the parent object. the base Drawable will
         have the Engine as its parent.
         """
 
-        super(Drawable, self).__init__(**kwargs)
+        super(Drawable, self).__init__(*args, **kwargs)
 
         # initialize sane default values
         self.y = self.x = self.h = self.w = 0
@@ -417,6 +417,7 @@ class Container(Drawable):
     """
 
     def __init__(self, *args, **kwargs):
+        super(Container, self).__init__(*args, **kwargs)
         self.children = []
         self.active = None
 
@@ -506,6 +507,8 @@ class EngineException(Exception):
 class NoInputCharException(Exception):
     pass
 
+class ContainerException(Exception):
+    pass
 
 
 class Engine(InputHandler):
