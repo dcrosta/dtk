@@ -31,7 +31,7 @@ class Columns(Container):
         # save these for later use
         self.outerborder = outerborder
         self.innerborder = innerborder
-        self.separators = []
+        self.columns = []
 
         self.bindKey('tab', self.nextColumn)
 
@@ -48,6 +48,7 @@ class Columns(Container):
         if not len(self.children):
             self.active = drawable
         self.children.append(drawable)
+        self.columns.append(drawable)
         self.touch()
 
     def addSeparator(self, type = 'line'):
@@ -59,7 +60,9 @@ class Columns(Container):
             'blank' leaves a blank column 1 character wide
         @type  type: string
         """
-        self.separators.append(self.Separator(type))
+        sep = self.Separator(type)
+        sep._meta = dict(fixedsize=1, weight=None)
+        self.separators.append(sep)
         self.touch()
 
     def insertColumn(self, drawable, fixedsize = None, weight = 1):
@@ -81,6 +84,8 @@ class Columns(Container):
         after minimum and maximum are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        if not len(self.children):
+            self.active = drawable
         self.children.insert(index, drawable)
         self.touch()
 
@@ -118,18 +123,19 @@ class Columns(Container):
             h -= 2
 
         if self.innerborder:
-            available -= (len(self.children) - 1)
+            available -= (len(self.columns) - 1)
 
 
-        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.columns]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip(self.children, sizes):
+        for (child, size) in zip(self.columns, sizes):
             child._meta['width'] = size
 
-            self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
-            child.setSize(y, x, h, child._meta['width'])
+            if isinstance(child, Drawable):
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
+                child.setSize(y, x, h, child._meta['width'])
 
             x += child._meta['width']
             if self.innerborder:
@@ -164,19 +170,20 @@ class Columns(Container):
 
         x = borders 
 
-        for child in self.children[:-1] + self.separators:
+        for child in self.columns:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.lineDown(0, x, self.h)
                 elif child.type == 'blank':
                     self.drawDown(' ' * (self.h - 2 * borders), 0, x)
 
-            else:
-                x += child._meta['width']
+            x += child._meta['width']
 
-                if self.innerborder:
-                    self.lineDown(0, x, self.h, **attr)
-                    x += 1 # for the inner border
+            # if we're drawing inner borders, do it here
+            # but only if there are more cols after this
+            if self.innerborder and self.columns.index(child) != len(self.columns) - 1:
+                self.lineDown(0, x, self.h, **attr)
+                x += 1 # for the inner border
 
 
     def nextColumn(self):

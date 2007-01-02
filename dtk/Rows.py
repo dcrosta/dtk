@@ -31,7 +31,7 @@ class Rows(Container):
 
         self.outerborder = outerborder
         self.innerborder = innerborder
-        self.separators = []
+        self.rows = []
 
         self.bindKey('tab', self.nextRow)
 
@@ -48,6 +48,7 @@ class Rows(Container):
         if not len(self.children):
             self.active = drawable
         self.children.append(drawable)
+        self.rows.append(drawable)
         self.touch()
 
     def addSeparator(self, type = 'line'):
@@ -59,7 +60,9 @@ class Rows(Container):
             'blank' leaves a blank row 1 character high
         @type  type: string
         """
-        self.separators.append(self.Separator(type))
+        sep = self.Separator(type)
+        sep._meta = dict(fixedsize=1, weight=None)
+        self.rows.append(sep)
         self.touch()
 
     def insertRow(self, drawable, fixedsize = None, weight = 1):
@@ -81,7 +84,10 @@ class Rows(Container):
         after minimum and maximum are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        if not len(self.children):
+            self.active = drawable
         self.children.insert(index, drawable)
+        self.rows.insert(index, drawable)
         self.touch()
 
 
@@ -119,18 +125,19 @@ class Rows(Container):
             w -= 2
 
         if self.innerborder:
-            available -= (len(self.children) - 1)
+            available -= (len(self.rows) - 1)
 
 
-        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.rows]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip(self.children, sizes):
+        for (child, size) in zip(self.rows, sizes):
             child._meta['height'] = size
 
-            self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
-            child.setSize(y, x, child._meta['height'], w)
+            if isinstance(child, Drawable):
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
+                child.setSize(y, x, child._meta['height'], w)
 
             y += child._meta['height']
             if self.innerborder:
@@ -142,7 +149,8 @@ class Rows(Container):
         call drawContents() on each of our children
         """
         for child in self.children:
-            child.drawContents()
+            if isinstance(child, Drawable):
+                child.drawContents()
 
         # draw borders through render()
         #super(Rows, self).drawContents()
@@ -164,16 +172,18 @@ class Rows(Container):
 
         y = borders
 
-        for child in self.children[:-1] + self.separators:
+        for child in self.rows:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
                     self.draw(' ' * (self.w - 2 * borders), y, borders)
-            else:
-                y += child._meta['height']
 
-            if self.innerborder:
+            y += child._meta['height']
+
+            # if we're drawing inner borders, do it here
+            # but only if there are more rows after this
+            if self.innerborder and self.rows.index(child) != len(self.rows) - 1:
                 self.line(y, 0, self.w, **attr)
                 y += 1 # for ther inner border
 
