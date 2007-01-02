@@ -147,6 +147,7 @@ class Rows(Container):
 
         # draw borders through render()
         #super(Rows, self).drawContents()
+        # this is not ideal, but Container.drawContents throws an exception, so.
         Drawable.drawContents(self)
 
     def render(self):
@@ -194,8 +195,10 @@ class Rows(Container):
 
     def switchRow(self, index):
         self.log.debug('switching row from %s to %s' % (self.children.index(self.active), index))
+        self.active.touch()
         self.active = self.children[index]
- 
+        self.touch()
+        self.active.touch()
 #       no, don't.       
 #        # tell engine to focus on this one
 #        rows = [row for row in self.rows if isinstance(row, self.Row)]
