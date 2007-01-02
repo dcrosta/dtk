@@ -55,6 +55,7 @@ class Rows(Container):
         """
         sep = self.Separator(type)
         sep._meta = dict(fixedsize=1, weight=None)
+        self.log.debug('adding separator')
         self.rows.append(sep)
         self.touch()
 
@@ -167,6 +168,7 @@ class Rows(Container):
 
         for child in self.rows:
             if isinstance(child, self.Separator):
+                self.log.debug('drawing separator at y=%d', y)
                 if child.type == 'line':
                     self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
@@ -190,7 +192,7 @@ class Rows(Container):
 
     def prevRow(self):
         index = self.children.index(self.active) - 1
-        if index = 0:
+        if index == 0:
             index += len(self.children)
         self.switchRow(index)
         

@@ -64,7 +64,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'r':
     lb3.setItems(['Dog', 'Cat', 'Squirrel'], [7,8,9])
 
     c.addRow(lb1, fixedsize=5)
+    c.addSeparator(type='line')
     c.addRow(lb2, fixedsize=10)
+    c.addSeparator(type='blank')
     c.addRow(lb3, weight = 2)
 
     e.setFocus(lb1)
@@ -84,7 +86,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'c':
     lb3.setItems(['Dog', 'Cat', 'Squirrel', id(lb3)])
 
     c.addColumn(lb1, fixedsize = 15)
+    c.addSeparator(type='line')
     c.addColumn(lb2, weight = 1)
+    c.addSeparator(type='blank')
     c.addColumn(lb3, weight = 2)
 
 

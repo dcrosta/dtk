@@ -55,7 +55,7 @@ class Columns(Container):
         """
         sep = self.Separator(type)
         sep._meta = dict(fixedsize=1, weight=None)
-        self.separators.append(sep)
+        self.columns.append(sep)
         self.touch()
 
     def insertColumn(self, drawable, fixedsize = None, weight = 1):
@@ -166,9 +166,9 @@ class Columns(Container):
         for child in self.columns:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.lineDown(0, x, self.h)
+                    self.lineDown(borders, x, self.h - 2 * borders)
                 elif child.type == 'blank':
-                    self.drawDown(' ' * (self.h - 2 * borders), 0, x)
+                    self.drawDown(' ' * (self.h - 2 * borders), 0, x + borders)
 
             x += child._meta['width']
 
@@ -188,7 +188,7 @@ class Columns(Container):
 
     def prevColumn(self):
         index =self.children.index(self.active) - 1
-        if index < 0:
+        if index == 0:
             index += len(self.children)
         self.switchColumn(index)
 
