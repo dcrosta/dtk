@@ -31,6 +31,7 @@ class Columns(Container):
         # save these for later use
         self.outerborder = outerborder
         self.innerborder = innerborder
+        self.separators = []
 
         self.bindKey('tab', self.nextColumn)
 
@@ -44,7 +45,7 @@ class Columns(Container):
         are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len([c for c in self.children if isinstance(c, Drawable)]):
+        if not len(self.children):
             self.active = drawable
         self.children.append(drawable)
         self.touch()
@@ -58,7 +59,7 @@ class Columns(Container):
             'blank' leaves a blank column 1 character wide
         @type  type: string
         """
-        self.children.append(self.Separator(type))
+        self.separators.append(self.Separator(type))
         self.touch()
 
     def insertColumn(self, drawable, fixedsize = None, weight = 1):
@@ -120,16 +121,15 @@ class Columns(Container):
             available -= (len(self.children) - 1)
 
 
-        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children if isinstance(item, Drawable)]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip([child for child in self.children if isinstance(child, Drawable)], sizes):
+        for (child, size) in zip(self.children, sizes):
             child._meta['width'] = size
 
-            if isinstance(child, Drawable):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
-                child.setSize(y, x, h, child._meta['width'])
+            self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
+            child.setSize(y, x, h, child._meta['width'])
 
             x += child._meta['width']
             if self.innerborder:
@@ -141,8 +141,7 @@ class Columns(Container):
         call drawContents() on each of our children
         """
         for child in self.children:
-            if isinstance(child, Drawable):
-                child.drawContents()
+            child.drawContents()
 
         # draw borders through render()
         #super(Columns, self).drawContents()
@@ -165,19 +164,17 @@ class Columns(Container):
 
         x = borders 
 
-        for child in self.children[:-1]:
+        for child in self.children[:-1] + self.separators:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.lineDown(0, x, self.h)
                 elif child.type == 'blank':
                     self.drawDown(' ' * (self.h - 2 * borders), 0, x)
 
-        try:
-            x += child._meta['width']
-        except:
-            x += 0
+            else:
+                x += child._meta['width']
 
-            if self.innerborder:
+                if self.innerborder:
                     self.lineDown(0, x, self.h, **attr)
                     x += 1 # for the inner border
 
@@ -227,7 +224,7 @@ class Columns(Container):
         """
         call setFocus on the correct column
         """
-        cols = [col for col in self.children if isinstance(col, Drawable)]
+        cols = self.children
         if len(cols):
             child = self.active
             self.log.debug('handing focus to %s', child)
