@@ -1,106 +1,81 @@
-from core import Drawable
+from core import Container, ContainerException
 import curses
 import util
 
-#todo figure out why it doesn't clear the display
-
-class Slideshow(Drawable):
+class Slideshow(Container):
     """
     implements a simple layout scheme for Drawables which
     holds an arbitrary number of Drawables and only displays
     one at a time.
     """
 
-    def __init__(self, **kwargs):
-        super(Slideshow, self).__init__(**kwargs)
-        
-        # the slides
-        self.slides = []
-        
-        # the slide we're currently targeted on
-        self.currentSlide = 0
-
-        # todo this key is not good.
-        self.bindKey('s', self.nextSlide)
-
-
-    def handleInput(self, input):
-        """
-        give input to the current slide
-        """
-        consumed = self.slides[self.currentSlide].handleInput(input)
-        if not consumed:
-            consumed = super(Slideshow, self).handleInput(input)
-
-        return consumed
+    def __init__(self, *args, **kwargs):
+        super(Slideshow, self).__init__(*args, **kwargs)
+        self.bindKey('tab', self.nextSlide)
     
-
     def focus(self):
-        self.slides[self.currentSlide].focus()
-
+        """
+        called when this Slideshow gains focus. note that this
+        does not actually set focus.
+        """
+        return self.active.focus()
 
     def unfocus(self):
-        self.slides[self.currentSlide].unfocus()
-
-
-    def __str__(self):
-        return 'Slideshow'
-
+        """
+        called when this Slideshow loses focus. note that this
+        does not actually set focus.
+        """
+        self.active.unfocus()
 
     def addSlide(self, drawable):
         """
         add a Drawable to the end of the list of slides. the
-        newly-added Drawable will be hidden by default.
+        newly-added Drawable will be hidden by default unless
+        it is the only slide in the slideshow.
         """                
-        self.slides.append(drawable)
-        drawable.setSize(0, 0, 0, 0)
-
+        self.children.append(drawable)
+        if self.active:
+            drawable.setSize(0, 0, 0, 0)
+        else:
+            self.active = drawable
 
     def _setChildSizes(self):
         """
         hide all child Drawables except the currently-viewed one.
         """
-        y = self.y
-        x = self.x
-        h = self.h
-        w = self.w
+        y, x, h, w = self.y, self.x, self.h, self.w
 
-        for i in range(len(self.slides)):
-            if i == self.currentSlide:
-                self.slides[i].setSize(y, x, h, w)
+        for child in self.children:
+            if child == self.active:
+                child.setSize(y, x, h, w)
             else:
-                self.slides[i].setSize(0, 0, 0, 0)
-
+                child.setSize(0, 0, 0, 0)
 
     def setSize(self, y, x, h, w):
         super(Slideshow, self).setSize(y, x, h, w)
 
-        if y == 0 and x == 0 and h == 0 and w == 0:
-            return
-
         self.log.debug('setSize(%d, %d, %d, %d)' % (y, x, h, w))
         self._setChildSizes()
-        # use the values from parent's setSize()
         
-    def _refresh(self):
+    def __refresh(self):
         self._setChildSizes()
-        self.engine.setFocus(self.slides[self.currentSlide])
+        self.engine.setFocus(self.active)
         self.clear()
 
     def nextSlide(self):
-        self.currentSlide += 1
-        if( self.currentSlide >= len(self.slides) ):
-            self.currentSlide = 0
-        self._refresh()
+        index = self.children.index(self.active) + 1
+        if( index >= len(self.children) ):
+            index = 0
+        self.active = self.children[index]
+        self.__refresh()
 
     def showSlide(self, slide):
-        try:
-            self.currentSlide = self.slides.index(slide)
-            self._refresh()
-        except IndexError:
-            return
+        if slide not in self.children:
+            return False
+        self.active = slide
+        self._refresh()
 
     def drawContents(self):
-        self.slides[self.currentSlide].drawContents()
+        self.active.drawContents()
 
     
