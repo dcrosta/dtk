@@ -1,9 +1,9 @@
-from core import Drawable
+from core import Drawable, Container, ContainerException
 
 import curses
 import util
 
-class Rows(Drawable):
+class Rows(Container):
     """
     implements a flexible, resizable (hopefully!) layout
     scheme for Drawables. Supports a border option, which
@@ -11,12 +11,12 @@ class Rows(Drawable):
     or between the row, or both.
     """
 
-    class Row:
-        def __init__(self, drawable, fixedsize, weight):
-            self.drawable = drawable
-            self.fixedsize = fixedsize
-            self.weight = float(weight)
-            self.height = None 
+#    class Row:
+#        def __init__(self, drawable, fixedsize, weight):
+#            self.drawable = drawable
+#            self.fixedsize = fixedsize
+#            self.weight = float(weight)
+#            self.height = None 
 
     class Separator:
         def __init__(self, type):
@@ -32,40 +32,21 @@ class Rows(Drawable):
         self.outerborder = outerborder
         self.innerborder = innerborder
 
-        # the row definitions
-        self.rows = []
-
-        # the row we're currently targeted on
-        self.targetRow = 0
-
-        # keybindings
         self.bindKey('tab', self.nextRow)
-
-    def __str__(self):
-        return 'Rows'
-
-
-    def handleInput(self, input):
-        """
-        Pass input to the current row
-        """
-        consumed = self.rows[self.targetRow].drawable.handleInput(input)
-        if not consumed:
-            consumed = super(Rows, self).handleInput(input)
-
-        return consumed
-    
 
     def addRow(self, drawable, fixedsize = None, weight = 1):
         """
         add a row (will become the bottom row) containing
-        the given drawable (its parent should be this ColumnLayout),
+        the given drawable (its parent should be this RowLayout),
         which will be drawn with the appropriate minimum and
         maximum height, as space allows. weight is used to calculate
         how to distribute remaining space after minimum and maximum
         are taken into account.
         """
-        self.rows.append(self.Row(drawable, fixedsize, weight))
+        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        if not len([c for c in self.children if isinstance(c, Drawable)]):
+            self.active = drawable
+        self.children.append(drawable)
         self.touch()
 
     def addSeparator(self, type = 'line'):
@@ -77,7 +58,7 @@ class Rows(Drawable):
             'blank' leaves a blank row 1 character high
         @type  type: string
         """
-        self.rows.append(self.Separator(type))
+        self.children.append(self.Separator(type))
         self.touch()
 
     def insertRow(self, drawable, fixedsize = None, weight = 1):
@@ -98,7 +79,8 @@ class Rows(Drawable):
         weight is used to calculate how to distribute remaining space
         after minimum and maximum are taken into account.
         """
-        self.rows.insert(index, self.Row(drawable, fixedsize, weight))
+        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
+        self.rows.insert(index, drawable)
         self.touch()
 
 
@@ -136,21 +118,21 @@ class Rows(Drawable):
             w -= 2
 
         if self.innerborder:
-            available -= (len(self.rows) - 1)
+            available -= (len(self.children) - 1)
 
 
-        items = [(item.fixedsize, item.weight) for item in self.rows]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.children if isinstance(item, Drawable)]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip(self.rows, sizes):
-            child.height = size
+        for (child, size) in zip([child for child in self.children if isinstance(child, Drawable)], sizes):
+            child._meta['height'] = size
 
-            if isinstance(child, self.Row):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.drawable.name, y, x, child.height, w)
-                child.drawable.setSize(y, x, child.height, w)
+            if isinstance(child, Drawable):
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
+                child.setSize(y, x, child._meta['height'], w)
 
-            y += child.height
+            y += child._meta['height']
             if self.innerborder:
                 y += 1
 
@@ -159,12 +141,13 @@ class Rows(Drawable):
         """
         call drawContents() on each of our children
         """
-        for child in self.rows:
-            if isinstance(child, self.Row):
-                child.drawable.drawContents()
+        for child in self.children:
+            if isinstance(child, Drawable):
+                child.drawContents()
 
         # draw borders through render()
-        super(Rows, self).drawContents()
+        #super(Rows, self).drawContents()
+        Drawable.drawContents(self)
 
     def render(self):
         """
@@ -181,14 +164,17 @@ class Rows(Drawable):
 
         y = borders
 
-        for child in self.rows[:-1]:
+        for child in self.children[:-1]:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.line(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
                     self.draw(' ' * (self.w - 2 * borders), borders, y)
 
-            y += child.height or 0
+            try:
+                y += child._meta['height']
+            except:
+                y += 0
 
             if self.innerborder:
                 self.line(y, 0, self.w, **attr)
@@ -196,32 +182,36 @@ class Rows(Drawable):
 
 
     def nextRow(self):
-        self.switchRow(self.targetRow + 1)
+        index = self.children.index(self.active) + 1
+        if index >= len(self.children):
+            index = 0
+        self.switchRow(index)
 
 
     def prevRow(self):
-        self.switchRow(self.targetRow - 1)
+        self.switchRow(self.children.index(self.active) - 1)
         
 
     def switchRow(self, index):
-        self.log.debug('switching row from %s to %s' % (self.targetRow, index))
-        self.targetRow = index 
-        
-        # tell engine to focus on this one
-        rows = [row for row in self.rows if isinstance(row, self.Row)]
-        if len(rows):
-            self.targetRow %= len(rows) 
-
-            self.engine.setFocus(rows[self.targetRow].drawable)
-            self.touch()
+        self.log.debug('switching row from %s to %s' % (self.children.index(self.active), index))
+        self.active = self.children[index]
+ 
+#       no, don't.       
+#        # tell engine to focus on this one
+#        rows = [row for row in self.rows if isinstance(row, self.Row)]
+#        if len(rows):
+#            self.targetRow %= len(rows) 
+#
+#            self.engine.setFocus(rows[self.targetRow].drawable)
+#            self.touch()
 
 
     def focus(self):
         """
         call setFocus on the correct row
         """
-        rows = [row for row in self.rows if isinstance(row, self.Row)]
+        rows = [row for row in self.children if isinstance(row, Drawable)]
         if len(rows):
-            child = rows[self.targetRow].drawable
+            child = self.active
             self.log.debug('handing focus to %s', child)
             return child.focus() 
