@@ -11,13 +11,6 @@ class Rows(Container):
     or between the row, or both.
     """
 
-#    class Row:
-#        def __init__(self, drawable, fixedsize, weight):
-#            self.drawable = drawable
-#            self.fixedsize = fixedsize
-#            self.weight = float(weight)
-#            self.height = None 
-
     class Separator:
         def __init__(self, type):
             self.fixedsize = 1
@@ -196,7 +189,10 @@ class Rows(Container):
 
 
     def prevRow(self):
-        self.switchRow(self.children.index(self.active) - 1)
+        index = self.children.index(self.active) - 1
+        if index = 0:
+            index += len(self.children)
+        self.switchRow(index)
         
 
     def switchRow(self, index):
@@ -205,22 +201,3 @@ class Rows(Container):
         self.active = self.children[index]
         self.touch()
         self.active.touch()
-#       no, don't.       
-#        # tell engine to focus on this one
-#        rows = [row for row in self.rows if isinstance(row, self.Row)]
-#        if len(rows):
-#            self.targetRow %= len(rows) 
-#
-#            self.engine.setFocus(rows[self.targetRow].drawable)
-#            self.touch()
-
-
-    def focus(self):
-        """
-        call setFocus on the correct row
-        """
-        rows = self.children
-        if len(rows):
-            child = self.active
-            self.log.debug('handing focus to %s', child)
-            return child.focus() 

@@ -10,13 +10,6 @@ class Columns(Container):
     or between the columns, or both.
     """
 
-#    class Column:
-#        def __init__(self, drawable, fixedsize, weight):
-#            self.drawable = drawable
-#            self.fixedsize = fixedsize
-#            self.weight = weight
-#            self.width = None 
-
     class Separator:
         def __init__(self, type):
             self.fixedsize = 1
@@ -194,7 +187,10 @@ class Columns(Container):
 
 
     def prevColumn(self):
-        self.switchColumn(self.children.index(self.active) - 1)
+        index =self.children.index(self.active) - 1
+        if index < 0:
+            index += len(self.children)
+        self.switchColumn(index)
 
 
     def switchColumn(self, index):
@@ -213,26 +209,3 @@ class Columns(Container):
         self.active = self.children[index]
         self.touch()
         self.active.touch()
-
-# good point, line 216 .. why does this work?
-#        self.targetCol = index
-#
-#        cols = [col for col in self.columns if isinstance(col, self.Column)]
-#        self.targetCol %= len(cols)
-#
-#        col = cols[self.targetCol]
-#
-#        self.engine.setFocus(col.drawable)
-#
-#        self.touch()
-
-
-    def focus(self):
-        """
-        call setFocus on the correct column
-        """
-        cols = self.children
-        if len(cols):
-            child = self.active
-            self.log.debug('handing focus to %s', child)
-            return child.focus()
