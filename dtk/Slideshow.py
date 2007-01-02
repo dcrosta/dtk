@@ -73,7 +73,7 @@ class Slideshow(Container):
         if slide not in self.children:
             return False
         self.active = slide
-        self._refresh()
+        self.__refresh()
 
     def drawContents(self):
         self.active.drawContents()
