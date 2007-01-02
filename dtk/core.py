@@ -175,7 +175,7 @@ class Drawable(InputHandler):
     def _setFocused(self, value):
         raise EngineException("Do not set focus on a Drawable directly.  Call Engine::setFocus instead.")
     def _getFocused(self):
-        return self.engine.getFocusedDrawable() == self
+        return self.engine.getFocusedDrawable() is self
     focused = property(_getFocused, _setFocused)
 
     
