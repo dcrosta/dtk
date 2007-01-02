@@ -7,10 +7,6 @@ import _curses
 import curses
 import curses.ascii
 
-# from core import * will get these objects
-__all__ = ['Engine', 'EngineException', 'InputHandler', 'Drawable', 'Container']
-
-
 
 class InputHandler(object):
     """
@@ -163,11 +159,13 @@ class Drawable(InputHandler):
 
         self.name = self.__class__.__name__
         if 'name' in kwargs:
-            self.name = name
+            self.name = kwargs['name']
 
         self.engine = Engine()
 
+        self.touched = True
         self._meta = dict()
+
 
     # `self.focused` is a property that checks whether
     # this is the Engine's current focused drawable; this
@@ -243,6 +241,7 @@ class Drawable(InputHandler):
         otherwise, do nothing.
         """
         if self.touched:
+            self.log.debug('calling render()')
             self.render()
             self.untouch()
 
@@ -384,6 +383,9 @@ class Container(Drawable):
          active path beginning at this node. The first element
          in the list will be self, the next element will be the
          active reference, etc. 
+    * touchAll():
+       * for each child, call touchAll() (if child is a Container)
+         or touch() (if child is a Drawable)
 
     Containers which want to provide methods to update the active
     status among their children (ie nextRow() in Rows) can update
@@ -478,12 +480,27 @@ class Container(Drawable):
         path = [self]
 
         if isinstance(self.active, Container):
-            path.extend(self.active.getActivePath)
+            path.extend(self.active.getActivePath())
 
         else:
             path.append(self.active)
 
         return path
+
+
+    def touchAll(self):
+        """
+        call touchAll() or touch() on each child if it is
+        a Container or a Drawable, respectively. also
+        touch self.
+        """
+        for child in self.children:
+            if isinstance(child, Container):
+                child.touchAll()
+            elif isinstance(child, Drawable): 
+                child.touch()
+
+        self.touch()
 
 
     def handleInput(self, input):
@@ -494,8 +511,10 @@ class Container(Drawable):
         the input, False otherwise
         """
 
+        self.log.debug('InputHandler: calling handleInput on %s', self.active)
         consumed = self.active.handleInput(input)
         if not consumed:
+            self.log.debug('InputHandler: calling handleInput on %s', self)
             consumed = super(Container, self).handleInput(input)
 
         return consumed
@@ -512,7 +531,73 @@ class ContainerException(Exception):
     pass
 
 
-class Engine(InputHandler):
+class InputContext(InputHandler):
+
+    def __init__(self, modal = True, *args, **kwargs):
+        super(InputContext, self).__init__(*args, **kwargs)
+
+        self.root = None
+        self.modal = modal
+        self.done = False
+
+
+    def quit(self):
+        """
+        stop processing this context
+        """
+        self.done = True
+
+
+    def unquit(self):
+        """
+        allow input processing to happen again
+        """
+        self.done = False
+
+
+    def getFocusedDrawable(self):
+        """
+        returns the drawable that has focus
+        """
+        if isinstance(self.root, Container):
+            return self.root.getActiveDrawable()
+        else:
+            return self.root
+
+
+    def setFocus(self, drawable):
+        """
+        Set the focused drawable to the given one
+        """
+
+        if isinstance(self.root, Container):
+            self.log.debug('self.root.setActiveDrawable(%s)', drawable)
+            self.root.setActiveDrawable(drawable)
+        else:
+            if self.root is drawable:
+                return
+            else:
+                raise EngineException, "To change the root Drawable, use setRoot()"
+ 
+
+    def setRoot(self, drawable):
+        """
+        set the given drawable as the root drawable.
+        """
+        self.root = drawable
+
+
+    def getRoot(self):
+        """
+        returns the root drawable, as set by setRoot()
+        """
+        return self.root
+
+
+
+
+
+class Engine(InputContext):
     """
     Engine handles the main event loop of dtk, manages
     a list of Drawables, and handles input parsing and
@@ -635,7 +720,7 @@ class Engine(InputHandler):
             # allocated and initialized; subsequently it is True
             Engine._initialized = True
 
-            super(Engine, self).__init__()
+            super(Engine, self).__init__(modal = False)
 
             # some things can only be done once curses.init_scr has been called
             self.cursesInitialized = False
@@ -646,9 +731,6 @@ class Engine(InputHandler):
 
             self.log = logging.getLogger('dtk')
             self.log.setLevel(logging.NOTSET + 1) # log all messages
-
-            self.focusedDrawable = None
-            self.root = None
 
             # initially, we are tiny!
             self.w = 0
@@ -767,14 +849,8 @@ class Engine(InputHandler):
             else:
                 foo()
 
-        # re-set focus on the root drawable; if the
-        # root is a container, this will cause it to
-        # set focus on the proper child drawable
-        self.log.debug('cursesMainLoop setting focus on root drawable')
-        self.setFocus(self.root)
-
         # these are all 0 so that we get a "resize" on the first time
-        lasth = lastw = 0
+        self.lasth = self.lastw = 0
         self.resized = True
 
         # handle input every 2/10th of a second
@@ -783,39 +859,44 @@ class Engine(InputHandler):
         # among others) 'esc'
         curses.halfdelay(3)
 
-        while not self.done:
-            # first try to detect and handle a terminal resize
+        return self.contextLoop(self)
+
+
+    def contextLoop(self, context):
+        (h, w) = self.scr.getmaxyx()
+        context.root.setSize(0, 0, h, w)
+
+        # call into the main loop of the current context
+        while not context.done:
             (h, w) = self.scr.getmaxyx()
 
             # update self.resized to be True if the height
             # or width has changed since the last iteration
-            self.resized = self.resized or h != lasth or w != lastw
-
-            if self.resized:
-                self.resized = False
-
+            resized = self.resized or h != self.lasth or w != self.lastw
+            if resized:
                 # a resize has happened
-                self.log.debug('screen resized (%d, %d) => (%d, %d)', lasth, lastw, h, w)
-
-                self.root.setSize(0, 0, h, w)
-                
-                lasth = h
-                lastw = w
+                self.log.debug('screen resized (%d, %d) => (%d, %d)', self.lasth, self.lastw, h, w)
 
                 # try to erase everything (necessary in some terms)
                 self.scr.move(0,0)
                 self.scr.clrtobot()
                 self.scr.refresh()
 
-                
-            # wait until i say so to update the screen state
+                context.root.setSize(0, 0, h, w)
+
+                self.resized = False
+                self.lasth = h
+                self.lastw = w
+
+
+            # wait to update the screen state
             self.scr.noutrefresh()
 
 
-            self.root.drawContents()
+            context.root.drawContents()
 
 
-            # draw the cursor if it's valid
+            # draw the cursor only if it's valid and should be shown
             if self.cursorpos == (-1, -1):
                 if curses.tigetstr('civis') is not None:
                     curses.curs_set(0)
@@ -825,9 +906,9 @@ class Engine(InputHandler):
                 self.scr.move(self.cursorpos[0], self.cursorpos[1])
 
 
+            # now update
+            self.scr.refresh()
             curses.doupdate()
-
-            
 
             # get and parse the input
             #
@@ -847,9 +928,12 @@ class Engine(InputHandler):
             # we're waiting on further multi-byte input
 
             if input is not None:
-                self.log.debug('calling handleInput on %s', self.root)
-                if not self.root.handleInput(input):
-                    self.handleInput(input)
+                self.log.debug('Engine: calling handleInput on %s', context.root)
+                if not context.root.handleInput(input) and not context.modal:
+                    self.log.debug('Engine: calling handleInput on %s', context)
+                    context.handleInput(input)
+        
+
 
 
     def parseInput(self, char):
@@ -895,43 +979,6 @@ class Engine(InputHandler):
             raise NoInputCharException
 
 
-    def getFocusedDrawable(self):
-        """
-        returns the drawable that has focus
-        """
-        if isinstance(self.root, Container):
-            return self.root.getActiveDrawable()
-        else:
-            return self.root
-
-
-    def setFocus(self, drawable):
-        """
-        Set the focused drawable to the given one
-        """
-        if isinstance(self.root, Container):
-            self.root.setActiveDrawable(drawable)
-        else:
-            if self.root is drawable:
-                return
-            else:
-                raise EngineException, "To change the root Drawable, use setRoot()"
- 
-
-    def setRoot(self, drawable):
-        """
-        set the given drawable as the root drawable.
-        """
-        self.root = drawable
-
-
-    def getRoot(self):
-        """
-        returns the root drawable, as set by setRoot()
-        """
-        return self.root
-
-
     def resize(self):
         """
         tells the engine that a resize has happened or that it
@@ -939,13 +986,6 @@ class Engine(InputHandler):
         visible Drawables
         """
         self.resized = True
-        
-
-    def quit(self):
-        """
-        quit the main loop, exit the program, etc
-        """
-        pass
 
 
     def capabilities(self):
@@ -974,7 +1014,8 @@ class Engine(InputHandler):
         # save the program mode
         curses.def_prog_mode()
 
-        self.root.clear()
+        self.scr.move(0, 0)
+        self.scr.clrtobot()
 
         # this drops us to shell mode...
         # the next call to curses.refresh() will
@@ -990,19 +1031,15 @@ class Engine(InputHandler):
         self.touchAll()
 
     
-    def quit(self):
-        """
-        quit the engine at the end of this input loop iteration
-        """
-        self.done = True
-
-
     def touchAll(self):
         """
         causes all drawables to be re-drawn on the next refresh
         TODO: implement in Container?
         """
-        pass
+        if isinstance(self.root, Container):
+            self.root.touchAll()
+        else:
+            self.root.touch()
 
 
     def hideCursor(self):
@@ -1050,7 +1087,6 @@ class Engine(InputHandler):
 
         # now draw it
         try:
-            self.log.debug('addstr(%d, %d, "%s", %s)', row, col, str, kwargs)
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
@@ -1288,7 +1324,4 @@ class Engine(InputHandler):
             self.numColors += 1
 
         return self.colors[fg][bg]
-
-
-
 
