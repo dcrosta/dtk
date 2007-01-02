@@ -189,7 +189,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'button':
     e.setFocus(b1)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
-    fp = file('dtk/Engine.py', 'r')
+    fp = file('dtk/ListBox.py', 'r')
     text = ''.join(fp.readlines())
     fp.close()
 
@@ -198,7 +198,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
     e.setRoot(p)
 
     d = dtk.Dialog()
-    d.setType('message')
+    d.setType('yesno')
     d.setTitle('Dialog Box')
     d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
 
