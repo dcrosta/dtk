@@ -1278,7 +1278,7 @@ class Engine(InputContext):
 
         for r in range(drawable.y, drawable.y + drawable.h):
             try:
-                self.scr.addstr(r, 0, ' ' * (drawable.w))
+                self.scr.addstr(r, drawable.x, ' ' * (drawable.w))
             except:
                 pass
 
