@@ -50,31 +50,33 @@ class InputHandler(object):
             (method, args, kwargs) = self.keybindings['printable']
 
             if len(input) > 1:
-                input = self.printableVersion[input] # map things like 'space' => ' '
-
-            # if the method is asking for a _input_key argument,
-            # supply it to the method before calling it
-            # unless another input key is already being supplied to the method
-            # TODO this is actually broken (see below)
-            if '_input_key' in method.func_code.co_varnames:
-                #kwargs['_input_key'] = kwargs.get('_input_key', None) or input
-                kwargs['_input_key'] = input
+                input = self.printableVersion[input] # map things like 'space' => ' '            
 
         elif input in self.keybindings:
             (method, args, kwargs) = self.keybindings[input]
 
         else:
             return False
-        
+       
+        # if the method is asking for a _input_key argument,
+        # supply it to the method before calling it
+        # unless another input key is already being supplied to the method
+        # TODO this is actually broken (see below)
+        if '_input_key' in method.func_code.co_varnames:
+            #kwargs['_input_key'] = kwargs.get('_input_key', None) or input
+            kwargs['_input_key'] = input
+
         # if the method is asking for a _source_obj argument,
         # bind the present object to the method before calling it
         # unless another object is already bound to the method
         # TODO this is actually broken. it will still fill the slot
         # if the user passes in a POSITIONAL argument for _source_obj,
         # resulting in an exception.
+        # TODO this is also broken in another way, but i don't remember what that is.
+        # does dcrosta?
         if '_source_obj' in method.func_code.co_varnames:
             kwargs['_source_obj'] = kwargs.get('_source_obj', None) or self
-
+            
         ret = method(*args, **kwargs)
         return True
 
