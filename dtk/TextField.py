@@ -33,6 +33,7 @@ class TextField(Drawable):
 
     def setText(self, text):
         self.buffer = text
+        self.moveToStart()
         self.touch()
 
 
