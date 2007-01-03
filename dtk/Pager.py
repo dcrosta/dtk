@@ -16,7 +16,7 @@ class Pager(Drawable):
 
         self.firstVisible = 0
 
-        self.text = None
+        self.text = ''
         self.lines = None
 
         self.bindKey('down', self.moveDown)
