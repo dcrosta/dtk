@@ -189,7 +189,13 @@ class TextEditor(Drawable):
         # account line wrapping) of where the cursor is... that might
         # take some work, or really we'll just need to move the wrapping
         # into this class
-        if self.editable and self.cx == self.w:
-            self.showCursor(self.cy + 1, 0)
-        elif self.editable:
-            self.showCursor(self.cy, self.cx)
+        if self.focused:
+            if self.editable and self.cx == self.w:
+                self.showCursor(self.cy + 1, 0)
+            elif self.editable:
+                self.showCursor(self.cy, self.cx)
+            else:
+                self.hideCursor()
+        else:
+            self.hideCursor()
+        
