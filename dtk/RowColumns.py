@@ -83,13 +83,13 @@ class RowColumns(Container):
 
     def setSize(self, y, x, h, w):
         if not issubclass(self.__class__, RowColumns):
-            raise ContainerException("action not implemented")
+            raise ContainerException("setSize method not implemented")
         else:
             super(RowColumns, self).setSize(y, x, h, w)
 
     def render(self):
         if not issubclass(self.__class__, RowColumns):
-            raise ContainerException("action not implemented")
+            raise ContainerException("render method not implemented")
         else:
             super(RowColumns, self).render()
 
