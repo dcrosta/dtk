@@ -882,7 +882,9 @@ class Engine(InputContext):
         # among others) 'esc'
         curses.halfdelay(3)
 
-        return self.contextLoop(self)
+        self.contextLoop(self)
+
+        self.shellMode()
 
 
     def contextLoop(self, context):
@@ -1115,6 +1117,7 @@ class Engine(InputContext):
 
         # now draw it
         try:
+            self.log.debug('addstr(%d, %d, "%s", %d)', row, col, str, self.cursesAttr(kwargs))
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
@@ -1270,6 +1273,8 @@ class Engine(InputContext):
         """
         clears the whole drawable
         """
+
+        self.log.debug('clear(%d, %d => %d, %d)', drawable.y, drawable.x, drawable.y + drawable.h, drawable.x + drawable.w)
 
         for r in range(drawable.y, drawable.y + drawable.h):
             try:

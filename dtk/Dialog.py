@@ -168,16 +168,23 @@ class Dialog(Container):
         elif self.type == 'yesno':
             self.context.setFocus(self.kids['yes'])
 
-        else:
+        elif self.type == 'input':
             self.context.setFocus(self.kids['input'])
         
-        self.log.debug('activePath is: %s', [str(x) for x in self.context.root.getActivePath()])
-
-        self.log.debug('beginning contextLoop')
         self.engine.contextLoop(self.context)
-        self.log.debug('finished contextLoop')
+        if self.type == 'message':
+            ret = None
+
+        elif self.type == 'yesno':
+            ret = self.result
+
+        elif self.type == 'input':
+            ret = self.kids['input'].getText()
+            self.engine.hideCursor()
 
         self.engine.touchAll()
+
+        return ret
 
     
     def _dismissed(self):
