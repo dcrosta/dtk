@@ -758,7 +758,7 @@ class Engine(InputContext):
             self.cursesInitialized = False
             self.doWhenCursesInitialized = []
 
-            self.name = 'dtk Application'
+            self.name = kwargs.get('name', 'dtk Application')
             self.title = self.name
 
             self.log = logging.getLogger('dtk')
