@@ -228,7 +228,7 @@ class ListBox(Drawable):
 
     def setItems(self, items, indices = None, highlighted = 0, selected = None):
         """
-        sets the items dict and currently highlighted item
+        sets the items list and currently highlighted item
         """
 
         if indices is None:
@@ -239,7 +239,7 @@ class ListBox(Drawable):
         if not len(items) == len(indices):
             raise RuntimeError, 'setItems expects len(items) == len(indices)'
 
-        self.items = items
+        self.items = list(items)
         self.indices = indices
         self.len = len(self.items)
 
