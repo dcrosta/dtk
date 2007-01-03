@@ -41,7 +41,7 @@ class TextEditor(Drawable):
         pass
 
     # temporary -- do nothing for all these funcs
-    moveToHome = moveToEnd = pageUp = pageDown = dopass
+    moveToEnd = pageUp = pageDown = dopass
 
 
     def typing(self, _input_key):
@@ -145,7 +145,9 @@ class TextEditor(Drawable):
         
         self.touch()
 
-
+    def moveToHome(self):
+        self.cx = self.cy = 0
+        self.touch()
 
     def setText(self, text):
         """
