@@ -38,7 +38,7 @@ class Dialog(Container):
 
         self.kids = {}
 
-        self.setTitle(text)
+        self.setTitle(title)
         self.setText(text)
         self.setType(type)
 
