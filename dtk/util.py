@@ -100,12 +100,14 @@ def wrap(line, width):
                 second = word[width - x:]
     
                 out[-1] += first
+                out[-1] = out[-1].strip()
                 out.append(second)
                 # i -= 1
     
                 x = len(second) 
     
             else:
+                out[-1] = out[-1].strip()
                 out.append(word)
                 x = l
 
