@@ -58,13 +58,17 @@ class InputHandler(object):
         else:
             return False
        
+        # copy the kwargs dictionary so that we don't save any of the
+        # extra information we're about to conditionally pass along
+        # (or overwrite anything passed in from the user)
+        kwargs = dict(kwargs)
+
         # if the method is asking for a _input_key argument,
         # supply it to the method before calling it
         # unless another input key is already being supplied to the method
         # TODO this is actually broken (see below)
         if '_input_key' in method.func_code.co_varnames:
-            #kwargs['_input_key'] = kwargs.get('_input_key', None) or input
-            kwargs['_input_key'] = input
+            kwargs['_input_key'] = kwargs.get('_input_key', None) or input
 
         # if the method is asking for a _source_obj argument,
         # bind the present object to the method before calling it
