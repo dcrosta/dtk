@@ -10,7 +10,7 @@ class Label(Drawable):
     to change at some later point.
     """
 
-    def __init__(self, text = None, **kwargs):
+    def __init__(self, text = '', **kwargs):
         super(Label, self).__init__(**kwargs)
 
         self.setText(text)
