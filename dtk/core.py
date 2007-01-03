@@ -162,6 +162,7 @@ class Drawable(InputHandler):
             self.name = kwargs['name']
 
         self.engine = Engine()
+        self.context = self.engine
 
         self.touched = True
         self._meta = dict()
@@ -173,7 +174,7 @@ class Drawable(InputHandler):
     def _setFocused(self, value):
         raise EngineException("Do not set focus on a Drawable directly.  Call Engine::setFocus instead.")
     def _getFocused(self):
-        return self.engine.getFocusedDrawable() is self
+        return self.context.getFocusedDrawable() is self
     focused = property(_getFocused, _setFocused)
 
     
@@ -386,6 +387,10 @@ class Container(Drawable):
     * touchAll():
        * for each child, call touchAll() (if child is a Container)
          or touch() (if child is a Drawable)
+    * setContext(context):
+       * for each child, call setContext() (if child is a Container)
+         or simply set the context member to the given value (if
+         child is a Drawable)
 
     Containers which want to provide methods to update the active
     status among their children (ie nextRow() in Rows) can update
@@ -504,6 +509,21 @@ class Container(Drawable):
                 child.touch()
 
         self.touch()
+
+
+    def setContext(self, context):
+        """
+        sets the context member of each Drawable and Container
+        at or below this Container; should be used only from
+        within Engine
+        """
+        for child in self.children:
+            if isinstance(child, Container):
+                child.setContext(context)
+            else:
+                child.context = context
+
+        self.context = context
 
 
     def handleInput(self, input):
@@ -868,6 +888,11 @@ class Engine(InputContext):
     def contextLoop(self, context):
         (h, w) = self.scr.getmaxyx()
         context.root.setSize(0, 0, h, w)
+
+        if isinstance(context.root, Container):
+            context.root.setContext(context)
+        else:
+            context.root.context = context
 
         # call into the main loop of the current context
         while not context.done:
