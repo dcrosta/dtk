@@ -432,9 +432,12 @@ class Container(Drawable):
         """
         Draws the contents of the container.  The proper drawing
         behavior is defined differently by each Container subclass
-        and is not defined for the Container interface
+        and is not defined for the Container interface itself.
         """
-        raise ContainerException("drawContents method not implemented")
+        if not issubclass(self.__class__, Container):
+            raise ContainerException("drawContents method not implemented")
+        else:
+            super(Container, self).drawContents()
 
     def setActiveDrawable(self, drawable):
         """

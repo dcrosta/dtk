@@ -82,10 +82,16 @@ class RowColumns(Container):
         self.touch()
 
     def setSize(self, y, x, h, w):
-        raise ContainerException("action not implemented")
+        if not issubclass(self.__class__, RowColumns):
+            raise ContainerException("action not implemented")
+        else:
+            super(RowColumns, self).setSize(y, x, h, w)
 
     def render(self):
-        raise ContainerException("action not implemented")
+        if not issubclass(self.__class__, RowColumns):
+            raise ContainerException("action not implemented")
+        else:
+            super(RowColumns, self).render()
 
     def drawContents(self):
         """
@@ -95,9 +101,7 @@ class RowColumns(Container):
             child.drawContents()
 
         # draw borders through render()
-        #super(Rows, self).drawContents()
-        # this is not ideal, but Container.drawContents throws an exception, so.
-        Drawable.drawContents(self)
+        super(RowColumns, self).drawContents()
 
     def nextChild(self):
         index = self.children.index(self.active) + 1
