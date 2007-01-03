@@ -67,6 +67,7 @@ class ListBox(Drawable):
         self.allowSelection = False
         self.multipleSelection = False
         self.selected = []
+        self.items = []
 
         self.len = 0
 
@@ -431,6 +432,7 @@ class ListBox(Drawable):
         going to re-draw what's in the visible range, based on our
         size and what is currently firstVisible
         """
+        self.clear()
 
         # update firstVisible to so that currently highligted item
         # is visible
