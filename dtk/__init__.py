@@ -52,6 +52,7 @@ for name in os.listdir(mod_path):
     if ext == '.py' and (not base == '__init__'):
         modules.append(base)
 
+
 # first get the core classes
 from core import *
 
@@ -60,4 +61,7 @@ from core import *
 # and then only if it begins with a capital letter
 for module in modules:
     if module[0] == module[0].upper():
-        exec 'from %s import %s' % (module, module)
+        try:
+            exec 'from %s import %s' % (module, module)
+        except SyntaxError:
+            pass
