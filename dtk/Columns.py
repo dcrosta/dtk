@@ -1,8 +1,9 @@
 from core import Drawable, Container, ContainerException
+from RowColumns import RowColumns
 import curses
 import util
 
-class Columns(Container):
+class Columns(RowColumns):
     """
     implements a flexible, resizable (hopefully!) layout
     scheme for Drawables. Supports a border option, which
@@ -10,77 +11,11 @@ class Columns(Container):
     or between the columns, or both.
     """
 
-    class Separator:
-        def __init__(self, type):
-            self.fixedsize = 1
-            self.width = 1 
-            self.weight = 0
-            self.type = type
-
-
-    def __init__(self, outerborder = True, innerborder = True, **kwargs):
-        super(Columns, self).__init__(**kwargs)
-
-        # save these for later use
-        self.outerborder = outerborder
-        self.innerborder = innerborder
-        self.columns = []
-
-        self.bindKey('tab', self.nextColumn)
-
-    def addColumn(self, drawable, fixedsize = None, weight = 1):
-        """
-        add a column (will become the rightmost column) containing
-        the given drawable (its parent should be this ColumnLayout),
-        which will be drawn with the appropriate minimum and
-        maximum width, as space allows. weight is used to calculate
-        how to distribute remaining space after minimum and maximum
-        are taken into account.
-        """
-        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len(self.children):
-            self.active = drawable
-        self.children.append(drawable)
-        self.columns.append(drawable)
-        self.touch()
-
-    def addSeparator(self, type = 'line'):
-        """
-        adds a 'separator row', which contains a horizontal line
-        akin to those drawn when internal borders are enabled.
-
-        @param type: 'line' draws a vertical line like the borders;
-            'blank' leaves a blank column 1 character wide
-        @type  type: string
-        """
-        sep = self.Separator(type)
-        sep._meta = dict(fixedsize=1, weight=None)
-        self.columns.append(sep)
-        self.touch()
-
-    def insertColumn(self, drawable, fixedsize = None, weight = 1):
-        """
-        same mechanics as addColumn, but it inserts it in the indexth
-        position in the column list. if index > num columns, it will
-        be the rightmost column; if index < 0, it will be the leftmost
-        column. the indices are not stored, so:
-
-        cols.addColumn(foo, ...)
-        cols.insertColumn(bar, 10, ...)
-        cols.insertColumn(baz, 5, ...)
-
-        will result in the columns ordered foo, bar, baz from left-
-        to-right. (that is, the insertion works as it would on any
-        ordinary python list)
-
-        weight is used to calculate how to distribute remaining space
-        after minimum and maximum are taken into account.
-        """
-        drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len(self.children):
-            self.active = drawable
-        self.children.insert(index, drawable)
-        self.touch()
+    addColumn = RowColumns.addChild
+    insertColumn = RowColumns.insertChild
+    nextColumn = RowColumns.nextChild
+    prevColumn = RowColumns.prevChild
+    switchColumn = RowColumns.switchChild
 
     def setSize(self, y, x, h, w):
         """
@@ -116,14 +51,14 @@ class Columns(Container):
             h -= 2
 
         if self.innerborder:
-            available -= (len(self.columns) - 1)
+            available -= (len(self.cells) - 1)
 
 
-        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.columns]
+        items = [(item._meta['fixedsize'], item._meta['weight']) for item in self.cells]
 
         sizes = util.flexSize(items, available)
 
-        for (child, size) in zip(self.columns, sizes):
+        for (child, size) in zip(self.cells, sizes):
             child._meta['width'] = size
 
             if isinstance(child, Drawable):
@@ -134,20 +69,6 @@ class Columns(Container):
             if self.innerborder:
                 x += 1
         
-
-    def drawContents(self):
-        """
-        call drawContents() on each of our children
-        """
-        for child in self.children:
-            child.drawContents()
-
-        # draw borders through render()
-        #super(Columns, self).drawContents()
-        # this is not ideal, but Container.drawContents throws an exception, so.
-        Drawable.drawContents(self)
-
-
     def render(self):
         """
         draw the borders
@@ -163,7 +84,7 @@ class Columns(Container):
 
         x = borders 
 
-        for child in self.columns:
+        for child in self.cells:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
                     self.lineDown(borders, x, self.h - 2 * borders)
@@ -174,38 +95,6 @@ class Columns(Container):
 
             # if we're drawing inner borders, do it here
             # but only if there are more cols after this
-            if self.innerborder and self.columns.index(child) != len(self.columns) - 1:
+            if self.innerborder and self.cells.index(child) != len(self.cells) - 1:
                 self.lineDown(0, x, self.h, **attr)
                 x += 1 # for the inner border
-
-
-    def nextColumn(self):
-        index = self.children.index(self.active) + 1
-        if index >= len(self.children):
-            index = 0
-        self.switchColumn(index)
-
-
-    def prevColumn(self):
-        index =self.children.index(self.active) - 1
-        if index == 0:
-            index += len(self.children)
-        self.switchColumn(index)
-
-
-    def switchColumn(self, index):
-        """
-        switches internal focus to the given column index, if it's
-        in range. otherwise, switches the focused column one to the
-        right, wrapping around if the rightmost column is currently
-        selected.
-
-        bad things will happen if you call this while focus isn't
-        on a child of this Columns instance, probably! so don't!
-        only call it from within a bindKey binding, that way it won't
-        get spuriously called from random points in the code.
-        """
-        self.active.touch()
-        self.active = self.children[index]
-        self.touch()
-        self.active.touch()
