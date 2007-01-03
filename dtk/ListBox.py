@@ -248,6 +248,8 @@ class ListBox(Drawable):
         else:
             selected = [None]
 
+        self.clear()
+        self.firstVisible = 0
         self.touch()
 
     def move(self, index):
