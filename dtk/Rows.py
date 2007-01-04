@@ -16,6 +16,8 @@ class Rows(RowColumns):
     nextRow = RowColumns.nextChild
     prevRow = RowColumns.prevChild
     switchRow = RowColumns.switchChild
+    lineSomehow = RowColumns.line
+    drawSomehow = RowColumns.draw
 
     def setSize(self, y, x, h, w):
         """
@@ -59,13 +61,13 @@ class Rows(RowColumns):
         sizes = util.flexSize(items, available)
 
         for (child, size) in zip(self.cells, sizes):
-            child._meta['height'] = size
+            child._meta['primary_dim'] = size
 
             if isinstance(child, Drawable):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['height'], w)
-                child.setSize(y, x, child._meta['height'], w)
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['primary_dim'], w)
+                child.setSize(y, x, child._meta['primary_dim'], w)
 
-            y += child._meta['height']
+            y += child._meta['primary_dim']
             if self.innerborder:
                 y += 1
 
@@ -87,14 +89,14 @@ class Rows(RowColumns):
         for child in self.cells:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.line(y, borders, self.w - 2 * borders)
+                    self.lineSomehow(y, borders, self.w - 2 * borders)
                 elif child.type == 'blank':
-                    self.draw(' ' * (self.w - 2 * borders), y, borders)
+                    self.drawSomehow(' ' * (self.w - 2 * borders), y, borders)
 
-            y += child._meta['height']
+            y += child._meta['primary_dim']
 
             # if we're drawing inner borders, do it here
             # but only if there are more rows after this
             if self.innerborder and self.cells.index(child) != len(self.cells) - 1:
-                self.line(y, 0, self.w, **attr)
+                self.lineSomehow(y, 0, self.w, **attr)
                 y += 1 # for ther inner border

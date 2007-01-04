@@ -16,6 +16,8 @@ class Columns(RowColumns):
     nextColumn = RowColumns.nextChild
     prevColumn = RowColumns.prevChild
     switchColumn = RowColumns.switchChild
+    lineSomehow = RowColumns.lineDown
+    drawSomehow = RowColumns.drawDown
 
     def setSize(self, y, x, h, w):
         """
@@ -59,13 +61,13 @@ class Columns(RowColumns):
         sizes = util.flexSize(items, available)
 
         for (child, size) in zip(self.cells, sizes):
-            child._meta['width'] = size
+            child._meta['primary_dim'] = size
 
             if isinstance(child, Drawable):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['width'])
-                child.setSize(y, x, h, child._meta['width'])
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['primary_dim'])
+                child.setSize(y, x, h, child._meta['primary_dim'])
 
-            x += child._meta['width']
+            x += child._meta['primary_dim']
             if self.innerborder:
                 x += 1
         
@@ -87,14 +89,14 @@ class Columns(RowColumns):
         for child in self.cells:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.lineDown(borders, x, self.h - 2 * borders)
+                    self.lineSomehow(borders, x, self.h - 2 * borders)
                 elif child.type == 'blank':
-                    self.drawDown(' ' * (self.h - 2 * borders), 0, x + borders)
+                    self.drawSomehow(' ' * (self.h - 2 * borders), 0, x + borders)
 
-            x += child._meta['width']
+            x += child._meta['primary_dim']
 
             # if we're drawing inner borders, do it here
             # but only if there are more cols after this
             if self.innerborder and self.cells.index(child) != len(self.cells) - 1:
-                self.lineDown(0, x, self.h, **attr)
+                self.lineSomehow(0, x, self.h, **attr)
                 x += 1 # for the inner border

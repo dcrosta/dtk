@@ -93,6 +93,12 @@ class RowColumns(Container):
         else:
             super(RowColumns, self).render()
 
+    def drawSomehow(self, *args, **kwargs):
+        raise ContainerException("no draw method specified.")
+
+    def lineSomehow(self, *args, **kwargs):
+        raise ContainerException("no line method specified.")
+
     def drawContents(self):
         """
         call drawContents() on each of our children
