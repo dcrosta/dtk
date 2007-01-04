@@ -1,17 +1,20 @@
 """
 dtk
-(C) 2006 Dan Crosta
+Copyright (C) 2006-2007 Dan Crosta
+Copyright (C) 2006-2007 Ethan Jucovy
 
 @author: Dan Crosta <dcrosta@sccs.swarthmore.edu>
+@author: Ethan Jucovy <ejucovy@openplans.org>
 """
 __docformat__ = 'epytext en'
 
-__version__ = '0.1'
+__version__ = '0.2'
 __url__ = 'https://firefly.student.swarthmore.edu/trac/wiki/Dtk'
-__copyright__ = '(C) 2006 Dan Crosta'
+__copyright__ = '(C) 2006-2007 Dan Crosta, Ethan Jucovy'
 __license__ = 'BSD'
 __license_long__ = """
-Copyright (C) 2006 Dan Crosta
+Copyright (C) 2006-2007 Dan Crosta
+Copyright (C) 2006-2007 Ethan Jucovy
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
