@@ -23,7 +23,7 @@ class Stack(Container):
         be set active automatically. if `drawable` already exists
         in the Stack, it will be removed first, then placed on
         top.
-        """
+        """        
         # make sure there's only one copy of it
         # on the stack at any time
         if drawable in self.children:

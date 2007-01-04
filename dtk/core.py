@@ -76,8 +76,6 @@ class InputHandler(object):
         # TODO this is actually broken. it will still fill the slot
         # if the user passes in a POSITIONAL argument for _source_obj,
         # resulting in an exception.
-        # TODO this is also broken in another way, but i don't remember what that is.
-        # does dcrosta?
         if '_source_obj' in method.func_code.co_varnames:
             kwargs['_source_obj'] = kwargs.get('_source_obj', None) or self
             

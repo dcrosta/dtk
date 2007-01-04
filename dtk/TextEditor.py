@@ -145,10 +145,11 @@ class TextEditor(Drawable):
         
         self.touch()
 
+    # TODO this isn't actually what "home" should do
     def moveToHome(self):
         self.cx = self.cy = 0
         self.touch()
-
+    
     def setText(self, text):
         """
         accepts a list of strings (each string is a paragraph in the
@@ -198,4 +199,3 @@ class TextEditor(Drawable):
                 self.hideCursor()
         else:
             self.hideCursor()
-        
