@@ -422,6 +422,9 @@ class Container(Drawable):
     """
 
     def __init__(self, *args, **kwargs):
+        if not issubclass(self.__class__, Container):
+            raise ContainerException("do not create an instance of Container. instantiate a subclass of Container instead.")
+
         super(Container, self).__init__(*args, **kwargs)
         self.children = []
         self.active = None

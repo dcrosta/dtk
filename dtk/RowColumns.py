@@ -18,6 +18,9 @@ class RowColumns(Container):
             self.type = type
 
     def __init__(self, outerborder = True, innerborder = True, **kwargs):
+        if not issubclass(self.__class__, RowColumns):
+            raise ContainerException("do not create a RowColumns instance. instantiate a subclass of RowColumns instead.")
+
         super(RowColumns, self).__init__(**kwargs)
 
         self.outerborder = outerborder
