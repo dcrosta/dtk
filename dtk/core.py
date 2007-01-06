@@ -10,11 +10,12 @@ import curses.ascii
 
 class InputHandler(object):
     """
-    The base class for objects which deal with keyboard and
-    pseudo-key input.
+    The base class for objects which deal with keyboard input.
     """
 
-    # remap certain printable inputs for output
+    # remap the dtk nice name for some keys back
+    # to the actual character it represents (for
+    # printable input only)
     printableVersion = {
         'space':' '
         }
@@ -27,17 +28,40 @@ class InputHandler(object):
 
     def handleInput(self, input):
         """
-        first sees if the InputHandler is set up to handle printable
-        input by looking for the 'printable' key in self.keybindings.
-        if so, then the printable characters method is called with
-        optional userdata. if not, processing proceeds as below:
+        handleInput checks the list of keybindings, and for keys
+        which are bound, dispatches to the bound method. if a
+        binding for 'printable' exists (printable characters are
+        letters, numbers, symbols, the space key, tab and enter;
+        see isPrintable) the bound method for the 'printable'
+        binding will be called. if there is no 'printable' binding
+        or if the input fails the isPrintable test, the input's
+        dtk friendly name will be looked for in the key binding
+        map; if successful, the bound method for that input
+        will be called. note that this means that an object which
+        binds 'printable' and any printable character, the letter
+        'a' for example, will only ever call the method bound
+        to 'printable' when an 'a' arrives as input.
 
-        if we can find key in self.keybindings, then we execute the
-        associated function with the associated userdata and return
-        the result of the method (True or False) to indicate that
-        handling is finished, or else we return False to indicate that
-        this InputHandler's parent should be asked to handle the
-        input
+        before calling any bound method, handleInput checks the
+        argument list.  if '_input_key' or '_source_obj' exist in the
+        argument list and weren't explicitly set to another value at
+        binding time, then the translated (see below) input character
+        and bound object (ie 'self'), respectively, will be passed to
+        the method using those names. if the method does not
+        explicitly name '_input_key' or '_source_obj', the extra
+        arguments will not be passed, even if the method accepts
+        *args or **kwargs.
+
+        (certain keys are represented in dtk with easy-to-use
+        names, for example the space character is bound with
+        the name 'space', not ' '. when passing a value for
+        _input_key, the translated version ' ' will be used. the
+        list of translated characters is in the dict
+        InputHandler.printableVersion.)
+
+        handleInput always returns True if a binding is found and
+        a method is called; the return value of the called method
+        is ignored.
         """
 
         self.log.debug("handleInput('%s')", input)
@@ -79,53 +103,58 @@ class InputHandler(object):
         if '_source_obj' in method.func_code.co_varnames:
             kwargs['_source_obj'] = kwargs.get('_source_obj', None) or self
             
-        ret = method(*args, **kwargs)
+        method(*args, **kwargs)
         return True
 
 
     def bindKey(self, key, method, *args, **kwargs):
         """
-        tell the input subsystem that the given key should
-        have the effect of calling the given method with
-        the given arguments and keyword arguments
+        Bind the method (or function) with the given positional
+        and named arguments to the given input key. When this
+        object recieves the given key as input, the most recent
+        method bound to the key will be called with the given
+        arguments. See the docstring for handleInput() for
+        more details on bound method calling.
         """
         self.keybindings[key] = (method, args, kwargs)
 
 
     def unbindKey(self, key):
         """
-        removes the binding for key from the InputHandler's
-        keybindings, if it exists. removing the pseudo-key 'all'
-        removes all keybindings from the InputHandler.
+        Removes the binding for the given key for this InputHandler.
+        If key is 'all', then all existing keybindings (including
+        bindings created by bindPrintable) will be removed.
         """
 
         if key == 'all':
-            for key in self.keybindings.keys():
-                del(self.keybindings[key])
+            self.keybindings = {}
 
         elif key in self.keybindings:
-            del(self.keybindings[key])
+            del self.keybindings[key]
 
 
     def bindPrintable(self, method, *args, **kwargs):
         """
         tell the input subsystem that printable characters
         should be passed to the given method as they arrive.
-        printable characters are anything for which
-        curses.ascii.isprint() returns True. 
+        see isprintable().
         """
         self.keybindings['printable'] = (method, args, kwargs)
 
 
     def unbindPrintable(self):
         """
-        tells the input subsystem that we don't want to handle
-        printable character input
+        Unbind the previously set 'printable' keybinding.
         """
         self.unbindKey('printable')
 
 
     def isprintable(self, input):
+        """
+        a character is printable if curses.ascii.isprint()
+        returns true or if the dtk character name (eg 'space')
+        exists in InputHandler.printableVersion
+        """
         if input in self.printableVersion:
             return True
         elif len(input) > 1:
@@ -137,19 +166,49 @@ class InputHandler(object):
 
 class Drawable(InputHandler):
     """
-    Drawable is the basic GUI unit of dtk. It contains methods
-    to set onscreen position (which should only be called from
-    Engine -- use Containers & children to position elements), get
-    the contents that should be drawn, input handling (provided
-    by extending InputHandler), and the like.
+    Drawable is the base class for on-screen DTK elements. It
+    provides implementations and stubs for methods crucial to 
+    drawing onscreen "widgets." In general, methods defined
+    here should only be called by subclasses or other parts
+    of the DTK core.
+
+    This class is a fully concrete class that can be instantiated,
+    though it won't do much by itself, unless you need a widget
+    which will never draw anything to the screen.
+    
+    To extend Drawable, subclasses must at least implement the
+    render() function. render() is called whenever it is time
+    to redraw the widget, and should use the drawing methods
+    (draw, drawDown, line, lineDown, clear and box) defined here
+    rather than directly calling the versions of same in Engine.
+    These methods all take positional arguments relative to the
+    origin, the upper-left, of the Drawable.
+
+    touch(), untouch() and drawContents() are used by DTK core to
+    control when render is called. Render will be called by
+    drawContents only if the object has been touched by a call to
+    touch(). untouch() is the inverse of touch(). Sub-classes will
+    generally not need to override any of these methods.
+
+    setSize is used by DTK core to set the size of the widget.
+    after it is called, the instance attributes y, x, h, and w are
+    set to the on screen origin (y, x) and the size (h, w) of the
+    Drawable. These should not be changed from within sub-classes.
+    Some drawables which do not wish to take up the entire space
+    allotted for them by DTK core may override setSize. 
+
+    Finally, each Drawable has a reference to the Engine and the
+    context in which it exists. For more information on input
+    contexts, see the documentation in InputContext and Engine.
+    Drawables may check the focused attribute to determine if
+    they are currently the focused Drawable in their context. Some
+    Drawables use this value to change their drawing style: ListBox
+    shows the active highlighted row in reverse-colors when it has
+    focus, and normally when it does not, creating a cursor only
+    when the ListBox has focus.
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        the only thing a drawable absolutely has to have is a
-        reference to the parent object. the base Drawable will
-        have the Engine as its parent.
-        """
 
         super(Drawable, self).__init__(*args, **kwargs)
 
@@ -179,32 +238,24 @@ class Drawable(InputHandler):
         raise EngineException("Do not set focus on a Drawable directly.  Call Engine::setFocus instead.")
     def _getFocused(self):
         return self.context.getFocusedDrawable() is self
-    focused = property(_getFocused, _setFocused)
+    focused = property(_getFocused, _setFocused,
+            doc="True when this Drawable is the focused Drawable. "
+                "Focus means this drawable will get input keys "
+                "before any others.")
 
     
     def __str__(self):
         """
-        returns the type of class this is. use getName() to
-        get the name of the instance
+        A printable representation of this Drawable, either the name
+        attribute, if set, or the class name.
         """
         return self.name
-
-
-    def handleInput(self, input):
-        """
-        Container-type drawables should override this to call
-        handleInput on the correct child or children. For other,
-        "regular" drawables, we just invoke InputHandler's
-        handleInput here, and everything works.
-        """
-        return super(Drawable, self).handleInput(input)
 
 
     def touch(self):
         """
         marks the drawable as needing a redraw. this is usually called
-        by the functions of the Drawable, and should not need to be
-        called from outside
+        by the functions of the Drawable
         """
         self.touched = True
 
@@ -212,8 +263,7 @@ class Drawable(InputHandler):
     def untouch(self):
         """
         marks the drawable as not needing a redraw. this is usually
-        called by the functions of the Drawable, and should not need
-        to be called from outside
+        called by the functions of the Drawable
         """
         self.touched = False
 
@@ -241,12 +291,12 @@ class Drawable(InputHandler):
 
     def drawContents(self):
         """
-        if this drawable needs redrawing (because someone called
-        touch() on it) then redraw using the render() method.
-        otherwise, do nothing.
+        If the Drawable needs redrawing, will delegate to the
+        render() method and mark it as no longer needing redraw;
+        otherwise, does nothing
         """
         if self.touched:
-            self.log.debug('calling render()')
+            self.log.debug('drawContents() calling render()')
             self.render()
             self.untouch()
 
@@ -300,7 +350,7 @@ class Drawable(InputHandler):
 
     def hideCursor(self):
         """
-        call Engine's hideCursor method
+        Hide the cursor in terminals which support it.
         """
         self.engine.hideCursor()
 
@@ -565,6 +615,17 @@ class ContainerException(Exception):
 
 
 class InputContext(InputHandler):
+    """
+    An InputContext creates an isolated set of Drawables on which
+    Engine's input loop operates. Essentially, InputContext is
+    a pointer to a root drawable and some methods for manipulating
+    the tree of drawables rooted there. This is useful, though,
+    as it provides a way for Drawables to create nested input loops
+    if they have some special purpose. For example, Dialog creates
+    an InputContext and processes it so that interactions with the
+    dialog are not available to the "regular" DTK drawable tree (ie
+    the Dialog is modal).
+    """
 
     def __init__(self, modal = True, *args, **kwargs):
         super(InputContext, self).__init__(*args, **kwargs)
@@ -583,14 +644,15 @@ class InputContext(InputHandler):
 
     def unquit(self):
         """
-        allow input processing to happen again
+        allow input processing to happen again. this is generally only
+        useful if re-using an already-quit InputContext
         """
         self.done = False
 
 
     def getFocusedDrawable(self):
         """
-        returns the drawable that has focus
+        returns the drawable in this context that has focus
         """
         if isinstance(self.root, Container):
             return self.root.getActiveDrawable()
@@ -600,7 +662,7 @@ class InputContext(InputHandler):
 
     def setFocus(self, drawable):
         """
-        Set the focused drawable to the given one
+        Set the focused drawable in this context to the given one
         """
 
         if isinstance(self.root, Container):
@@ -615,14 +677,14 @@ class InputContext(InputHandler):
 
     def setRoot(self, drawable):
         """
-        set the given drawable as the root drawable.
+        set the given drawable as the root drawable of the context
         """
         self.root = drawable
 
 
     def getRoot(self):
         """
-        returns the root drawable, as set by setRoot()
+        returns the root drawable of the context, as set by setRoot()
         """
         return self.root
 
@@ -632,28 +694,10 @@ class InputContext(InputHandler):
 
 class Engine(InputContext):
     """
-    Engine handles the main event loop of dtk, manages
-    a list of Drawables, and handles input parsing and
-    dispatch to Drawables.
-
-    conventions:
-    
-    the 'root' Drawable is the currently displayed
-    drawable that takes up the entire available screen.
-    it may itself contain other Drawables, which may be
-    smaller.
-
-    the 'focused' Drawable is the first to recieve input
-    after it is parsed. it is always in the tree of
-    Drawables defined with the 'root' drawable as it's
-    root (hence the name).
-
-    for the most part, Engine is an abstract class, that
-    should have functionality implemented in a platform-
-    specific way by a child class (eg CursesEngine)
-
-    Engine is an abstract class. CursesEngine is the concrete
-    implementation for the curses library.
+    Engine handles input processing, screen drawing and the event
+    loop for the DTK core. Engine is an InputContext which means
+    that it also contains a root drawable and methods for
+    manipulating a tree of Drawables.
 
     Engine is a singleton. This means you don't need to ever
     keep a reference to it, you can simply call
@@ -662,6 +706,19 @@ class Engine(InputContext):
 
     at any time, and you will get the first-created instance
     of Engine assigned to e.
+
+
+    conventions:
+    
+    * the 'root' Drawable is the currently displayed
+      drawable that takes up the entire available screen.
+      it may itself contain other Drawables, which may be
+      smaller.
+
+    * the 'focused' Drawable is the first to recieve input
+      after it is parsed. it is always in the tree of
+      Drawables defined with the 'root' drawable as it's
+      root (hence the name).
     """
 
     # for managing the singleton instance
@@ -742,9 +799,7 @@ class Engine(InputContext):
 
     def __init__(self, **kwargs):
         """
-        Initialize a new Engine. Engine will create a console environment
-        and everything, so you don't need to do that outside or pass
-        any arguments in. Calling the mainLoop() function will start
+        Initialize a new Engine. Calling the mainLoop() function will start
         the main event loop.
         """
 
@@ -823,7 +878,7 @@ class Engine(InputContext):
 
     def setTitle(self, title):
         """
-        Set the title of the window running DTK, if possible
+        Set the title of the window running DTK
         """
         self.title = title
         print "\033]0;%s\007" % self.title
@@ -838,29 +893,26 @@ class Engine(InputContext):
 
     def mainLoop(self):
         """
-        runs the main event loop
+        runs the main input loop
         """
 
         # check things we need
         if self.root is None:
             raise EngineError, "Must set a root Drawable with setRoot()"
 
-        curses.wrapper(self.cursesMainLoop)
+        curses.wrapper(self._setupCurses)
 
 
-    def cursesMainLoop(self, scr):
+    def _setupCurses(self, scr):
         """
-        the actual main loop. waits for input and
-        does its thing.
+        perform post-curses-initialization setup required for
+        Engine functioning.
         """
 
         self.scr = scr
         (self.h, self.w) = self.scr.getmaxyx()
         
         self.setTitle(self.title)
-
-        # our terminating condition
-        self.done = False
 
         # ask curses to parse the input for us into
         # single integers at a time
@@ -898,6 +950,14 @@ class Engine(InputContext):
 
 
     def contextLoop(self, context):
+        """
+        contextLoop runs an input loop on a given InputContext. It
+        redraws the context's Drawable tree, beginning at the root,
+        then waits for keyboard input from the user, parses it into
+        a DTK friendly string (eg "page up" and "enter") and passes
+        it off to the context's root Drawable for input processing.
+        """
+
         (h, w) = self.scr.getmaxyx()
         context.root.setSize(0, 0, h, w)
 
@@ -978,26 +1038,19 @@ class Engine(InputContext):
 
     def parseInput(self, char):
         """
-        if the char is a printable character, we just return it.
-        if it's one of the special curses characters (for things
-        like arrow keys, combinations, etc) then we will try
-        our best to figure out what it was and return that instead.
+        Returns a DTK-friendly representation of the given input,
+        or raises a NoInputCharException if the input could not
+        be properly parsed. "DTK-friendly" is the character itself
+        for printable character input, or else a short string
+        describing the key (eg "page up", "space", "enter") for
+        some keys. The complete list of DTK-friendly strings can
+        be gotten from the Engine.capabilities() dict under the key 
+        'keynames'
 
-        Ths method has been ruined by Peter Norton
-
-        Now with logging
+        @author Peter Norton
         """
 
-        # In half-delay mode with 8-bit (and more! BONUS BITS!)  input
-        # python curses' screen.getch() will return -1 to indicate
-        # that no key was pressed. It's documented as raising an
-        # exception, but I'm happy to get something consistant in this
-        # all-too-underdocumented module.
-        #
-        # XXX report the documentation inconsistancy to get it fixed?
-        #
-        # -PN
-        if char == -1:
+        if char < 0:
             # awwww... heck, raise an exception
             raise NoInputCharException
 
@@ -1074,7 +1127,7 @@ class Engine(InputContext):
     def touchAll(self):
         """
         causes all drawables to be re-drawn on the next refresh
-        TODO: implement in Container?
+        TODO: move to InputContext?
         """
         if isinstance(self.root, Container):
             self.root.touchAll()
