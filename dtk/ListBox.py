@@ -162,7 +162,8 @@ class ListBox(Drawable):
         self.touch()
 
     def remove(self, item):
-        self.selected.remove(self.index[item])
+        if self.items.index(item) in self.selected:
+            self.selected.remove(self.items.index(item))
         self.items.remove(item)
         self.touch()
 
