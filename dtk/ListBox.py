@@ -18,8 +18,8 @@ class ListBox(Drawable):
     """
 
     def __init__(self, selection = 'multiple', vimlike = False, 
-            hstyle = {'highlight':True}, sstyle = {'bold':True}, ustyle = {},
-            scheck = '', ucheck = '', **kwargs):
+                 hstyle = None, sstyle = None, ustyle = None,
+                 scheck = None, ucheck = None, **kwargs):
         """
         Initialize the ListBox.
 
@@ -226,7 +226,8 @@ class ListBox(Drawable):
 
         self.touch()
 
-    def setItems(self, items, indices = None, highlighted = 0, selected = None):
+    def setItems(self, items, indices = None,
+                 highlighted = 0, selected = None):
         """
         sets the items list and currently highlighted item
         """
@@ -369,7 +370,8 @@ class ListBox(Drawable):
             self.multipleSelection = False
 
 
-    def setDrawStyle(self, hstyle = {'highlight':True}, sstyle = {'bold':True}, ustyle = {}, scheck = '', ucheck = ''):
+    def setDrawStyle(self, hstyle = None, sstyle = None, ustyle = None,
+                     scheck = None, ucheck = None):
         """
         Set the drawing style. sstyle and ustyle are lists of drawing
         attribute keywords (eg 'bold' or 'green'). scheck and ucheck are
@@ -393,11 +395,11 @@ class ListBox(Drawable):
         @param ucheck: the check mark to be applied to unselected items
         @type  ucheck: string
         """
-        self.hstyle = hstyle
-        self.sstyle = sstyle
-        self.ustyle = ustyle
-        self.scheck = scheck
-        self.ucheck = ucheck
+        self.hstyle = hstyle or dict(highlight=True)
+        self.sstyle = sstyle or dict(bold=True)
+        self.ustyle = ustyle or dict()
+        self.scheck = scheck or ''
+        self.ucheck = ucheck or ''
 
         if self.ucheck != '' or self.scheck != '':
             self.prefixlen = max([len(self.ucheck), len(self.scheck)])
