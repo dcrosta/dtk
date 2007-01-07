@@ -336,6 +336,26 @@ class Drawable(InputHandler):
             self.h = h
 
 
+    # convenience method for binding and unbinding events on
+    # this instance
+    def bindEvent(self, event, method, *args, **kwargs):
+        """
+        bind method with the given args and keyword args
+        on this instance. see InputContext.bindEvent for
+        more details on event binding.
+        """
+        self.context.bindEvent(self, event, method, *args, **kwargs)
+    
+
+    def unbindEvent(self, event, method):
+        """
+        unbind the given method on this instance. see
+        InputContext.bindEvent for more details on event
+        binding.
+        """
+        self.context.unbindEvent(self, event, method)
+
+
     # drawables should use these methods for drawing rather than
     # directly calling Engine's equivalents, since these will
     # pass a reference to this Drawable to the Engine for bounding
@@ -634,6 +654,17 @@ class InputContext(InputHandler):
         self.modal = modal
         self.done = False
 
+        # a list of tuples (source, event)
+        self.eventQueue = []
+
+        # nested dict of bindings:
+        #
+        # eventBindings keyed by source (incl None)
+        #  + sub-dicts keyed by event
+        #     + sub-dicts keyed by method
+        #        + value is list of tuples (*args, **kwargs)
+        self.eventBindings = {}
+
 
     def quit(self):
         """
@@ -687,9 +718,106 @@ class InputContext(InputHandler):
         returns the root drawable of the context, as set by setRoot()
         """
         return self.root
+    
+
+    def bindEvent(self, source, event, method, *args, **kwargs):
+        """
+
+        add a binding for events of the given type from the given source.
+        some events without a source object may have 'None' as the
+        source; for others, source will be a reference to the Drawable
+        which caused the event. method may be a function or method. when
+        a matching event is found in the event queue, method will be
+        called with the given arguments and keyword arguments. many
+        bindings may be made for a given (source, event, method). bound
+        methods with an argument named '_source_obj' will receive a
+        reference to the source in that argument. bound methods with an
+        argument named '_event_type' will receive a copy of the event
+        type (usually a string) in thar argument.
+        
+        the return value of bound methods (if any) is ignored when
+        processing events
+        """
+
+        if source not in self.eventBindings:
+            self.eventBindings[source] = {}
+
+        if event not in self.eventBindings[source]:
+            self.eventBindings[source][event] = {}
+
+        self.eventBindings[source][event][method] = (args, kwargs)
+        self.log.debug('bound event handler for (%s, %s) => %s', source, event, method)
 
 
+    def unbindEvent(self, source, event, method):
+        """
+        remove the given method from the list of event bindings on the
+        given source and event.
+        """
+        try:
+            del self.eventBindings[source][event][method]
+            self.log.debug("unbound %s on (%s, %s)", method, source, event)
+        
+        except KeyError:
+            self.log.debug("no bindings for %s on (%s, %s)", method, source, event)
 
+
+    def enqueueEvent(self, source, event):
+        """
+        add an event to the event queue. the event queue is processed
+        periodically by the contextLoop (see Engine), at which time
+        any events with matching bindings will trigger a call to
+        each bound method. for user events without a source object,
+        set source to 'None', which will match bindings to events
+        with 'None' as source.
+        """
+        self.eventQueue.append((source, event))
+        self.log.debug('enqueued event for (%s, %s)', source, event)
+
+
+    def processEvents(self):
+        """
+        process all the events in the event queue, and clear the queue
+        """
+
+        for (source, event) in self.eventQueue:
+            # do this in a try/catch since we expect
+            # it to fail in most cases
+            try:
+                # the dict of methods bound to this (source, event)
+                bindings = self.eventBindings[source][event]
+
+                # each method bound to the (source, event)
+                for method in bindings.keys():
+                    (args, kwargs) = bindings[method]
+
+                    # copy the kwargs dictionary so that we don't save any of the
+                    # extra information we're about to conditionally pass along
+                    # (or overwrite anything passed in from the user)
+                    kwargs = dict(kwargs)
+
+                    # if the method is asking for a _source_obj argument,
+                    # bind the event source to the method before calling it
+                    # unless another object is already bound to the method
+                    # TODO this is actually broken. it will still fill the slot
+                    # if the user passes in a POSITIONAL argument for _source_obj,
+                    # resulting in an exception.
+                    if '_source_obj' in method.func_code.co_varnames:
+                        kwargs['_source_obj'] = kwargs.get('_source_obj', None) or source
+
+                    # do the same for _event_type
+                    if '_event_type' in method.func_code.co_varnames:
+                        kwargs['_event_type'] = kwargs.get('_event_type', None) or event
+
+
+                    method(*args, **kwargs)
+                    self.log.debug('calling %s(*args = %s, **kwargs = %s)', method, args, kwargs)
+
+            except KeyError:
+                pass
+
+        # finally reset the queue
+        self.eventQueue = []
 
 
 class Engine(InputContext):
@@ -942,7 +1070,7 @@ class Engine(InputContext):
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        curses.halfdelay(3)
+        #curses.halfdelay(3)
 
         self.contextLoop(self)
 
@@ -957,6 +1085,9 @@ class Engine(InputContext):
         a DTK friendly string (eg "page up" and "enter") and passes
         it off to the context's root Drawable for input processing.
         """
+
+        self.log.debug('processing events at start of context loop')
+        context.processEvents()
 
         (h, w) = self.scr.getmaxyx()
         context.root.setSize(0, 0, h, w)
@@ -994,6 +1125,8 @@ class Engine(InputContext):
 
 
             context.root.drawContents()
+            self.log.debug('processing events after drawing')
+            context.processEvents()
 
 
             # draw the cursor only if it's valid and should be shown
@@ -1032,6 +1165,11 @@ class Engine(InputContext):
                 if not context.root.handleInput(input) and not context.modal:
                     self.log.debug('Engine: calling handleInput on %s', context)
                     context.handleInput(input)
+
+
+            # input handling may have caused events, so we process them here
+            self.log.debug('processing events after input handling')
+            context.processEvents()
         
 
 

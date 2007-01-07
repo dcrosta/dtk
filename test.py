@@ -214,6 +214,25 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
 
     p.bindKey('enter', showDialog)
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'event':
+    root = dtk.Rows()
+    e.setRoot(root)
+
+    tf = dtk.TextField()
+    root.addRow(tf, fixedsize = 1)
+
+    p = dtk.Pager()
+    root.addRow(p)
+
+    def onchange(pager, _source_obj, _event_type):
+        pager.setText("got event '%s' from %s" % (_event_type, _source_obj))
+
+    tf.bindEvent('text changed', onchange, pager = p)
+
+    tf.bindKey('page up', tf.unbindEvent, 'text changed', onchange)
+
+    tf.bindKey('esc', e.quit)
+
 else:
     lb = dtk.ListBox(vimlike = True)
     e.setRoot(lb)
