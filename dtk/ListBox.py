@@ -69,8 +69,6 @@ class ListBox(Drawable):
         self.selected = []
         self.items = []
 
-        self.len = 0
-
         # remember the selection type
         self.setSelectionType(selection)
 
@@ -94,60 +92,6 @@ class ListBox(Drawable):
             self.bindKey('j', self.moveDown)
             self.bindKey('k', self.moveUp)
 
-
-    # to conform, roughly, to the list interface
-    def __contains__(self, item):
-        """
-        we'll hand this off to the underlying data
-        """
-        return item in self.items
-
-    def __delitem__(self, key):
-        """
-        check if we need to deal with the selected or highlighted items
-        """
-
-        if type(key) == types.SliceType:
-            step = key.step or 1
-            for i in range(key.start, key.stop, step):
-                self.__delitem__(i)
-
-        elif type(key) == types.IntType:
-            if key in self.selected:
-                self.selected.remove(key)
-
-            if key == self.highlighted:
-                self.highlighted -= 1
-
-            self.len -= 1
-            if self.len < 0:
-                self.len = 0
-
-            self.touch()
-
-        else:
-            raise ValueError, "unknown key type: %s" % type(key)
-
-
-    def __getitem__(self, index):
-        return self.items[index]
-
-    def __iadd__(self, other):
-        """
-        concatenation, like extend()
-        """
-        self.len += len(other)
-        self.touch()
-
-    def __iter__(self):
-        return iter(self.items)
-
-    def __len__(self):
-        return self.len
-
-    def __setitem__(self, key, item):
-        raise Exception, "not implemented yet"
-
     def _get_repr(self, item):
         """
         get the printable string for this list item. 
@@ -163,23 +107,14 @@ class ListBox(Drawable):
         return str_rep
 
     def append(self, item):
-        """
-        check if we need to deal with the selected or highlighted items
-        """
-        self.len += 1
+        self.items.append(item)
         self.touch()
 
     def count(self, item):
-        """
-        returns number of i's for which self[i] == item
-        """
         return self.items.count(item)
 
     def extend(self, other):
-        """
-        we just use the __iadd__ operator
-        """
-        self += other
+        self.items.extend(other)
         self.touch()
 
     def index(self, item, *args):
@@ -190,40 +125,37 @@ class ListBox(Drawable):
         return self.items.index(item, *args)
 
     def insert(self, index, item):
-        self.len += 1
-
         selected = []
         for elm in self.selected:
             if elm >= index:
                 selected.append(elm + 1)
             else:
                 selected.append(elm)
-
         self.selected = selected
+        self.items.insert(index, item)
 
         self.touch()
 
     def pop(self, index = None):
         """
         pops the end of the list by default
+        todo this should return the popped item
         """
-        self.len -= 1
         if index is None:
-            self.selected.remove(self.len)
+            self.selected.remove(len(self.items))
         else:
             self.selected.remove(index)
-
+        self.items.pop(index)
         self.touch()
 
     def remove(self, item):
-        self.len -= 1
         self.selected.remove(self.index[item])
-
+        self.items.remove(item)
         self.touch()
 
     def reverse(self):
-        self.selected = [(self.len - ix - 1) for ix in self.selected]
-
+        self.selected = [(len(self.items) - ix - 1) for ix in self.selected]
+        self.items.reverse()
         self.touch()
 
     def setItems(self, items, indices = None,
@@ -240,9 +172,9 @@ class ListBox(Drawable):
         if not len(items) == len(indices):
             raise RuntimeError, 'setItems expects len(items) == len(indices)'
 
+        # make and store a copy of the incoming items
         self.items = list(items)
         self.indices = indices
-        self.len = len(self.items)
 
         self.highlighted = highlighted
         if selected is not None:
@@ -262,13 +194,13 @@ class ListBox(Drawable):
         # list is, and it makes a copy of the int self.len if we were
         # to give that as the userdata
         if index == 'end':
-            index = self.len
+            index = len(self.items)
             
         self.highlighted = index
         if self.highlighted < 0:
             self.highlighted = 0
-        elif self.highlighted >= self.len:
-            self.highlighted = self.len - 1
+        elif self.highlighted >= len(self.items):
+            self.highlighted = len(self.items) - 1
             if self.highlighted < 0:
                 self.highlighted = 0
 
@@ -285,7 +217,7 @@ class ListBox(Drawable):
         """
         move the highlight to the last item
         """
-        self.move(self.len)
+        self.move(len(self.items))
 
     def moveUp(self):
         """
@@ -312,23 +244,21 @@ class ListBox(Drawable):
         self.move(self.highlighted - self.h)
 
 
-    def __len__(self):
-        return self.len
-
-
     def index(self):
         """
         return the index associated with the first highligted item
+        todo this is a terrible name.
         """
-        if self.len == 0:
+        if len(self.items) == 0:
             return None
         return self.indices[self.highlighted]
 
     def item(self):
         """
         return the highlighted item
+        todo this is a terrible name.
         """
-        if self.len == 0:
+        if len(self.items) == 0:
             return None
         return self.items[self.highlighted]
     
@@ -336,9 +266,12 @@ class ListBox(Drawable):
         """
         return a list of the selected items
         """
-        return [item for (item, index) in zip(self.items, range(len(self.items))) if index in self.selected]
+        return [item for (item, index)
+                in zip(self.items, range(len(self.items)))
+                if index in self.selected]
 
     def getHighlightedItem(self):
+        # todo errorcheck
         return self.items[self.highlighted]
 
     def setSelectionType(self, selectionType):
@@ -350,11 +283,16 @@ class ListBox(Drawable):
 
         @param selectionType: one of 'multiple', 'single', or 'none'
         """
-        if selectionType.lower() == 'multiple':
+        selectionType = selectionType.lower()
+        try:
+            assert selectionType in 'multiple single none'.split()
+        except AssertionError:
+            raise Exception("selection type must be one of multiple, single or none")
+        if selectionType == 'multiple':
             self.allowSelection = True
             self.multipleSelection = True
 
-        elif selectionType.lower() == 'single':
+        elif selectionType == 'single':
             # toggleSelection expects the list to have
             # at least one element -- this should not
             # cause anything to be displayed as selected
