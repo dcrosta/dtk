@@ -92,6 +92,19 @@ class ListBox(Drawable):
             self.bindKey('j', self.moveDown)
             self.bindKey('k', self.moveUp)
 
+    def __len__(self):
+        return len(self.items)
+    len = property(__len__)
+
+    def __iter__(self):
+        return iter(self.items)
+
+    def __getitem__(self, *args, **kwargs):
+        return self.items.__getitem__(*args, **kwargs)
+
+    def __contains__(self, *args, **kwargs):
+        return self.items.__contains__(*args, **kwargs)
+    
     def _get_repr(self, item):
         """
         get the printable string for this list item. 
