@@ -289,6 +289,18 @@ class Drawable(InputHandler):
         self.touch()
 
 
+    def setContext(self, context):
+        """
+        update the context reference and rebind events
+        to the new context
+        """
+        self.log.debug('moving bindings from context %s to %s', self.context, context)
+
+        bindings = self.context.dropBindings(self)
+        self.context = context
+        self.context.loadBindings(self, bindings)
+
+
     def drawContents(self):
         """
         If the Drawable needs redrawing, will delegate to the
@@ -354,6 +366,14 @@ class Drawable(InputHandler):
         binding.
         """
         self.context.unbindEvent(self, event, method)
+
+
+    def fireEvent(self, event):
+        """
+        enqueue the given event with the context with self
+        as the source
+        """
+        self.context.enqueueEvent(self, event)
 
 
     # drawables should use these methods for drawing rather than
@@ -598,12 +618,9 @@ class Container(Drawable):
         within Engine
         """
         for child in self.children:
-            if isinstance(child, Container):
-                child.setContext(context)
-            else:
-                child.context = context
+            child.setContext(context)
 
-        self.context = context
+        super(Container, self).setContext(context)
 
 
     def handleInput(self, input):
@@ -650,6 +667,9 @@ class InputContext(InputHandler):
     def __init__(self, modal = True, *args, **kwargs):
         super(InputContext, self).__init__(*args, **kwargs)
 
+        if getattr(self, 'log', None) is None:
+            self.log = logging.getLogger('dtk')
+
         self.root = None
         self.modal = modal
         self.done = False
@@ -662,7 +682,7 @@ class InputContext(InputHandler):
         # eventBindings keyed by source (incl None)
         #  + sub-dicts keyed by event
         #     + sub-dicts keyed by method
-        #        + value is list of tuples (*args, **kwargs)
+        #        + value is tuple (*args, **kwargs)
         self.eventBindings = {}
 
 
@@ -818,6 +838,60 @@ class InputContext(InputHandler):
 
         # finally reset the queue
         self.eventQueue = []
+
+
+    def dropBindings(self, source):
+        """
+        return the dict of bindings for the given source, and
+        remove them from the eventBindings dictionary. this
+        should only be called from Drawable.setContext()
+        """
+        bindings = self.eventBindings.get(source, {})
+
+        try:
+            del self.eventBindings[source]
+        except KeyError:
+            pass
+
+        return bindings
+    
+
+    def loadBindings(self, source, bindings):
+        """
+        add the bindings to the bindings dictionary for the given
+        source. this should only be called from Drawable.setContext().
+        if any bindings exist for the (source, event, method), then
+        we will overwrite them here and issue a warning to the log
+        """
+
+        if source not in self.eventBindings:
+            # the simple case, where no previous bindings
+            # exist for the source -- just set the reference
+            self.eventBindings[source] = bindings
+
+        else:
+            # if previous bindings exist, we have to merge
+            # the incoming ones with what exists. i doubt
+            # this will happen, but be careful just in case
+            sbindings = self.eventBindings[source]
+
+            for event in bindings.keys():
+                if event not in sbindings:
+                    sbindings[event] = bindings[event]
+
+                else:
+                    ebindings = self.eventBindings[source][event]
+
+                    new_ebindings = bindings[event]
+
+                    for method in new_ebindings.keys():
+                        if method in ebindings:
+                            self.log.warn('overwriting existing binding on (%s, %s) => %s', source, event, method)
+
+                        ebindings[method] = new_ebindings[method]
+                        
+                    
+
 
 
 class Engine(InputContext):
@@ -1066,11 +1140,11 @@ class Engine(InputContext):
         self.lasth = self.lastw = 0
         self.resized = True
 
-        # handle input every 2/10th of a second
+        # handle input every 1/2 second
         #
         # this is necessary to handle input of (possibly
         # among others) 'esc'
-        #curses.halfdelay(3)
+        curses.halfdelay(5)
 
         self.contextLoop(self)
 
@@ -1086,8 +1160,14 @@ class Engine(InputContext):
         it off to the context's root Drawable for input processing.
         """
 
-        self.log.debug('processing events at start of context loop')
+
+        # NOTE: don't put any logging in the loop that will happen
+        # each iteration, else the log gets full of not-so-helpful
+        # messages every half second
+
+
         context.processEvents()
+
 
         (h, w) = self.scr.getmaxyx()
         context.root.setSize(0, 0, h, w)
@@ -1106,7 +1186,6 @@ class Engine(InputContext):
             resized = self.resized or h != self.lasth or w != self.lastw
             if resized:
                 # a resize has happened
-                self.log.debug('screen resized (%d, %d) => (%d, %d)', self.lasth, self.lastw, h, w)
 
                 # try to erase everything (necessary in some terms)
                 self.scr.move(0,0)
@@ -1125,7 +1204,6 @@ class Engine(InputContext):
 
 
             context.root.drawContents()
-            self.log.debug('processing events after drawing')
             context.processEvents()
 
 
@@ -1168,7 +1246,6 @@ class Engine(InputContext):
 
 
             # input handling may have caused events, so we process them here
-            self.log.debug('processing events after input handling')
             context.processEvents()
         
 

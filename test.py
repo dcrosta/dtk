@@ -228,10 +228,16 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'event':
         pager.setText("got event '%s' from %s" % (_event_type, _source_obj))
 
     tf.bindEvent('text changed', onchange, pager = p)
-
     tf.bindKey('page up', tf.unbindEvent, 'text changed', onchange)
 
     tf.bindKey('esc', e.quit)
+
+    d = dtk.Dialog()
+    d.setText('a happy dialog!')
+
+    d.bindEvent('dismissed', p.setText, 'dialog was dismissed')
+
+    tf.bindKey('page down', d.show)
 
 else:
     lb = dtk.ListBox(vimlike = True)
