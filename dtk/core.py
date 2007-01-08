@@ -8,6 +8,7 @@ import curses
 import curses.ascii
 
 
+
 class InputHandler(object):
     """
     The base class for objects which deal with keyboard input.
