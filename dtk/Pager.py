@@ -12,6 +12,15 @@ class Pager(Drawable):
 
 
     def __init__(self, vimlike = False, **kwargs):
+        """
+        Pager takes an optional parameter 'vimlike': when
+        True enables bindings for vim-like navigation (j/k
+        for up/down)
+
+        Events:
+         * 'cursor moved' when the highlight/cursor moves
+         * 'text changed' when the pager contents are changed
+        """
         super(Pager, self).__init__(**kwargs)
 
         self.firstVisible = 0
@@ -43,6 +52,8 @@ class Pager(Drawable):
         self.text = text
         self.touch()
 
+        self.fireEvent('text changed')
+
     
     def getText(self):
         """
@@ -61,6 +72,8 @@ class Pager(Drawable):
         self.firstVisible = 0
         self.touch()
 
+        self.fireEvent('cursor moved')
+
 
     def moveToBottom(self):
         """
@@ -68,6 +81,8 @@ class Pager(Drawable):
         """
         self.firstVisible = max(0, len(self.lines) - self.h)
         self.touch()
+
+        self.fireEvent('cursor moved')
 
 
     def moveUp(self):
@@ -79,6 +94,8 @@ class Pager(Drawable):
             self.firstVisible = 0
         self.touch()
 
+        self.fireEvent('cursor moved')
+
 
     def moveDown(self):
         """
@@ -88,6 +105,8 @@ class Pager(Drawable):
         if self.firstVisible > len(self.lines) - 1:
             self.firstVisible = len(self.lines) - 1
         self.touch()
+
+        self.fireEvent('cursor moved')
 
 
     def pageDown(self):
@@ -99,6 +118,8 @@ class Pager(Drawable):
             self.firstVisible = len(self.lines) - 1
         self.touch()
 
+        self.fireEvent('cursor moved')
+
 
     def pageUp(self):
         """
@@ -108,6 +129,8 @@ class Pager(Drawable):
         if self.firstVisible < 0:
             self.firstVisible = 0
         self.touch()
+
+        self.fireEvent('cursor moved')
 
 
     def setSize(self, y, x, h, w):

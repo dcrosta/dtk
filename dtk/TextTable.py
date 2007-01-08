@@ -9,6 +9,9 @@ class TextTable(ListBox):
     a multicolumn sortable interface by accepting sequences rather
     than single items for display (each element in the sequence will
     appear in its own column, subject to layout rules, etc).
+
+    Events (in addition to ListBox events):
+     * 'columns changed' when a column is added or removed
     """
 
     class TextColumn:
@@ -52,6 +55,8 @@ class TextTable(ListBox):
         self.colnames.append(name)
 
         self.touch()
+
+        self.fireEvent('columns changed')
 
     def render(self):
         """

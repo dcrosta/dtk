@@ -9,7 +9,15 @@ class RowColumns(Container):
     scheme for Drawables. Supports a border option, which
     will draw a one-character border around the whole area,
     or between the row, or both.
+
+    Events:
+     * 'child added' when a child is added (but not when a
+       separator is added)
+     * 'active child changed' when the active child is changed,
+       which happens when nextChild (nextRow, nextColumn) or
+       prevChild (prevRow, prevColumn) is called
     """
+
     class Separator:
         def __init__(self, type):
             self.fixedsize = 1
@@ -140,3 +148,5 @@ class RowColumns(Container):
         self.active = self.children[index]
         self.touch()
         self.active.touch()
+
+        self.fireEvent('active child changed')

@@ -1,6 +1,19 @@
 from core import Drawable
 
 class Select(Drawable):
+    """
+    Select is a widget which looks like a button when
+    unfocused, and shows a horizontal list of choices
+    when focused. The list will take up as much room as
+    is available to be drawn or as is needed. Selection
+    changes with the left and right arrow keys.
+
+    Events:
+     * 'selection changed' when the selection changes
+     * 'options changed' when the options in the Select
+       are changed
+    """
+
 
     def __init__(self, **kwargs):
         super(Select, self).__init__(**kwargs)
@@ -16,21 +29,27 @@ class Select(Drawable):
         self.options = options
         self.touch()
 
+        self.fireEvent('options changed')
+
 
     def setValue(self, value):
         if value in self.options:
             self.value = value
             self.touch()
 
+            self.fireEvent('selection changed')
+
         elif value is None:
             self.value = ''
             self.touch()
+
+            self.fireEvent('selection changed')
 
 
     def getValue(self):
         return self.value
 
-    # alias getText() to getValue()
+    # alias getValue() as getText() 
     getText = getValue
 
 
@@ -44,6 +63,8 @@ class Select(Drawable):
 
         self.touch()
 
+        self.fireEvent('selection changed')
+
 
     def prevOption(self):
         if self.value in self.options:
@@ -54,6 +75,8 @@ class Select(Drawable):
             self.value = self.options[0]
 
         self.touch()
+
+        self.fireEvent('selection changed')
 
 
     def render(self):

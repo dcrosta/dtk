@@ -7,6 +7,9 @@ class Slideshow(Container):
     implements a simple layout scheme for Drawables which
     holds an arbitrary number of Drawables and only displays
     one at a time.
+
+    Events:
+     * 'active child changed' when a new slide is shown
     """
 
     def __init__(self, *args, **kwargs):
@@ -39,6 +42,8 @@ class Slideshow(Container):
         else:
             self.active = drawable
 
+            self.fireEvent('active child changed')
+
     def _setChildSizes(self):
         """
         hide all child Drawables except the currently-viewed one.
@@ -69,11 +74,15 @@ class Slideshow(Container):
         self.active = self.children[index]
         self.__refresh()
 
+        self.fireEvent('active child changed')
+
     def showSlide(self, slide):
         if slide not in self.children:
             return False
         self.active = slide
         self.__refresh()
+
+        self.fireEvent('active child changed')
 
     def drawContents(self):
         self.active.drawContents()

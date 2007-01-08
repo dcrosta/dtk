@@ -17,45 +17,19 @@ class ListBox(Drawable):
     views the list.
     """
 
-    def __init__(self, selection = 'multiple', vimlike = False, 
-                 hstyle = None, sstyle = None, ustyle = None,
-                 scheck = None, ucheck = None, **kwargs):
+    def __init__(self, selection = 'multiple', vimlike = False, **kwargs):
         """
-        Initialize the ListBox.
+        ListBox takes optional parameters 'selection' and 'vimlike':
 
-        @param parent: the parent class
-        @type  parent: dtk.Drawable
+         * selection controls the selection style - 'multiple', 'single'
+           or 'none'
+         * vimlike: when True enables bindings for vim-like navigation:
+           j/k for up/down
 
-        @param name: the name of this ListBox (used, eg, in logging)
-        @type  name: string
-
-        @param selection: the type of selection to be supported by this
-            ListBox. one of 'multiple', 'single' or 'none'
-        @type  selection: string
-
-        @param vimlike: whether this ListBox should support vimlike
-            keybindings. Currently binds 'j' to moveDown and 'k' to moveUp
-        @type  vimlike: boolean
-
-        @param hstyle: the style to be applied to the highlighted item. see
-            setDrawStyle()
-        @type  hstyle: dict
-
-        @param sstyle: the style to be applied to selected items. see
-            setDrawStyle()
-        @type  sstyle: dict
-
-        @param ustyle: the style to be applied to unselected items. see
-            setDrawStyle()
-        @type  ustyle: dict
-
-        @param scheck: the check mark to be applied to selected items. see
-            setDrawStyle()
-        @type  scheck: string
-
-        @param ucheck: the check mark to be applied to unselected items.
-            see setDrawStyle()
-        @type  ucheck: string
+        Events:
+         * 'selection changed' when the selection changes
+         * 'cursor moved' when the highlight/cursor moves
+         * 'content changed' when the list contents are changed
         """
         super(ListBox, self).__init__(**kwargs)
 
@@ -71,9 +45,6 @@ class ListBox(Drawable):
 
         # remember the selection type
         self.setSelectionType(selection)
-
-        # set the selection style
-        self.setDrawStyle(hstyle, sstyle, ustyle, scheck, ucheck)
 
         # sensible defaults 
         self.firstVisible = 0
@@ -123,12 +94,16 @@ class ListBox(Drawable):
         self.items.append(item)
         self.touch()
 
+        self.fireEvent('content changed')
+
     def count(self, item):
         return self.items.count(item)
 
     def extend(self, other):
         self.items.extend(other)
         self.touch()
+
+        self.fireEvent('content changed')
 
     def index(self, item, *args):
         """
@@ -149,6 +124,8 @@ class ListBox(Drawable):
 
         self.touch()
 
+        self.fireEvent('content changed')
+
     def pop(self, index = None):
         """
         pops the end of the list by default
@@ -161,16 +138,22 @@ class ListBox(Drawable):
         self.items.pop(index)
         self.touch()
 
+        self.fireEvent('content changed')
+
     def remove(self, item):
         if self.items.index(item) in self.selected:
             self.selected.remove(self.items.index(item))
         self.items.remove(item)
         self.touch()
 
+        self.fireEvent('content changed')
+
     def reverse(self):
         self.selected = [(len(self.items) - ix - 1) for ix in self.selected]
         self.items.reverse()
         self.touch()
+
+        self.fireEvent('content changed')
 
     def setItems(self, items, indices = None,
                  highlighted = 0, selected = None):
@@ -200,6 +183,8 @@ class ListBox(Drawable):
         self.firstVisible = 0
         self.touch()
 
+        self.fireEvent('content changed')
+
     def move(self, index):
         """
         move the highlight to the item at given index
@@ -219,6 +204,8 @@ class ListBox(Drawable):
                 self.highlighted = 0
 
         self.touch()
+
+        self.fireEvent('cursor moved')
 
 
     def moveToTop(self):
@@ -378,6 +365,8 @@ class ListBox(Drawable):
             self.selected[0] = self.highlighted
 
         self.touch()
+
+        self.fireEvent('selection changed')
 
     def render(self):
         """

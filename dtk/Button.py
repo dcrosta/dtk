@@ -2,18 +2,19 @@ from Label import Label
 
 class Button(Label):
     """
-    Similar to Label, but with some added keybindings.
+    Button is a clickable widget which is displayed with
+    customizable decoration. 'enter' is bound to the click
+    action which fires the 'clicked' event.
 
-    Supports the 'click' pseudo-keystroke for binding
-    actions to the click action on the button (default
-    hitting <enter>)
+    Events (in addition to standard Drawable events):
+     * 'clicked' when the user "clicks" the button (hitting enter)
     """
 
     def __init__(self, text = None, decoration = '[%s]', **kwargs):
         super(Button, self).__init__(text, **kwargs)
 
         self.setDecoration(decoration)
-        self.bindKey('enter', self._doClick)
+        self.bindKey('enter', self.fireEvent, 'clicked')
 
 
     def setDecoration(self, decoration):
@@ -23,14 +24,6 @@ class Button(Label):
         format conversion.
         """
         self.decoration = decoration
-
-
-    def _doClick(self):
-        """
-        Call parent's handleInput() method with the
-        'click' pseudo-key
-        """
-        super(Button, self).handleInput('click')
 
 
     def render(self):

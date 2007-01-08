@@ -24,6 +24,10 @@ class Dialog(Container):
     one of the buttons, depending on the type), it will
     create a psuedo-key, 'dismissed' which may be used
     as any other key (eg with bindKey).
+
+    Events (in additon to standard Drawable events):
+     * 'shown' when the dialog is shown
+     * 'dismissed' when the dialog is dismissed
     """
 
     def __init__(self, title = '', text = '', type = 'message', **kwargs):
@@ -170,6 +174,10 @@ class Dialog(Container):
 
         elif self.type == 'input':
             self.context.setFocus(self.kids['input'])
+
+
+        self.fireEvent('shown')
+
         
         self.engine.contextLoop(self.context)
         if self.type == 'message':
@@ -192,6 +200,7 @@ class Dialog(Container):
         called when any button is clicked
         """
         self.context.quit()
+        self.fireEvent('dismissed')
 
 
     def _clickedOK(self):
@@ -306,13 +315,6 @@ class Dialog(Container):
 
 
     def setSize(self, y, x, h, w):
-        if getattr(self, 'text', None)  is None or \
-           getattr(self, 'title', None) is None or \
-           getattr(self, 'type', None)  is None:
-            #XXX: raise an exception
-            return
-
-
         super(Dialog, self).setSize(y, x, h, w)
 
 
