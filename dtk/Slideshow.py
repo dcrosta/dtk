@@ -16,20 +16,6 @@ class Slideshow(Container):
         super(Slideshow, self).__init__(*args, **kwargs)
         self.bindKey('tab', self.nextSlide)
     
-    def focus(self):
-        """
-        called when this Slideshow gains focus. note that this
-        does not actually set focus.
-        """
-        return self.active.focus()
-
-    def unfocus(self):
-        """
-        called when this Slideshow loses focus. note that this
-        does not actually set focus.
-        """
-        self.active.unfocus()
-
     def addSlide(self, drawable):
         """
         add a Drawable to the end of the list of slides. the
