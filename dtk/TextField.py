@@ -36,6 +36,8 @@ class TextField(Drawable):
         self.moveToStart()
         self.touch()
 
+        self.fireEvent('text changed') 
+
 
     def getText(self):
         return self.buffer
@@ -83,16 +85,22 @@ class TextField(Drawable):
         self.buffer = self.buffer[:max(0, self.cursor-1)] + self.buffer[self.cursor:]
         self.moveLeft()
 
+        self.fireEvent('text changed') 
+
     def delete(self):
         self.buffer = self.buffer[:self.cursor] + self.buffer[self.cursor+1:]
 
         self.touch()
+
+        self.fireEvent('text changed') 
 
     def typing(self, _input_key):
         self.buffer = self.buffer[:self.cursor] + _input_key + self.buffer[self.cursor:]
         self.moveRight()
 
         self.touch()
+
+        self.fireEvent('text changed') 
 
     def render(self):
         """
