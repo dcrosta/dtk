@@ -145,8 +145,7 @@ class RowColumns(Container):
         get spuriously called from random points in the code.
         """
         self.active.touch()
-        self.active = self.children[index]
+        self.setActiveDrawable(self.children[index])
         self.touch()
-        self.active.touch()
 
         self.fireEvent('active child changed')
