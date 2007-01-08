@@ -283,6 +283,7 @@ class Drawable(InputHandler):
         this drawable has just gotten focus. fires the 'got focus'
         event
         """
+        self.touch()
         self.fireEvent('got focus')
 
 
@@ -291,6 +292,7 @@ class Drawable(InputHandler):
         this drawable has just lost focus. fires the 'lost focus'
         event
         """
+        self.touch()
         self.fireEvent('lost focus')
 
 
