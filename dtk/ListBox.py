@@ -36,6 +36,7 @@ class ListBox(Drawable):
         # the higlighted element is shown in reverse mode
         self.highlighted = 0
 
+        self.setDrawStyle()
 
         # these get immediately overwritten
         self.allowSelection = False
