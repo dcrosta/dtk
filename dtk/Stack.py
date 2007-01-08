@@ -32,7 +32,7 @@ class Stack(Container):
         self.children.append(drawable)
 
         drawable.setSize(self.y, self.x, self.h, self.w)
-        self.active = drawable
+        self.setActiveDrawable(drawable)
 
         self.clear()
         self.touch()
@@ -51,7 +51,7 @@ class Stack(Container):
 
             if self.active is drawable:
                 if len(self.children):
-                    self.active = self.children[-1]
+                    self.setActiveDrawable(self.children[-1])
                 else:
                     self.log.debug('forcing focus on self')
                     self.engine.setFocus(self)

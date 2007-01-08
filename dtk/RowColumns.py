@@ -48,7 +48,7 @@ class RowColumns(Container):
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
         if not len(self.children):
-            self.active = drawable
+            self.setActiveDrawable(drawable)
         self.children.append(drawable)
         self.cells.append(drawable)
         self.touch()
@@ -87,7 +87,7 @@ class RowColumns(Container):
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
         if not len(self.children):
-            self.active = drawable
+            self.setActiveDrawable(drawable)
         self.children.insert(index, drawable)
         self.cells.insert(index, drawable)
         self.touch()

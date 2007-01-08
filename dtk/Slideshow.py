@@ -40,7 +40,7 @@ class Slideshow(Container):
         if self.active:
             drawable.setSize(0, 0, 0, 0)
         else:
-            self.active = drawable
+            self.setActiveDrawable(drawable)
 
             self.fireEvent('active child changed')
 
@@ -71,7 +71,7 @@ class Slideshow(Container):
         index = self.children.index(self.active) + 1
         if( index >= len(self.children) ):
             index = 0
-        self.active = self.children[index]
+        self.setActiveDrawable(self.children[index])
         self.__refresh()
 
         self.fireEvent('active child changed')
@@ -79,7 +79,7 @@ class Slideshow(Container):
     def showSlide(self, slide):
         if slide not in self.children:
             return False
-        self.active = slide
+        self.setActiveDrawable(slide)
         self.__refresh()
 
         self.fireEvent('active child changed')
