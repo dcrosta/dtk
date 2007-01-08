@@ -12,6 +12,10 @@ class TextField(Drawable):
     
     to have a certain key be the "end" of the input (eg, 'enter' or
     'escape' you must bind it yourself from outside the TextField
+
+
+    Events (in addition to standard Drawable events):
+     * 'text changed' whenever the text changes
     """
 
     def __init__(self, **kwargs):
