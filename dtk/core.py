@@ -206,6 +206,15 @@ class Drawable(InputHandler):
     shows the active highlighted row in reverse-colors when it has
     focus, and normally when it does not, creating a cursor only
     when the ListBox has focus.
+
+    Events:
+     * 'got focus' when this Drawable gains focus
+     * 'lost focus' when this Drawable loses focus
+     * 'became active' when this Drawable is on an active path (see
+       becameActive())
+     * 'became inactive' when this Drawable is no longer on an
+       active path (see becameInactive())
+     * 'resized' when this Drawable is resized
     """
 
     def __init__(self, *args, **kwargs):
@@ -268,25 +277,42 @@ class Drawable(InputHandler):
         self.touched = False
 
 
-    def focus(self):
+    def gotFocus(self):
         """
-        this drawable has just gotten focus. return a reference
-        to self to indicate to engine which drawable currently
-        has focus (allows container-type drawables to hand focus
-        to others)
+        this drawable has just gotten focus. fires the 'got focus'
+        event
         """
-        self.log.debug('got focus (%d)', id(self))
-        self.touch()
-
-        return self
+        self.fireEvent('got focus')
 
 
-    def unfocus(self):
+    def lostFocus(self):
         """
-        this drawable has just lost focus
+        this drawable has just lost focus. fires the 'lost focus'
+        event
         """
-        self.log.debug('lost focus (%d)', id(self))
-        self.touch()
+        self.fireEvent('lost focus')
+
+
+    def becameActive(self):
+        """
+        this drawable is now part of an active path of some subtree.
+        note that this does not mean that it is on *the* active path
+        (ie the one beginning at the context root).
+        """
+        self.fireEvent('became active')
+        if self.focused:
+            self.gotFocus()
+
+
+    def becameInactive(self):
+        """
+        this drawable is now part of an active path of some subtree.
+        note that this does not mean that it is on *the* active path
+        (ie the one beginning at the context root).
+        """
+        if self.focused:
+            self.lostFocus()
+        self.fireEvent('became inactive')
 
 
     def setContext(self, context):
@@ -325,27 +351,34 @@ class Drawable(InputHandler):
         """
         sets the size fields to those given. fields which
         are not assigned, or which are assigned None, are
-        not changed.
+        not changed. if the size changed, call touch() and
+        fire the 'resized' event
         """
+        sizeChanged = False
 
         if y < 0 or x < 0:
             raise ValueError, "y and x arguments to setSize must be non-negative"
 
         if y is not None and y != self.y:
-            self.touch()
+            sizeChanged = True
             self.y = y
 
         if x is not None and x != self.x:
-            self.touch()
+            sizeChanged = True
             self.x = x
 
         if w is not None and w != self.w:
-            self.touch()
+            sizeChanged = True
             self.w = w
 
         if h is not None and h != self.h:
-            self.touch()
+            sizeChanged = True
             self.h = h
+
+        if sizeChanged:
+            self.touch()
+            self.fireEvent('resized')
+
 
 
     # convenience method for binding and unbinding events on
@@ -550,14 +583,18 @@ class Container(Drawable):
         for child in self.children:
             if child is drawable:
                 self.log.debug('setting active to drawable == %s', drawable)
+                self.active.becameInactive()
                 self.active = child
+                self.active.becameActive()
                 success = True
                 break
 
             elif isinstance(child, Container):
                 self.log.debug('calling setActiveDrawable on %s', child)
                 if child.setActiveDrawable(drawable):
+                    child.becameInactive()
                     self.active = child
+                    self.active.becameActive()
                     success = True
                     break
 
