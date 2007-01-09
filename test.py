@@ -239,6 +239,40 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'event':
 
     tf.bindKey('page down', d.show)
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'color':
+    from dtk import util
+
+    class ColorDemo(dtk.Drawable):
+
+        def __init__(self, *args, **kwargs):
+            super(ColorDemo, self).__init__(*args, **kwargs)
+
+            self.colors = ['white','black','blue','cyan','green','magenta','red','yellow','clear']
+            self.attrs = ['normal','bold','highlight','dim','bright','underline','blink']
+
+
+        def render(self):
+            self.clear()
+
+            r = 0
+            for attr in self.attrs:
+                for color in self.colors:
+                    # **{attr:True} adds a keyword argument whose name is the value
+                    # in self.attrs (eg 'bold') and whose value is True. Normally
+                    # you would call draw like self.draw(..., bold=True, highlight=True)
+                    self.draw('This is %s in %s' % (color, attr), r, 0, foreground = color, **{attr:True})
+                    r += 1
+                self.line(r, 0, self.w)
+                r += 1
+
+
+    cd = ColorDemo()
+
+    e.setRoot(cd)
+
+                    
+
+
 else:
     lb = dtk.ListBox(vimlike = True)
     e.setRoot(lb)
