@@ -584,7 +584,7 @@ class Container(Drawable):
         success = False
 
         for child in self.children:
-            if child is drawable:
+            if child is drawable and child is not self.active:
                 self.log.debug('setting active to drawable == %s', drawable)
                 if self.active is not None:
                     self.active.becameInactive()
