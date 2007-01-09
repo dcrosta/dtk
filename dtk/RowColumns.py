@@ -46,10 +46,12 @@ class RowColumns(Container):
         how to distribute remaining space after minimum and maximum
         are taken into account.
         """
+        firstChild = len(self.children) == 0
+
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len(self.children):
-            self.setActiveDrawable(drawable)
         self.children.append(drawable)
+        if firstChild:
+            self.setActiveDrawable(drawable)
         self.cells.append(drawable)
         self.touch()
 
