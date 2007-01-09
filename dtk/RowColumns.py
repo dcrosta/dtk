@@ -14,8 +14,7 @@ class RowColumns(Container):
      * 'child added' when a child is added (but not when a
        separator is added)
      * 'active child changed' when the active child is changed,
-       which happens when nextChild (nextRow, nextColumn) or
-       prevChild (prevRow, prevColumn) is called
+       when switchChild, nextChild or prevChild is called
     """
 
     class Separator:
@@ -46,11 +45,11 @@ class RowColumns(Container):
         how to distribute remaining space after minimum and maximum
         are taken into account.
         """
-        firstChild = len(self.children) == 0
+        first_child = len(self.children) == 0
 
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
         self.children.append(drawable)
-        if firstChild:
+        if first_child:
             self.setActiveDrawable(drawable)
         self.cells.append(drawable)
         self.touch()
@@ -88,9 +87,10 @@ class RowColumns(Container):
         after minimum and maximum are taken into account.
         """
         drawable._meta = dict(fixedsize=fixedsize, weight=weight)
-        if not len(self.children):
-            self.setActiveDrawable(drawable)
+        first_child = len(self.children) == 0
         self.children.insert(index, drawable)
+        if first_child:
+            self.setActiveDrawable(drawable)
         self.cells.insert(index, drawable)
         self.touch()
 
@@ -136,15 +136,8 @@ class RowColumns(Container):
 
     def switchChild(self, index):
         """
-        switches internal focus to the given column index, if it's
-        in range. otherwise, switches the focused column one to the
-        right, wrapping around if the rightmost column is currently
-        selected.
-
-        bad things will happen if you call this while focus isn't
-        on a child of this Columns instance, probably! so don't!
-        only call it from within a bindKey binding, that way it won't
-        get spuriously called from random points in the code.
+        switches internal focus to the given child index
+        if the given index is in range.
         """
         self.active.touch()
         self.setActiveDrawable(self.children[index])
