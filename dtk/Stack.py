@@ -34,18 +34,20 @@ class Stack(Container):
         drawable.setSize(self.y, self.x, self.h, self.w)
         self.setActiveDrawable(drawable)
 
-        self.clear()
         self.touch()
 
 
     def pop(self):
         """
-        pop the top element off the stack. if the previous
-        top stack Drawable was focused, the element underneath
-        (if any) will be focused automatically. if the stack
-        is empty after popping this element and that element
-        had focus, then the stack itself is given focus
+        pop and return the top element off the stack. if the
+        previous top stack Drawable was focused, the element
+        underneath (if any) will be focused automatically. if
+        the stack is empty after popping this element and that
+        element had focus, then the stack itself is given
+        focus
         """
+        drawable = None
+
         if len(self.children):
             drawable = self.children.pop()
 
@@ -61,6 +63,8 @@ class Stack(Container):
 
         self.clear()
         self.touch()
+
+        return drawable
 
 
     def setSize(self, y, x, h, w):
