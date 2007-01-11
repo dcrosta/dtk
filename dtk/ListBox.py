@@ -133,13 +133,17 @@ class ListBox(Drawable):
         todo this should return the popped item
         """
         if index is None:
-            self.selected.remove(len(self.items))
-        else:
+            index = len(self.items) - 1
+
+        if index in self.selected:
             self.selected.remove(index)
-        self.items.pop(index)
+
+        out = self.items.pop(index)
         self.touch()
 
         self.fireEvent('content changed')
+
+        return out
 
     def remove(self, item):
         if self.items.index(item) in self.selected:
@@ -156,31 +160,20 @@ class ListBox(Drawable):
 
         self.fireEvent('content changed')
 
-    def setItems(self, items, indices = None,
-                 highlighted = 0, selected = None):
+    def setItems(self, items, highlighted = 0, selected = None):
         """
-        sets the items list and currently highlighted item
+        sets the items list and currently highlighted item. touches
+        the ListBox (forces redraw next time through drawing loop)
         """
 
-        if indices is None:
-            # if indices is None, then auto-generate them
-            # starting at 0
-            indices = range(len(items))
-
-        if not len(items) == len(indices):
-            raise RuntimeError, 'setItems expects len(items) == len(indices)'
-
-        # make and store a copy of the incoming items
         self.items = list(items)
-        self.indices = indices
 
         self.highlighted = highlighted
         if selected is not None:
             self.selected = selected
         else:
-            selected = [None]
+            self.selected = []
 
-        self.clear()
         self.firstVisible = 0
         self.touch()
 
@@ -245,36 +238,21 @@ class ListBox(Drawable):
         """
         self.move(self.highlighted - self.h)
 
-
-    def index(self):
-        """
-        return the index associated with the first highligted item
-        todo this is a terrible name.
-        """
-        if len(self.items) == 0:
-            return None
-        return self.indices[self.highlighted]
-
-    def item(self):
-        """
-        return the highlighted item
-        todo this is a terrible name.
-        """
-        if len(self.items) == 0:
-            return None
-        return self.items[self.highlighted]
-    
     def getSelectedItems(self):
         """
-        return a list of the selected items
+        return a list of the selected items. order is undefined
         """
-        return [item for (item, index)
-                in zip(self.items, range(len(self.items)))
-                if index in self.selected]
+        return [self.items[i] for i in self.selected]
 
     def getHighlightedItem(self):
-        # todo errorcheck
-        return self.items[self.highlighted]
+        """
+        return the highlighted item
+        """
+        if len(self.items):
+            return self.items[self.highlighted]
+
+    # alias of getHighlightedItem
+    item = getHighlightedItem
 
     def setSelectionType(self, selectionType):
         """
@@ -283,13 +261,14 @@ class ListBox(Drawable):
         selection is cleared. When changing to no selection, any
         existing selection is cleared.
 
-        @param selectionType: one of 'multiple', 'single', or 'none'
+        selectionType is one of 'multiple', 'single', or 'none'
         """
         selectionType = selectionType.lower()
         try:
-            assert selectionType in 'multiple single none'.split()
+            assert selectionType in ('multiple', 'single', 'none')
         except AssertionError:
             raise Exception("selection type must be one of multiple, single or none")
+
         if selectionType == 'multiple':
             self.allowSelection = True
             self.multipleSelection = True
@@ -356,6 +335,9 @@ class ListBox(Drawable):
         if the highlighted item is not selected, select it,
         and vice-versa
         """
+        if not self.allowSelection:
+            return
+
         if self.highlighted in self.selected:
             self.selected.remove(self.highlighted)
 
