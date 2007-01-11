@@ -1424,7 +1424,7 @@ class Engine(InputContext):
 
         # truncate the string to fit
         if col + len(str) > drawable.w:
-            str = str[:self.w - col]
+            str = str[:drawable.w - col]
 
         if col < 0:
             str = str[-col:]
@@ -1436,7 +1436,7 @@ class Engine(InputContext):
 
         # now draw it
         try:
-            #self.log.debug('addstr(%d, %d, "%s", %d)', row, col, str, self.cursesAttr(kwargs))
+            self.log.debug('from %s<%d, %d>: addstr(%d, %d, <%d>, %d)', drawable, drawable.h, drawable.w, row, col, len(str), self.cursesAttr(kwargs))
             self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
