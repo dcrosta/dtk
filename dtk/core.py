@@ -92,7 +92,11 @@ class InputHandler(object):
         # supply it to the method before calling it
         # unless another input key is already being supplied to the method
         # TODO this is actually broken (see below)
-        if '_input_key' in method.func_code.co_varnames:
+        try:
+            varnames = method.func_code.co_varnames
+        except AttributeError:
+            varnames = method.__call__.func_code.co_varnames
+        if '_input_key' in varnames:
             kwargs['_input_key'] = kwargs.get('_input_key', None) or input
 
         # if the method is asking for a _source_obj argument,
@@ -101,7 +105,7 @@ class InputHandler(object):
         # TODO this is actually broken. it will still fill the slot
         # if the user passes in a POSITIONAL argument for _source_obj,
         # resulting in an exception.
-        if '_source_obj' in method.func_code.co_varnames:
+        if '_source_obj' in varnames:
             kwargs['_source_obj'] = kwargs.get('_source_obj', None) or self
             
         method(*args, **kwargs)

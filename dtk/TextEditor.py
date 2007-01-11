@@ -49,7 +49,7 @@ class TextEditor(Drawable):
         handles printable input and updates the cursor position
         for normal typing
         """
-
+        input = _input_key
         input = _input_key
         # if the input is 'enter', then insert a new line into the 
         # buffer and move the cursor to it
@@ -103,6 +103,9 @@ class TextEditor(Drawable):
         self.touch()
 
 
+    def moveHome(self):
+        self.cx, self.cy = (0,0)
+        self.touch()
 
     def moveLeft(self):
         if self.cx == 0 and self.cy > 0:

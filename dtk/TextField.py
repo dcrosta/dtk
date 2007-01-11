@@ -45,8 +45,7 @@ class TextField(Drawable):
 
     def getText(self):
         return self.buffer
-   
-   
+
     def moveLeft(self):
         self.cursor -= 1
         if self.cursor < 0:
