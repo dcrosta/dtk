@@ -116,6 +116,8 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
         ['Radiohead', 'OK Computer', 10, 'No Surprises'],
         ['Radiohead', 'OK Computer', 11, 'Lucky'],
         ['Radiohead', 'OK Computer', 12, 'The Tourist'],
+        ['Shorter Row'],
+        ['Longer Row', 'field', 'x', 'field', 'field'],
         ['Schneider TM', 'Zoomer', 1, 'Reality Check'],
         ['Schneider TM', 'Zoomer', 2, 'Frogtoise'],
         ['Schneider TM', 'Zoomer', 3, 'Abyss'],
@@ -138,7 +140,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'table':
     table.addColumn(weight = 2, name = 'Song')
 
 
-    table.setItems(items, [i for i in range(len(items))])
+    table.setItems(items)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'l':
     l = dtk.Label('My Label Text')
@@ -274,7 +276,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'color':
 
 
 else:
-    lb = dtk.ListBox(vimlike = True)
+    lb = dtk.ListBox(vimlike = True, selection='multiple')
     e.setRoot(lb)
     lb.setItems(
         ['Radiohead Kid A  1 Everything In Its Right Place',
@@ -298,8 +300,9 @@ else:
         'Radiohead OK Computer  9 Climbing Up the Walls',
         'Radiohead OK Computer 10 No Surprises',
         'Radiohead OK Computer 11 Lucky',
-        'Radiohead OK Computer 12 The Tourist',
-        'Schneider TM Zoomer 1 Reality Check',
+        'Radiohead OK Computer 12 The Tourist'])
+
+    lb.bindKey('tab', lb.setItems, ['Schneider TM Zoomer 1 Reality Check',
         'Schneider TM Zoomer 2 Frogtoise',
         'Schneider TM Zoomer 3 Abyss',
         'Schneider TM Zoomer 4 DJ Guy?',
@@ -307,6 +310,11 @@ else:
         'Schneider TM Zoomer 6 Hunger',
         'Schneider TM Zoomer 7 999',
         'Schneider TM Zoomer 8 Cuba TM'])
+
+    def dumpPop(_source_obj):
+        _source_obj.log.debug('pop is %s', str(_source_obj.pop()))
+    lb.bindKey('p', dumpPop)
+
     lb.setDrawStyle(
             hstyle = {'highlight':True},
             sstyle = {'bold':True},

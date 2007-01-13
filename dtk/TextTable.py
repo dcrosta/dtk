@@ -111,10 +111,12 @@ class TextTable(ListBox):
         for i in range(self.firstVisible, min(len(self.items), self.firstVisible + height)):
             item = self.items[i]
 
-            if len(item) < self.cols:
-                item += ' ' * (len(item) - len(self.cols))
-            elif len(item) > self.cols:
-                item = item[:self.cols]
+            if len(item) < len(self.cols):
+                item = list(item)
+                item.extend([''] * (len(self.cols) - len(item)))
+
+            elif len(item) > len(self.cols):
+                item = item[:len(self.cols)]
 
             attr = {}
             if i in self.selected:
