@@ -587,22 +587,25 @@ class Container(Drawable):
         """
         success = False
 
+        self.log.debug('got setActiveDrawable(%s)', drawable)
         for child in self.children:
-            if child is drawable and child is not self.active:
-                self.log.debug('setting active to drawable == %s', drawable)
-                if self.active is not None:
-                    self.active.becameInactive()
-                self.active = child
-                self.active.becameActive()
+            if child is drawable:
+                if child is not self.active:
+                    self.log.debug('setting active to drawable == %s', drawable)
+                    if self.active is not None:
+                        self.active.becameInactive()
+                    self.active = child
+                    self.active.becameActive()
                 success = True
                 break
 
             elif isinstance(child, Container):
                 self.log.debug('calling setActiveDrawable on %s', child)
                 if child.setActiveDrawable(drawable):
-                    child.becameInactive()
-                    self.active = child
-                    self.active.becameActive()
+                    if child is not drawable:
+                        child.becameInactive()
+                        self.active = child
+                        self.active.becameActive()
                     success = True
                     break
 

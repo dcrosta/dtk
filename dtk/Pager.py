@@ -48,8 +48,9 @@ class Pager(Drawable):
             newline formatted string
         @type  text: string
         """
+        self.firstVisible = 0
         self.lines = None
-        self.text = text
+        self.text = str(text)
         self.touch()
 
         self.fireEvent('text changed')

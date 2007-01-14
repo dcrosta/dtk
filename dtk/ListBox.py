@@ -345,7 +345,7 @@ class ListBox(Drawable):
             self.selected.append(self.highlighted)
 
         else:
-            self.selected[0] = self.highlighted
+            self.selected = [self.highlighted]
 
         self.touch()
 
