@@ -22,11 +22,9 @@ class Dialog(Container):
 
     When the dialog is dismissed (by hitting "enter" on
     one of the buttons, depending on the type), it will
-    create a psuedo-key, 'dismissed' which may be used
-    as any other key (eg with bindKey).
+    fire the 'dismissed' event.
 
     Events (in additon to standard Drawable events):
-     * 'shown' when the dialog is shown
      * 'dismissed' when the dialog is dismissed
     """
 
@@ -47,8 +45,6 @@ class Dialog(Container):
         self.setType(type)
 
         self._setup()
-
-        self.context = InputContext()
 
 
     def setType(self, type):
@@ -160,26 +156,28 @@ class Dialog(Container):
         """
         shows the dialog
         """
-        self.window.touchAll()
+        self.log.info('in show()')
+
+        # create a new input context for the Dialog
+        context = InputContext()
         
-        self.context.unquit()
-        self.context.log = self.log
-        self.context.setRoot(self)
+        context.log = self.log
+        context.setRoot(self)
 
         if self.type == 'message':
-            self.context.setFocus(self.kids['ok'])
+            context.setFocus(self.kids['ok'])
 
         elif self.type == 'yesno':
-            self.context.setFocus(self.kids['yes'])
+            context.setFocus(self.kids['yes'])
 
         elif self.type == 'input':
-            self.context.setFocus(self.kids['input'])
+            context.setFocus(self.kids['input'])
 
 
-        self.fireEvent('shown')
+        self.window.touchAll()
+        self.engine.contextLoop(context)
 
-        
-        self.engine.contextLoop(self.context)
+
         if self.type == 'message':
             ret = None
 
@@ -281,9 +279,11 @@ class Dialog(Container):
         if self.type == 'message':
             self.kids['ok'] = Button(' OK ')
             self.kids['ok'].name = 'Dialog::OKButton'
-            self.kids['ok'].bindKey('click', self._clickedOK)
+            self.kids['ok'].bindEvent('clicked', self._clickedOK)
 
             self.window.addRow(self.kids['ok'], fixedsize = 1)
+
+            self.window.setActiveDrawable(self.kids['ok'])
 
         elif self.type == 'input':
             self.kids['input'] = TextField()
@@ -291,6 +291,8 @@ class Dialog(Container):
             self.kids['input'].bindKey('enter', self._clickedOK)
 
             self.window.addRow(self.kids['input'], fixedsize = 1)
+
+            self.window.setActiveDrawable(self.kids['input'])
 
         else:
             self.kids['yesno'] = Columns(outerborder = False, innerborder = False)
@@ -300,18 +302,20 @@ class Dialog(Container):
             self.kids['no']    = Button(' No ')
             self.kids['no'].name = 'Dialog::NoButton'
 
-            self.kids['yes'].bindKey('click', self._clickedYes)
-            self.kids['no'].bindKey('click',  self._clickedNo)
+            self.kids['yes'].bindEvent('clicked', self._clickedYes)
+            self.kids['no'].bindEvent('clicked', self._clickedNo)
 
             self.kids['yesno'].addColumn(self.kids['yes'])
             self.kids['yesno'].addColumn(self.kids['no'])
 
             self.window.addRow(self.kids['yesno'], fixedsize = 1)
 
+            self.window.setActiveDrawable(self.kids['yesno'])
+
 
         # be a Container
         self.children = [self.window]
-        self.active = self.window
+        self.setActiveDrawable(self.window)
 
 
     def setSize(self, y, x, h, w):
