@@ -14,7 +14,7 @@ class Button(Label):
         super(Button, self).__init__(text, **kwargs)
 
         self.setDecoration(decoration)
-        self.bindKey('enter', self.fireEvent, 'clicked')
+        self.bindKey('enter', self.clicked)
 
 
     def setDecoration(self, decoration):
@@ -24,6 +24,14 @@ class Button(Label):
         format conversion.
         """
         self.decoration = decoration
+
+
+    def clicked(self):
+        """
+        called when the button is clicked by a keybinding,
+        or when you want to simulate such a click
+        """
+        self.fireEvent('clicked')
 
 
     def render(self):
