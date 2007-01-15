@@ -48,17 +48,21 @@ class Slideshow(Container):
         self.log.debug('setSize(%d, %d, %d, %d)' % (y, x, h, w))
         self._setChildSizes()
         
-    def __refresh(self):
-        self._setChildSizes()
-        self.engine.setFocus(self.active)
-        self.clear()
-
     def nextSlide(self):
         index = self.children.index(self.active) + 1
         if( index >= len(self.children) ):
             index = 0
         self.setActiveDrawable(self.children[index])
-        self.__refresh()
+        self._setChildSizes()
+
+        self.fireEvent('active child changed')
+
+    def previousSlide(self):
+        index = self.children.index(self.active) - 1
+        if( index < 0 ):
+            index = len(self.children) - 1
+        self.setActiveDrawable(self.children[index])
+        self._setChildSizes()
 
         self.fireEvent('active child changed')
 
@@ -66,11 +70,9 @@ class Slideshow(Container):
         if slide not in self.children:
             return False
         self.setActiveDrawable(slide)
-        self.__refresh()
+        self._setChildSizes()
 
         self.fireEvent('active child changed')
 
     def drawContents(self):
         self.active.drawContents()
-
-    

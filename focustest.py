@@ -19,7 +19,7 @@ else:
 e = dtk.Engine(name='dtk Test App')
 e.beginLogging(file = 'log.txt', level = level)
 
-col = dtk.Rows()
+col = dtk.Slideshow()
 lb = dtk.ListBox()
 
 lll = []
@@ -31,8 +31,8 @@ text.setText("This is the text")
 
 lb.setItems(lll)
 
-col.addRow(lb)
-col.addRow(text)
+col.addSlide(lb)
+col.addSlide(text)
 
 e.setRoot(col)
 #e.setFocus(col)
