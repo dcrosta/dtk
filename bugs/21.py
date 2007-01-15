@@ -1,8 +1,7 @@
 """
 Demonstrates TextEditor bug when text is taller than screen.
 Make sure to run this in a terminal window shorter than the
-length of the text, or, alternatively, press enter repeatedly
-to keep adding lines to the text until the error occurs.
+length of the text
 """
 
 import dtk
