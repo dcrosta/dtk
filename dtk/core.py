@@ -741,14 +741,6 @@ class InputContext(InputHandler):
         self.done = True
 
 
-    def unquit(self):
-        """
-        allow input processing to happen again. this is generally only
-        useful if re-using an already-quit InputContext
-        """
-        self.done = False
-
-
     def getFocusedDrawable(self):
         """
         returns the drawable in this context that has focus
