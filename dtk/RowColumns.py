@@ -139,7 +139,6 @@ class RowColumns(Container):
         switches internal focus to the given child index
         if the given index is in range.
         """
-        self.active.touch()
         self.setActiveDrawable(self.children[index])
         self.touch()
 
