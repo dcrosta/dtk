@@ -859,6 +859,11 @@ class InputContext(InputHandler):
                 for method in bindings.keys():
                     (args, kwargs) = bindings[method]
 
+                    try:
+                        varnames = method.func_code.co_varnames
+                    except AttributeError:
+                        varnames = method.__call__.func_code.co_varnames
+
                     # copy the kwargs dictionary so that we don't save any of the
                     # extra information we're about to conditionally pass along
                     # (or overwrite anything passed in from the user)
@@ -870,11 +875,11 @@ class InputContext(InputHandler):
                     # TODO this is actually broken. it will still fill the slot
                     # if the user passes in a POSITIONAL argument for _source_obj,
                     # resulting in an exception.
-                    if '_source_obj' in method.func_code.co_varnames:
+                    if '_source_obj' in varnames:
                         kwargs['_source_obj'] = kwargs.get('_source_obj', None) or source
 
                     # do the same for _event_type
-                    if '_event_type' in method.func_code.co_varnames:
+                    if '_event_type' in varnames:
                         kwargs['_event_type'] = kwargs.get('_event_type', None) or event
 
 
