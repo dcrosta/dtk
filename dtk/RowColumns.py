@@ -100,11 +100,11 @@ class RowColumns(Container):
         else:
             super(RowColumns, self).setSize(y, x, h, w)
 
-    def render(self):
+    def _render(self):
         if not issubclass(self.__class__, RowColumns):
-            raise ContainerException("render method not implemented")
+            raise ContainerException("_render method not implemented")
         else:
-            super(RowColumns, self).render()
+            super(RowColumns, self)._render()
 
     def drawSomehow(self, *args, **kwargs):
         raise ContainerException("no draw method specified.")
@@ -119,7 +119,7 @@ class RowColumns(Container):
         for child in self.children:
             child.drawContents()
 
-        # draw borders through render()
+        # draw borders through _render()
         super(RowColumns, self).drawContents()
 
     def nextChild(self):

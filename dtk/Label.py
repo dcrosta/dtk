@@ -32,7 +32,7 @@ class Label(Drawable):
         self.touch()
 
 
-    def render(self):
+    def _render(self):
         """
         simply draw the text we have starting at the first position, and
         going on for as long as we can (Engine clips the text)

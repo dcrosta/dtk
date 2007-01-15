@@ -209,7 +209,7 @@ class TextEditor(Drawable):
         return self.buffer
 
 
-    def render(self):
+    def _render(self):
         wrapped = []
         for line in self.buffer:
             wrapped.extend(util.wrap(line, self.w))

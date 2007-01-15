@@ -361,6 +361,6 @@ class Dialog(Container):
         self.window.drawContents()
 
 
-    def render(self):
+    def _render(self):
         self.clear()
-        super(Dialog, self).render()
+        super(Dialog, self)._render()

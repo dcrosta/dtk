@@ -71,7 +71,7 @@ class Rows(RowColumns):
             if self.innerborder:
                 y += 1
 
-    def render(self):
+    def _render(self):
         """
         draw the borders
         """

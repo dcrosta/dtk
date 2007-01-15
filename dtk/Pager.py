@@ -140,7 +140,7 @@ class Pager(Drawable):
         self.touch()
 
 
-    def render(self):
+    def _render(self):
         """
         redraw what's in the visible range, based on our
         size and firstVisible

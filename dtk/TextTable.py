@@ -58,7 +58,7 @@ class TextTable(ListBox):
 
         self.fireEvent('columns changed')
 
-    def render(self):
+    def _render(self):
         """
         if this gets called, then one of our functions has indicated
         that it's time for a redraw (through self.touch()), so we're
