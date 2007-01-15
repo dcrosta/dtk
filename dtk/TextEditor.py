@@ -37,13 +37,6 @@ class TextEditor(Drawable):
         self.bindKey('page down', self.pageDown)
 
 
-    def dopass(self):
-        pass
-
-    # temporary -- do nothing for all these funcs
-    moveToEnd = pageUp = pageDown = dopass
-
-
     def typing(self, _input_key):
         """
         handles printable input and updates the cursor position
@@ -104,9 +97,54 @@ class TextEditor(Drawable):
 
 
     def moveHome(self):
+        """
+        move the cursor to the start of the buffer.
+        distinct from moveToHome
+        """
         self.cx, self.cy = (0,0)
         self.touch()
 
+
+    def moveToHome(self):
+        self.cx = 0
+        self.touch()
+
+
+    def moveToEnd(self):
+        self.cx = len(self.buffer[self.cy])
+        self.touch()
+        
+
+    def pageUp(self):
+        """
+        this behavior is modelled on the text editor widget in trac.
+        this is different from emacs' behavior, but i think this
+        is the more common behavior.
+        """
+        self.cy -= self.h
+        if self.cy < 0:
+            self.cy = 0
+            self.cx = 0
+        elif self.cx > len(self.buffer[self.cy]):
+            self.cx = len(self.buffer[self.cy])
+        self.touch()
+
+
+    def pageDown(self):
+        """
+        this behavior is modelled on the text editor widget in trac.
+        this is different from emacs' behavior, but i think this
+        is the more common behavior.
+        """
+        self.cy += self.h
+        if self.cy >= len(self.buffer):
+            self.cy = len(self.buffer) - 1
+            self.cx = len(self.buffer[self.cy])
+        elif self.cx > len(self.buffer[self.cy]):
+            self.cx = len(self.buffer[self.cy])
+        self.touch()
+
+    
     def moveLeft(self):
         if self.cx == 0 and self.cy > 0:
             self.cy -= 1
@@ -147,11 +185,7 @@ class TextEditor(Drawable):
                 self.cx = len(self.buffer[self.cy])
         
         self.touch()
-
-    # TODO this isn't actually what "home" should do
-    def moveToHome(self):
-        self.cx = self.cy = 0
-        self.touch()
+        
     
     def setText(self, text):
         """
