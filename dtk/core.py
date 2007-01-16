@@ -1147,7 +1147,7 @@ class Engine(InputContext):
         if self.root is None:
             raise EngineError, "Must set a root Drawable with setRoot()"
 
-        curses.wrapper(self.__setupCurses)
+        curses.wrapper(self.setupCurses)
 
 
     def setupCurses(self, scr):
