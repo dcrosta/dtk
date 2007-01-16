@@ -105,7 +105,7 @@ class TextField(Drawable):
 
         self.fireEvent('text changed') 
 
-    def _render(self):
+    def render(self):
         """
         re-displays the buffer into the curses environment
         """

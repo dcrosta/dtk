@@ -79,7 +79,7 @@ class Select(Drawable):
         self.fireEvent('selection changed')
 
 
-    def _render(self):
+    def render(self):
         self.clear()
         
         size = 2 + sum([len(option) for option in self.options]) + len(self.options)

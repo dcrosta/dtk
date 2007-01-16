@@ -351,7 +351,7 @@ class ListBox(Drawable):
 
         self.fireEvent('selection changed')
 
-    def _render(self):
+    def render(self):
         """
         if this gets called, then one of our functions has indicated
         that it's time for a redraw (through self.touch()), so we're

@@ -71,7 +71,7 @@ class InputHandler(object):
         args   = []
         kwargs = {}
                 
-        if 'printable' in self.keybindings and self.__isprintable(input):
+        if 'printable' in self.keybindings and self.isprintable(input):
             (method, args, kwargs) = self.keybindings['printable']
 
             if len(input) > 1:
@@ -142,7 +142,7 @@ class InputHandler(object):
         """
         tell the input subsystem that printable characters
         should be passed to the given method as they arrive.
-        see __isprintable().
+        see isprintable().
         """
         self.keybindings['printable'] = (method, args, kwargs)
 
@@ -154,7 +154,7 @@ class InputHandler(object):
         self.unbindKey('printable')
 
 
-    def __isprintable(self, input):
+    def isprintable(self, input):
         """
         a character is printable if curses.ascii.isprint()
         returns true or if the dtk character name (eg 'space')
@@ -182,7 +182,7 @@ class Drawable(InputHandler):
     which will never draw anything to the screen.
     
     To extend Drawable, subclasses must at least implement the
-    _render() function. _render() is called whenever it is time
+    render() function. render() is called whenever it is time
     to redraw the widget, and should use the drawing methods
     (draw, drawDown, line, lineDown, clear and box) defined here
     rather than directly calling the versions of same in Engine.
@@ -190,7 +190,7 @@ class Drawable(InputHandler):
     origin, the upper-left, of the Drawable.
 
     touch(), untouch() and drawContents() are used by DTK core to
-    control when _render() is called. Render will be called by
+    control when render is called. Render will be called by
     drawContents only if the object has been touched by a call to
     touch(). untouch() is the inverse of touch(). Sub-classes will
     generally not need to override any of these methods.
@@ -337,16 +337,16 @@ class Drawable(InputHandler):
     def drawContents(self):
         """
         If the Drawable needs redrawing, will delegate to the
-        _render() method and mark it as no longer needing redraw;
+        render() method and mark it as no longer needing redraw;
         otherwise, does nothing
         """
         if self.touched:
-            self.log.debug('drawContents() calling _render()')
-            self._render()
+            self.log.debug('drawContents() calling render()')
+            self.render()
             self.untouch()
 
 
-    def _render(self):
+    def render(self):
         """
         Drawable-specific render function. Should use self's
         draw*(), line*(), clear(), etc methods for drawing.
@@ -778,7 +778,7 @@ class InputContext(InputHandler):
         returns the root drawable of the context, as set by setRoot()
         """
         return self.root
-
+    
 
     def bindEvent(self, source, event, method, *args, **kwargs):
         """
@@ -1147,10 +1147,10 @@ class Engine(InputContext):
         if self.root is None:
             raise EngineError, "Must set a root Drawable with setRoot()"
 
-        curses.wrapper(self.__setupCurses)
+        curses.wrapper(self._setupCurses)
 
 
-    def __setupCurses(self, scr):
+    def _setupCurses(self, scr):
         """
         perform post-curses-initialization setup required for
         Engine functioning.
@@ -1275,7 +1275,7 @@ class Engine(InputContext):
             # (ie location in keymap) somehow
             input = self.scr.getch()
             try:
-                input = self.__parseInput(input)
+                input = self.parseInput(input)
             except NoInputCharException:
                 input = None
                 
@@ -1285,20 +1285,18 @@ class Engine(InputContext):
 
             if input is not None:
                 self.log.debug('Engine: calling handleInput on %s', context.root)
-                if not context.root.handleInput(input):
+                if not context.root.handleInput(input) and not context.modal:
                     self.log.debug('Engine: calling handleInput on %s', context)
-                    if not context.handleInput(input) and not context.modal:
-                        self.log.debug('Engine: calling handleInput on self')
-                        self.handleInput(input)
-                        
-
+                    context.handleInput(input)
 
 
             # input handling may have caused events, so we process them here
             context.processEvents()
+        
 
 
-    def __parseInput(self, char):
+
+    def parseInput(self, char):
         """
         Returns a DTK-friendly representation of the given input,
         or raises a NoInputCharException if the input could not
@@ -1332,6 +1330,15 @@ class Engine(InputContext):
             self.log.info("couldn't parse char: %d" % char)
             # return None
             raise NoInputCharException
+
+
+    def resize(self):
+        """
+        tells the engine that a resize has happened or that it
+        should believe that one has happened and resize all the
+        visible Drawables
+        """
+        self.resized = True
 
 
     def capabilities(self):
@@ -1386,7 +1393,7 @@ class Engine(InputContext):
             self.root.touchAll()
         else:
             self.root.touch()
-    
+
 
     def hideCursor(self):
         """
@@ -1433,8 +1440,8 @@ class Engine(InputContext):
 
         # now draw it
         try:
-            self.log.debug('from %s<%d, %d>: addstr(%d, %d, <%d>, %d)', drawable, drawable.h, drawable.w, row, col, len(str), self.__cursesAttr(kwargs))
-            self.scr.addstr(row, col, str, self.__cursesAttr(kwargs))
+            self.log.debug('from %s<%d, %d>: addstr(%d, %d, <%d>, %d)', drawable, drawable.h, drawable.w, row, col, len(str), self.cursesAttr(kwargs))
+            self.scr.addstr(row, col, str, self.cursesAttr(kwargs))
         except _curses.error, e:
             pass
 
@@ -1451,7 +1458,7 @@ class Engine(InputContext):
         if row > drawable.h or col < 0 or col > drawable.w:
             return
 
-        attr = self.__cursesAttr(kwargs)
+        attr = self.cursesAttr(kwargs)
 
         row += drawable.y
 
@@ -1474,7 +1481,7 @@ class Engine(InputContext):
         col += drawable.x
         row += drawable.y
 
-        attr = self.__cursesAttr(kwargs)
+        attr = self.cursesAttr(kwargs)
 
         # draw corners
         self.scr.addch(row, col, curses.ACS_ULCORNER, attr)
@@ -1526,7 +1533,7 @@ class Engine(InputContext):
         col += drawable.x
         row += drawable.y
 
-        attr = self.__cursesAttr(kwargs)
+        attr = self.cursesAttr(kwargs)
 
         if 'leftEnd' in kwargs:
             self.scr.addch(row, col, kwargs['leftEnd'], attr)
@@ -1567,7 +1574,7 @@ class Engine(InputContext):
         col += drawable.x
         row += drawable.y
 
-        attr = self.__cursesAttr(kwargs)
+        attr = self.cursesAttr(kwargs)
 
         if 'topEnd' in kwargs:
             self.scr.addch(row, col, kwargs['topEnd'], attr)
@@ -1601,7 +1608,7 @@ class Engine(InputContext):
 
     # curses support functions
 
-    def __cursesAttr(self, attrdict):
+    def cursesAttr(self, attrdict):
         """
         calculate the attribute bitstring for curses drawing
         """
@@ -1619,12 +1626,12 @@ class Engine(InputContext):
             elif name in self.attrs and attrdict[name] == True:
                 attr |= self.attrs[name]
 
-        attr |= self.__lookupColorPair(fg, bg)
+        attr |= self.lookupColorPair(fg, bg)
 
         return attr
 
 
-    def __lookupColorPair(self, fg, bg):
+    def lookupColorPair(self, fg, bg):
         """
         initialize curses colors, adds appropriate
         constants to self.attrs

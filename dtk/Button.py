@@ -34,7 +34,7 @@ class Button(Label):
         self.fireEvent('clicked')
 
 
-    def _render(self):
+    def render(self):
         """
         Draw the text formatted with the decoration. If
         focused, we draw with the highlight attribute
