@@ -190,7 +190,7 @@ class Drawable(InputHandler):
     origin, the upper-left, of the Drawable.
 
     touch(), untouch() and drawContents() are used by DTK core to
-    control when render is called. Render will be called by
+    control when render() is called. Render will be called by
     drawContents only if the object has been touched by a call to
     touch(). untouch() is the inverse of touch(). Sub-classes will
     generally not need to override any of these methods.
@@ -778,7 +778,7 @@ class InputContext(InputHandler):
         returns the root drawable of the context, as set by setRoot()
         """
         return self.root
-    
+
 
     def bindEvent(self, source, event, method, *args, **kwargs):
         """
@@ -1147,10 +1147,10 @@ class Engine(InputContext):
         if self.root is None:
             raise EngineError, "Must set a root Drawable with setRoot()"
 
-        curses.wrapper(self._setupCurses)
+        curses.wrapper(self.__setupCurses)
 
 
-    def _setupCurses(self, scr):
+    def setupCurses(self, scr):
         """
         perform post-curses-initialization setup required for
         Engine functioning.
@@ -1285,15 +1285,17 @@ class Engine(InputContext):
 
             if input is not None:
                 self.log.debug('Engine: calling handleInput on %s', context.root)
-                if not context.root.handleInput(input) and not context.modal:
+                if not context.root.handleInput(input):
                     self.log.debug('Engine: calling handleInput on %s', context)
-                    context.handleInput(input)
+                    if not context.handleInput(input) and not context.modal:
+                        self.log.debug('Engine: calling handleInput on self')
+                        self.handleInput(input)
+                        
+
 
 
             # input handling may have caused events, so we process them here
             context.processEvents()
-        
-
 
 
     def parseInput(self, char):
@@ -1330,15 +1332,6 @@ class Engine(InputContext):
             self.log.info("couldn't parse char: %d" % char)
             # return None
             raise NoInputCharException
-
-
-    def resize(self):
-        """
-        tells the engine that a resize has happened or that it
-        should believe that one has happened and resize all the
-        visible Drawables
-        """
-        self.resized = True
 
 
     def capabilities(self):
@@ -1393,7 +1386,7 @@ class Engine(InputContext):
             self.root.touchAll()
         else:
             self.root.touch()
-
+    
 
     def hideCursor(self):
         """
