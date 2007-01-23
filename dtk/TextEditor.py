@@ -9,6 +9,9 @@ import re
 class TextEditor(Drawable):
     """
     A simple multi-line text edtor/viewer that does smart things.
+
+    Events:
+     * 'text changed' whenever the text changes
     """
 
     def __init__(self, editable = True, **kwargs):
@@ -61,6 +64,8 @@ class TextEditor(Drawable):
 
         self.touch()
 
+        self.fireEvent('text changed')
+
 
     def backspace(self):
         """
@@ -81,6 +86,8 @@ class TextEditor(Drawable):
             self.cx -= 1
 
         self.touch()
+
+        self.fireEvent('text changed')
     
 
     def delete(self):
@@ -94,6 +101,8 @@ class TextEditor(Drawable):
             self.buffer[self.cy] = line[:self.cx] + line[self.cx + 1:]
 
         self.touch()
+
+        self.fireEvent('text changed')
 
 
     def moveHome(self):
@@ -199,6 +208,8 @@ class TextEditor(Drawable):
             self.buffer = list(text)
 
         self.touch()
+
+        self.fireEvent('text changed')
 
 
     def getText(self):

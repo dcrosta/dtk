@@ -29,7 +29,6 @@ class ListBox(Drawable):
         Events:
          * 'selection changed' when the selection changes
          * 'cursor moved' when the highlight/cursor moves
-         * 'content changed' when the list contents are changed
         """
         super(ListBox, self).__init__(**kwargs)
 
@@ -95,16 +94,12 @@ class ListBox(Drawable):
         self.items.append(item)
         self.touch()
 
-        self.fireEvent('content changed')
-
     def count(self, item):
         return self.items.count(item)
 
     def extend(self, other):
         self.items.extend(other)
         self.touch()
-
-        self.fireEvent('content changed')
 
     def index(self, item, *args):
         """
@@ -125,8 +120,6 @@ class ListBox(Drawable):
 
         self.touch()
 
-        self.fireEvent('content changed')
-
     def pop(self, index = None):
         """
         pops the end of the list by default
@@ -141,8 +134,6 @@ class ListBox(Drawable):
         out = self.items.pop(index)
         self.touch()
 
-        self.fireEvent('content changed')
-
         return out
 
     def remove(self, item):
@@ -151,14 +142,10 @@ class ListBox(Drawable):
         self.items.remove(item)
         self.touch()
 
-        self.fireEvent('content changed')
-
     def reverse(self):
         self.selected = [(len(self.items) - ix - 1) for ix in self.selected]
         self.items.reverse()
         self.touch()
-
-        self.fireEvent('content changed')
 
     def setItems(self, items, highlighted = 0, selected = None):
         """
@@ -176,8 +163,6 @@ class ListBox(Drawable):
 
         self.firstVisible = 0
         self.touch()
-
-        self.fireEvent('content changed')
 
     def move(self, index):
         """

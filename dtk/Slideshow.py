@@ -28,8 +28,6 @@ class Slideshow(Container):
         else:
             self.setActiveDrawable(drawable)
 
-            self.fireEvent('active child changed')
-
     def _setChildSizes(self):
         """
         hide all child Drawables except the currently-viewed one.
@@ -55,8 +53,6 @@ class Slideshow(Container):
         self.setActiveDrawable(self.children[index])
         self._setChildSizes()
 
-        self.fireEvent('active child changed')
-
     def previousSlide(self):
         index = self.children.index(self.active) - 1
         if( index < 0 ):
@@ -64,15 +60,11 @@ class Slideshow(Container):
         self.setActiveDrawable(self.children[index])
         self._setChildSizes()
 
-        self.fireEvent('active child changed')
-
     def showSlide(self, slide):
         if slide not in self.children:
             return False
         self.setActiveDrawable(slide)
         self._setChildSizes()
-
-        self.fireEvent('active child changed')
 
     def drawContents(self):
         self.active.drawContents()

@@ -5,74 +5,98 @@ class Select(Drawable):
     Select is a widget which looks like a button when
     unfocused, and shows a horizontal list of choices
     when focused. The list will take up as much room as
-    is available to be drawn or as is needed. Selection
-    changes with the left and right arrow keys.
+    is available to be drawn or as is needed.
+
+    The left and right keys will move the selection on
+    the Select (each time firing the 'selection changed'
+    event), but the user must hit Enter to choose an
+    option (this will fire the 'clicked') event.
+
+    The selected/highlighted item will be shown in reverse
+    colors; the chosen item (which may be different than
+    the selected item when the user moves the selection
+    but hasn't hit enter) will be bold.
 
     Events:
      * 'selection changed' when the selection changes
-     * 'options changed' when the options in the Select
-       are changed
+     * 'clicked' when the user hits enter on an option
     """
 
 
     def __init__(self, **kwargs):
         super(Select, self).__init__(**kwargs)
 
-        self.options = []
-        self.setValue(None)
+        self.items = []
+        self.chosen = None
+        self.selected = None
 
-        self.bindKey('right', self.nextOption)
-        self.bindKey('left', self.prevOption)
+        self.bindKey('right', self.selectNext)
+        self.bindKey('left', self.selectPrev)
+        self.bindKey('enter', self.clicked)
 
 
-    def setOptions(self, options):
-        self.options = options
+    def setItems(self, items):
+        self.items = items
         self.touch()
 
-        self.fireEvent('options changed')
+        if self.selected is None:
+            self.selected = 0
 
 
-    def setValue(self, value):
-        if value in self.options:
-            self.value = value
+    def setChosenItem(self, item):
+        """
+        make the given item the chosen one if it is
+        in the list of items
+        """
+        if item in self.items:
+            self.chosen = self.items.index(item)
             self.touch()
 
-            self.fireEvent('selection changed')
 
-        elif value is None:
-            self.value = ''
-            self.touch()
+    def getChosenItem(self):
+        """
+        return the chosen item
+        """
+        return self.chosen
+    
 
-            self.fireEvent('selection changed')
+    def clicked(self):
+        """
+        set the chosen item to the currently highlighted one,
+        and fire the 'clicked' event
+        """
+        self.chosen = self.selected
+        self.touch()
+
+        self.fireEvent('clicked')
 
 
-    def getValue(self):
-        return self.value
-
-    # alias getValue() as getText() 
-    getText = getValue
-
-
-    def nextOption(self):
-        if self.value in self.options:
-            index = self.options.index(self.value)
-            self.setValue(self.options[(index + 1) % len(self.options)])
+    def selectNext(self):
+        """
+        move the selection one to the right, wrapping
+        around to the beginning if necessary
+        """
+        if self.selected is None:
+            self.selected = self.items[0]
 
         else:
-            self.value = self.options[0]
+            self.selected = (self.selected + 1) % len(self.items)
 
         self.touch()
 
         self.fireEvent('selection changed')
 
 
-    def prevOption(self):
-        if self.value in self.options:
-            index = self.options.index(self.value)
-            self.setValue(self.options[(index - 1) % len(self.options)])
+    def selectPrev(self):
+        """
+        move the selection one to the left, wrapping
+        around to the beginning if necessary
+        """
+        if self.selected is None:
+            self.selected = self.items[0]
 
         else:
-            self.value = self.options[0]
+            self.selected = (self.selected - 1) % len(self.items)
 
         self.touch()
 
@@ -82,21 +106,26 @@ class Select(Drawable):
     def render(self):
         self.clear()
         
-        size = 2 + sum([len(option) for option in self.options]) + len(self.options)
+        size = sum([len(item) for item in self.items]) + len(self.items) + 3
 
-        if self.w >= size and self.focused:
+        selected_item = None
+        chosen_item = None
+        if len(self.items) > 0:
+            selected_item = self.items[self.selected]
+        if self.chosen is not None:
+            chosen_item = self.items[self.chosen]
+
+        # cache this for efficiency
+        focused = self.focused 
+
+        if self.w >= size:
             self.draw('[', 0, 0)
-            x = 1
-            for option in self.options:
-                label = option
-                if option == '':
-                    label = '<No Value>'
-                self.draw(label, 0, x, highlight = (option == self.value))
-                x += len(label)
-                self.draw(' ', 0, x)
-                x += 1
+            x = 2
+            for item in self.items:
+                self.draw(item, 0, x, highlight = (focused and item == selected_item), bold = (item == chosen_item))
+                x += len(item) + 1
 
-            self.draw(']', 0, x - 1)
+            self.draw(']', 0, x)
 
         else:
-            self.draw(self.value, 0, 0, highlight = self.focused)
+            self.draw('[ %s ]' % selected_item, 0, 0, highlight = focused, bold = chosen_item == selected_item)

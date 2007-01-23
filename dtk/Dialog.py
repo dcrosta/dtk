@@ -23,9 +23,6 @@ class Dialog(Container):
     When the dialog is dismissed (by hitting "enter" on
     one of the buttons, depending on the type), it will
     fire the 'dismissed' event.
-
-    Events (in additon to standard Drawable events):
-     * 'dismissed' when the dialog is dismissed
     """
 
     def __init__(self, title = '', text = '', type = 'message', **kwargs):
@@ -198,7 +195,6 @@ class Dialog(Container):
         called when any button is clicked
         """
         self.context.quit()
-        self.fireEvent('dismissed')
 
 
     def _clickedOK(self):
