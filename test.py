@@ -273,6 +273,36 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'color':
     e.setRoot(cd)
 
                     
+elif len(sys.argv) > 1 and sys.argv[1] == 'select':
+    rw = dtk.Rows()
+
+    s1 = dtk.Select()
+    s1.name = 's1'
+    s2 = dtk.Select()
+    s1.name = 's2'
+    s3 = dtk.Select()
+    s1.name = 's3'
+
+    s1.setItems(['foo', 'bar', 'baz'])
+    s2.setItems(['Dan is cooler', 'Ethan is cooler'])
+    s3.setItems(['Lorem ipsum dolor sit amet', 'consectetuer adipiscing elit.', 'Cras ultrices. Nulla placerat', 'nonummy augue. In odio nunc, ', 'luctus id, venenatis ut, nonummy tincidunt, ante.'])
+
+    rw.addRow(s1)
+    rw.addRow(s2)
+    rw.addRow(s3)
+
+    e.setRoot(rw)
+
+    def logIt(e, _source_obj, _event_type):
+        e.log.warn('%s fired "%s"', _source_obj, _event_type)
+
+    s1.bindEvent('selection changed', logIt, e = e)
+    s2.bindEvent('selection changed', logIt, e = e)
+    s3.bindEvent('selection changed', logIt, e = e)
+
+    s1.bindEvent('clicked', logIt, e = e)
+    s2.bindEvent('clicked', logIt, e = e)
+    s3.bindEvent('clicked', logIt, e = e)
 
 
 else:
