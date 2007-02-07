@@ -282,33 +282,14 @@ class Drawable(InputHandler):
         self.touched = False
 
 
-    def gotFocus(self):
-        """
-        this drawable has just gotten focus. fires the 'got focus'
-        event
-        """
-        self.touch()
-        self.fireEvent('got focus')
-
-
-    def lostFocus(self):
-        """
-        this drawable has just lost focus. fires the 'lost focus'
-        event
-        """
-        self.touch()
-        self.fireEvent('lost focus')
-
-
     def becameActive(self):
         """
         this drawable is now part of an active path of some subtree.
         note that this does not mean that it is on *the* active path
         (ie the one beginning at the context root).
         """
+        self.touch()
         self.fireEvent('became active')
-        if self.focused:
-            self.gotFocus()
 
 
     def becameInactive(self):
@@ -317,8 +298,7 @@ class Drawable(InputHandler):
         note that this does not mean that it is on *the* active path
         (ie the one beginning at the context root).
         """
-        if self.focused:
-            self.lostFocus()
+        self.touch()
         self.fireEvent('became inactive')
 
 
@@ -688,6 +668,14 @@ class Container(Drawable):
         return consumed
 
 
+    def touch(self):
+        """
+        touch the active child as well as self
+        """
+        super(Container, self).touch()
+        self.active.touch()
+
+
 
 class EngineException(Exception):
     pass
@@ -721,6 +709,7 @@ class InputContext(InputHandler):
         self.root = None
         self.modal = modal
         self.done = False
+        self.started = False
 
         # a list of tuples (source, event)
         self.eventQueue = []
@@ -831,14 +820,18 @@ class InputContext(InputHandler):
         set source to 'None', which will match bindings to events
         with 'None' as source.
         """
-        self.eventQueue.append((source, event))
-        self.log.debug('enqueued event for (%s, %s)', source, event)
+        if self.started and not self.done:
+            self.eventQueue.append((source, event))
+            self.log.debug('enqueued event for (%s, %s)', source, event)
 
 
     def processEvents(self):
         """
         process all the events in the event queue, and clear the queue
         """
+
+        if len(self.eventQueue) > 0:
+            self.log.debug('processing event queue with %d items', len(self.eventQueue))
 
         for (source, event) in self.eventQueue:
             # do this in a try/catch since we expect
@@ -1211,7 +1204,9 @@ class Engine(InputContext):
         # messages every half second
 
 
-        context.processEvents()
+        # context.processEvents()
+
+        context.started = True
 
 
         (h, w) = self.scr.getmaxyx()
