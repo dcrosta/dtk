@@ -833,7 +833,11 @@ class InputContext(InputHandler):
         if len(self.eventQueue) > 0:
             self.log.debug('processing event queue with %d items', len(self.eventQueue))
 
-        for (source, event) in self.eventQueue:
+        # make a local copy
+        localEventQueue = list(self.eventQueue)
+        self.eventQueue = []
+
+        for (source, event) in localEventQueue:
             # do this in a try/catch since we expect
             # it to fail in most cases
             try:
@@ -873,9 +877,6 @@ class InputContext(InputHandler):
 
             except KeyError:
                 pass
-
-        # finally reset the queue
-        self.eventQueue = []
 
 
     def dropBindings(self, source):
