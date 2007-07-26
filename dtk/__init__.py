@@ -15,13 +15,13 @@ __license__ = 'CC By-Sa 3.0 US'
 __license_long__ = """
 Copyright (C) 2006-2007 Dan Crosta
 Copyright (C) 2006-2007 Ethan Jucovy
-All rights reserved.
+Some rights reserved.
 
 DTK is licensed under the Creative Commons Attribution-ShareAlike 3.0 US
 license. Under this license you are free:
 
-  * to Share to copy, distribute, display, and perform the work
-  * to Remix to make derivative works
+  * to Share -- to copy, distribute, display, and perform the work
+  * to Remix -- to make derivative works
 
 Under the following conditions:
 
