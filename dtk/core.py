@@ -1352,7 +1352,7 @@ class Engine(InputContext):
 
         # If it's in keymap via a direct lookup, we're golden
         elif char in self.keymap:
-            self.log.debug("Returning char %d as %s (curses name %s)", char, self.keymap[char], curses.keyname(char))
+            self.log.debug("Returning char %s as %s (curses name %s)", char, str(self.keymap[char]), curses.keyname(char))
             return(self.keymap[char])
 
         # If we got here, bad user, bad user
