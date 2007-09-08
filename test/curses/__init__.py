@@ -44,6 +44,9 @@ KEY_F10 = 'F10'
 KEY_F11 = 'F11'
 KEY_F12 = 'F12'
 
+def keyname(ch):
+    return ch
+
 COLOR_WHITE = 'white'
 COLOR_BLACK = 'black'
 COLOR_BLUE = 'blue'
@@ -77,6 +80,8 @@ class Screen:
         self._keypad = False
         self._cursor = (0, 0)
         self._screen = make_buf( *list(self.getmaxyx()) )
+
+        self._input_buf = list()
 
     def getmaxyx(self):
         return self._maxyx
@@ -166,6 +171,14 @@ class Screen:
         _ticks += delay
         time.sleep( delay )
 
+        if len(self._input_buf) > 0:
+            ch = self._input_buf[0]
+            self._input_buf = self._input_buf[1:]
+
+            return ch
+        else:
+            return None
+
 
     def __str__(self):
         out = ''
@@ -184,6 +197,10 @@ class Screen:
     refresh = noop
     noutrefresh = noop
     doupdate = noop
+
+
+    def set_input(self, *args):
+        self._input_buf.extend(args)
 
 _halfdelay = None
 def halfdelay(ticks):
@@ -204,6 +221,11 @@ def doupdate():
     print _scr
     print "\n"
 
+def def_prog_mode():
+    pass
+def endwin():
+    pass
+
 
 _scr = None
 _start = 0
@@ -211,5 +233,6 @@ _ticks = 0
 def wrapper(callback):
     global _scr
     _scr = Screen(24,80)
+    _scr.set_input('down', 'down', ord('q'))
 
     callback(_scr)
