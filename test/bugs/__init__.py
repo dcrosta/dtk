@@ -24,4 +24,7 @@ for module in modules:
 # TODO: when the other bug*.py files are adapted to DtkTestCases,
 # use the above to automatically include them in the tests run
 # by runner.py (outside this directory)
+from bug27 import BugTwentySeven
 from bug22 import BugTwentyTwo
+from bug26 import BugTwentySix
+from bug34 import BugThirtyFour

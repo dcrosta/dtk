@@ -22,16 +22,24 @@ class DtkTestCase(unittest.TestCase):
         curses._scr = self.scr
         curses.use_delay(False)
         curses.print_screen(False)
+        
+    def tearDown(self):
+        curses.endwin()
 
         # reset Engine
         dtk.Engine._instance = None
         dtk.Engine._initialized = False
-        
+
 
     def assertTextAt(self, y, x, text, time=None):
         t = self.scr.get_text_at(y, x, len(text), time)
 
-        self.assertEquals(text, t, 'screen at (%d, %d) at time %g: "%s" != "%s"' % (y, x, time, text, t))
+        if time is None:
+            time = 'end'
+        else:
+            time = 'time %g' % time
+
+        self.assertEquals(text, t, 'screen at (%d, %d) at %s: "%s" != "%s"' % (y, x, time, text, t))
 
 
 class TestBasics(DtkTestCase):

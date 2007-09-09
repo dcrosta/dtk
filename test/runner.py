@@ -24,4 +24,5 @@ from dtktest import *
 from bugs import *
 
 if __name__ == '__main__':
-    unittest.main()
+    suite = unittest.TestLoader().loadTestsFromModule(__import__('runner'))
+    unittest.TextTestRunner(verbosity=2).run(suite)

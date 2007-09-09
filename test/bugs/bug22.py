@@ -6,13 +6,6 @@ to keep adding lines to the text until the error occurs.
 """
 
 import dtk
-import logging
-import sys
-
-# set up an import path to ../ so we can get the
-# DtkTestCase class
-#sys.path.insert( 1, os.path.abspath( os.path.join( os.path.dirname( __file__ ), '..' ) ) )
-
 from dtktest import DtkTestCase
 
 class BugTwentyTwo(DtkTestCase):
