@@ -64,6 +64,8 @@ ACS_HLINE = '-'
 ACS_TTEE = ACS_BTEE = '+'
 
 
+# thanks to http://simonwillison.net/2004/Jan/28/sequenceInReverse/
+# for the hint on reverse iteration w/out resorting the sequence
 class ReverseIterator:
     def __init__(self, sequence):
         self.sequence = sequence
