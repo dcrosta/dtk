@@ -238,6 +238,18 @@ class Screen:
 
         return out
 
+    def at(self, time):
+        out = ''
+        out += '-' * (self.getmaxyx()[1]+2)
+        out += '\n'
+        for line in self._screen:
+            out += "|%s|\n" % (''.join([x.at(time) for x in line]))
+
+        out += '-' * (self.getmaxyx()[1]+2)
+
+        return out
+
+
     def noop(self, *args, **kwargs):
         pass
 
@@ -249,6 +261,8 @@ class Screen:
         if time is None:
             global _ticks
             time = _ticks
+            if time == 0:
+                time += 0.1
 
         e = x + len
         return ''.join([x.at(time) for x in self._screen[y][x:e]])
@@ -284,8 +298,10 @@ def doupdate():
 def def_prog_mode():
     pass
 def endwin():
-    global _ticks
+    global _ticks, _scr
     _ticks = 0
+    del _scr
+    _scr = None
 
 _use_delay = True
 def use_delay(b):
