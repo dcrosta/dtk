@@ -1,4 +1,5 @@
 import time
+import re
 
 # a unittest-worthy replacement for python's curses module,
 # at least as far as DTK is concerned
@@ -63,15 +64,53 @@ ACS_HLINE = '-'
 ACS_TTEE = ACS_BTEE = '+'
 
 
+class ReverseIterator:
+    def __init__(self, sequence):
+        self.sequence = sequence
+
+    def __iter__(self):
+        length = len(self.sequence)
+        i = length
+        while i > 0:
+            i = i - 1
+            yield self.sequence[i]
+
+class Char:
+    """
+    represents a character on screen, and all the previous
+    characters at that location over time
+    """
+
+    def __init__(self, ch, time=0):
+        self.prev = [(ch, time)]
+
+    def __str__(self):
+        return self.prev[len(self.prev)-1][0]
+
+    def set(self, ch, time):
+        if self.prev[len(self.prev)-1][1] == time:
+            self.prev[len(self.prev)-1] = (ch, time)
+        else:
+            self.prev.append((ch, time))
+
+    def at(self, time):
+        """
+        find the character at this position at the given time
+        """
+        r = ReverseIterator(self.prev)
+        for ch, tick in r:
+            if tick < time:
+                return ch
+
+
 def make_buf(y, x):
     buf = list()
     for i in xrange(y):
         line = list()
         for j in xrange(x):
-            line.append(' ')
+            line.append(Char(' '))
         buf.append(line)
     return buf
-
 
 class Screen:
 
@@ -93,19 +132,23 @@ class Screen:
         self._cursor = (y, x)
 
     def clrtobot(self):
+        global _ticks
+
         y, x = self._cursor
         my, mx = self.getmaxyx()
 
         for i in xrange(y, my):
             for j in xrange(x, mx):
-                self._screen[i][j] = ' '
+                self._screen[i][j].set(' ', _ticks)
 
     def _addstr(self, s):
+        global _ticks
+
         y, x = self._cursor
         my, mx = self.getmaxyx()
 
         for ltr in s:
-            self._screen[y][x] = ltr
+            self._screen[y][x].set(ltr, _ticks)
 
             x += 1
             if x >= mx:
@@ -143,11 +186,13 @@ class Screen:
             self.addstr( y, x, ch * int(n) )
 
     def _vline(self, ch, n):
+        global _ticks
+
         y, x = self._cursor
         my, mx = self.getmaxyx()
 
         for i in xrange(n):
-            self._screen[y][x] = ch
+            self._screen[y][x].set(ch, _ticks)
 
             y += 1
             if y >= my:
@@ -163,13 +208,13 @@ class Screen:
 
 
     def getch(self):
-        global _halfdelay, _ticks
-        delay = _halfdelay
-        if _halfdelay is None:
-            delay = 10.0
-        delay = float(delay) / 10.0
-        _ticks += delay
-        time.sleep( delay )
+        global _halfdelay, _ticks, _use_delay
+
+        _ticks += 1
+
+        if _use_delay:
+            delay = _halfdelay / 10.0
+            time.sleep( delay )
 
         if len(self._input_buf) > 0:
             ch = self._input_buf[0]
@@ -182,12 +227,12 @@ class Screen:
 
     def __str__(self):
         out = ''
-        out += '-' * (_scr.getmaxyx()[1]+2)
+        out += '-' * (self.getmaxyx()[1]+2)
         out += '\n'
-        for line in _scr._screen:
-            out += "|%s|\n" % (''.join(line))
+        for line in self._screen:
+            out += "|%s|\n" % (''.join([str(x) for x in line]))
 
-        out += '-' * (_scr.getmaxyx()[1]+2)
+        out += '-' * (self.getmaxyx()[1]+2)
 
         return out
 
@@ -198,9 +243,21 @@ class Screen:
     noutrefresh = noop
     doupdate = noop
 
+    def get_text_at(self, y, x, len, time=None):
+        if time is None:
+            global _ticks
+            time = _ticks
+
+        e = x + len
+        return ''.join([x.at(time) for x in self._screen[y][x:e]])
 
     def set_input(self, *args):
-        self._input_buf.extend(args)
+        printre = re.compile('\w')
+        for elm in args:
+            if printre.match(elm):
+                self._input_buf.append(ord(elm))
+            else:
+                self._input_buf.append(elm)
 
 _halfdelay = None
 def halfdelay(ticks):
@@ -215,24 +272,38 @@ def tigetstr(*args):
     return None
 
 def doupdate():
-    global _scr, _start, _ticks
+    global _scr, _start, _ticks, _print_screen
 
-    print round( 10.0 * (_ticks - _start) ) / 10.0
-    print _scr
-    print "\n"
+    if _print_screen:
+        print round( 10.0 * (_ticks - _start) ) / 10.0
+        print _scr
+        print "\n"
 
 def def_prog_mode():
     pass
 def endwin():
     pass
 
+_use_delay = True
+def use_delay(b):
+    global _use_delay
+    _use_delay = b
+
+_print_screen = True
+def print_screen(b):
+    global _print_screen
+    _print_screen = b
 
 _scr = None
 _start = 0
 _ticks = 0
+
+
 def wrapper(callback):
     global _scr
-    _scr = Screen(24,80)
-    _scr.set_input('down', 'down', ord('q'))
+
+    if _scr is None:
+        _scr = Screen(24,80)
+        _scr.set_input('down', 'down', ord('q'))
 
     callback(_scr)
