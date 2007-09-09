@@ -1448,7 +1448,7 @@ class Engine(InputContext):
         """
 
         # if it's completely off-screen, don't draw
-        if row < 0 or row > self.h or col > self.w:
+        if row < 0 or row >= self.h or col >= self.w:
             return
 
         # truncate the string to fit
