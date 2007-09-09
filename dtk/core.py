@@ -34,6 +34,7 @@ import string
 import types
 import time
 import logging
+import logging.handlers
 
 import _curses
 import curses
@@ -1097,6 +1098,9 @@ class Engine(InputContext):
             self.w = 0
             self.h = 0
             self.resized = False
+
+            # set up a null logger to avoid the "no logger" message
+            self.beginLogging(handler=logging.handlers.BufferingHandler(0))
 
 
 
