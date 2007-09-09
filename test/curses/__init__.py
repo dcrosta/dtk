@@ -150,14 +150,14 @@ class Screen:
         my, mx = self.getmaxyx()
 
         for ltr in s:
-            self._screen[y][x].set(ltr, _ticks)
-
-            x += 1
             if x >= mx:
                 x = 0
                 y += 1
             if y >= my:
                 print "out of bounds: (%d, %d)" % (y, x)
+
+            self._screen[y][x].set(ltr, _ticks)
+            x += 1
 
         self._cursor = (y, x)
 
@@ -256,7 +256,7 @@ class Screen:
     def set_input(self, *args):
         printre = re.compile('\w')
         for elm in args:
-            if printre.match(elm):
+            if len(elm) == 1 and printre.match(elm):
                 self._input_buf.append(ord(elm))
             else:
                 self._input_buf.append(elm)
@@ -284,7 +284,8 @@ def doupdate():
 def def_prog_mode():
     pass
 def endwin():
-    pass
+    global _ticks
+    _ticks = 0
 
 _use_delay = True
 def use_delay(b):
@@ -306,6 +307,6 @@ def wrapper(callback):
 
     if _scr is None:
         _scr = Screen(24,80)
-        _scr.set_input('down', 'down', ord('q'))
+        _scr.set_input('down', 'down', 'q')
 
     callback(_scr)
