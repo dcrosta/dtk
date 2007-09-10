@@ -42,6 +42,17 @@ class DtkTestCase(unittest.TestCase):
         self.assertEquals(text, t, 'screen at (%d, %d) at %s: "%s" != "%s"' % (y, x, time, text, t))
 
 
+    def assertTextDownAt(self, y, x, text, time=None):
+        t = self.scr.get_text_down_at(y, x, len(text), time)
+
+        if time is None:
+            time = 'end'
+        else:
+            time = 'time %g' % time
+
+        self.assertEquals(text, t, 'screen at (%d, %d) at %s: "%s" != "%s"' % (y, x, time, text, t))
+
+
 class TestBasics(DtkTestCase):
 
     def testHelloWorld(self):

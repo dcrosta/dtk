@@ -48,14 +48,14 @@ KEY_F12 = 'F12'
 def keyname(ch):
     return ch
 
-COLOR_WHITE = 'white'
-COLOR_BLACK = 'black'
-COLOR_BLUE = 'blue'
-COLOR_CYAN = 'cyan'
-COLOR_GREEN = 'green'
-COLOR_MAGENTA = 'magenta'
-COLOR_RED = 'red'
-COLOR_YELLOW = 'yellow'
+COLOR_BLACK = 128 
+COLOR_WHITE = 256
+COLOR_BLUE = 512
+COLOR_CYAN = 1024
+COLOR_GREEN = 2048
+COLOR_MAGENTA = 4096
+COLOR_RED = 8192
+COLOR_YELLOW = 16384
 
 # symbol-thingies
 ACS_ULCORNER = ACS_URCORNER = ACS_LLCORNER = ACS_LRCORNER = '+'
@@ -260,12 +260,18 @@ class Screen:
     def get_text_at(self, y, x, len, time=None):
         if time is None:
             global _ticks
-            time = _ticks
-            if time == 0:
-                time += 0.1
+            time = _ticks + 0.1 # just after the end
 
         e = x + len
         return ''.join([x.at(time) for x in self._screen[y][x:e]])
+
+    def get_text_down_at(self, y, x, len, time=None):
+        if time is None:
+            global _ticks
+            time = _ticks + 0.1 # just after the end
+
+        e = y + len
+        return ''.join([y[x].at(time) for y in self._screen[y:e]])
 
     def set_input(self, *args):
         printre = re.compile('\w')
@@ -282,7 +288,16 @@ def halfdelay(ticks):
 
 _colors = []
 def start_color():
-    pass
+    global _colors, COLOR_WHITE, COLOR_BLACK
+    _colors = [(None,None)] * 64
+    _colors[0] = (COLOR_WHITE, COLOR_BLACK)
+
+def init_pair(pair_number, fg, bg):
+    global _colors
+    _colors[pair_number] = (fg, bg)
+
+def color_pair(color_number):
+    return color_number
 
 def tigetstr(*args):
     return None
@@ -297,9 +312,13 @@ def doupdate():
 
 def def_prog_mode():
     pass
-def endwin():
-    global _ticks, _scr
+
+def initscr():
+    global _ticks
     _ticks = 0
+
+def endwin():
+    global _scr
     del _scr
     _scr = None
 
@@ -321,6 +340,8 @@ _ticks = 0
 def wrapper(callback):
     global _scr
 
+    initscr()
+    
     if _scr is None:
         _scr = Screen(24,80)
         _scr.set_input('down', 'down', 'q')

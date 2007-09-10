@@ -35,7 +35,7 @@ class BugTwentySix(DtkTestCase):
         y, x = self.scr.getmaxyx()
         x -= 1
         for i in xrange(1, y-1):
-            self.assertTextAt(i, x, curses.ACS_VLINE)
+            self.assertTextAt(i, x, curses.ACS_VLINE, 1)
 
-        self.assertTextAt(0, x, curses.ACS_URCORNER)
-        self.assertTextAt(y - 1, x, curses.ACS_URCORNER)
+        self.assertTextAt(0, x, curses.ACS_URCORNER, 1)
+        self.assertTextAt(y - 1, x, curses.ACS_URCORNER, 1)

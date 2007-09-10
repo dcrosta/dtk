@@ -23,6 +23,10 @@ from dtktest import *
 # get any test cases defined in bugs/
 from bugs import *
 
+# and widgets/
+from widgets import *
+
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromModule(__import__('runner'))
     unittest.TextTestRunner(verbosity=2).run(suite)
