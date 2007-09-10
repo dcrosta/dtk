@@ -61,7 +61,7 @@ COLOR_YELLOW = 'yellow'
 ACS_ULCORNER = ACS_URCORNER = ACS_LLCORNER = ACS_LRCORNER = '+'
 ACS_VLINE = '|'
 ACS_HLINE = '-'
-ACS_TTEE = ACS_BTEE = '+'
+ACS_TTEE = ACS_BTEE = ACS_RTEE = ACS_LTEE = '+'
 
 
 # thanks to http://simonwillison.net/2004/Jan/28/sequenceInReverse/
