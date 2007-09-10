@@ -870,6 +870,8 @@ class InputContext(InputHandler):
         localEventQueue = list(self.eventQueue)
         self.eventQueue = []
 
+        if self.done: return
+
         for (source, event) in localEventQueue:
             # do this in a try/catch since we expect
             # it to fail in most cases
