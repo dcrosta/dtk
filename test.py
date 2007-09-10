@@ -305,6 +305,23 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'select':
     s3.bindEvent('clicked', logIt, e = e)
 
 
+elif len(sys.argv) > 1 and sys.argv[1] == 'canvas':
+
+    c = dtk.Canvas()
+    e.setRoot(c)
+
+    c.draw('hello, world!', 1, 1, bold=True)
+    c.drawDown('ello sunshine!', 2, 1, foreground='yellow')
+    c.box(5, 5, 3, 3)
+
+    c.lineDown(5, 6, 3)
+    c.line(6, 5, 3)
+
+
+    c.bindKey('e', c.clear)
+    c.bindKey('q', e.quit)
+
+
 else:
     lb = dtk.ListBox(vimlike = True, selection='multiple')
     e.setRoot(lb)
