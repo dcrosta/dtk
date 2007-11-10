@@ -1,33 +1,20 @@
+# DTK, a curses "GUI" toolkit for Python programs.
+# 
 # Copyright (C) 2006-2007 Dan Crosta
 # Copyright (C) 2006-2007 Ethan Jucovy
-# Some rights reserved.
 # 
-# DTK is licensed under the Creative Commons Attribution-ShareAlike 3.0 US
-# license. Under this license you are free:
+# DTK is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
 # 
-#   * to Share -- to copy, distribute, display, and perform the work
-#   * to Remix -- to make derivative works
+# DTK is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+# License for more details.
 # 
-# Under the following conditions:
-# 
-#   * Attribution. You must attribute the work in the manner specified by the
-#     author or licensor (but not in any way that suggests that they endorse you
-#     or your use of the work).
-#   * Share Alike. If you alter, transform, or build upon this work, you may
-#     distribute the resulting work only under the same, similar or a compatible
-#     license.
-# 
-#   * For any reuse or distribution, you must make clear to others the license
-#     terms of this work.
-#   * Any of the above conditions can be waived if you get permission from the
-#     copyright holder.
-#   * Apart from the remix rights granted under this license, nothing in this
-#     license impairs or restricts the author's moral rights.
-# 
-# 
-# Full text of the license can be found online:
-# 
-#   <http://creativecommons.org/licenses/by-sa/3.0/us/>
+# You should have received a copy of the GNU Lesser General Public
+# License along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
 
 import types
