@@ -18,4 +18,5 @@ setup(name='dtk',
       license="LGPLv3",
       copyright="(C) 2006-2007 Dan Crosta, Ethan Jucovy",
       docformat="epytext en",
+      test_suite="test.runner",
       packages=['dtk'])
