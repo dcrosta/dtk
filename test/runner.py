@@ -28,5 +28,8 @@ from widgets import *
 
 
 if __name__ == '__main__':
+    dtk.Engine().beginLogging(level=logging.DEBUG, file='log.txt')
+    dtk.Engine().log.debug('')
+
     suite = unittest.TestLoader().loadTestsFromModule(__import__('runner'))
     unittest.TextTestRunner(verbosity=2).run(suite)

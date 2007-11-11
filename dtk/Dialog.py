@@ -56,9 +56,9 @@ class Dialog(Container):
 
         self.kids = {}
 
-        self.setTitle(title)
-        self.setText(text)
-        self.setType(type)
+        self.title = title 
+        self.text = text
+        self.type = type
 
         self._setup()
 
@@ -213,7 +213,10 @@ class Dialog(Container):
         """
         called when any button is clicked
         """
+        self.log.debug('quitting context')
         self.context.quit()
+        self.log.debug('firing dismissed')
+        self.fireEvent('dismissed')
 
 
     def _clickedOK(self):

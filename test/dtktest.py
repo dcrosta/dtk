@@ -2,6 +2,7 @@ import unittest
 import sys
 import os
 import os.path
+import logging
 
 # add the path of this file to the python path, so that
 # "import curses" picks up the test curses module
@@ -22,6 +23,8 @@ class DtkTestCase(unittest.TestCase):
         curses._scr = self.scr
         curses.use_delay(False)
         curses.print_screen(False)
+
+        dtk.Engine().log.debug('\n\nBeginning test %s\n', self._TestCase__testMethodName)
         
     def tearDown(self):
         curses.endwin()

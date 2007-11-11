@@ -1318,6 +1318,9 @@ class Engine(InputContext):
             # input handling may have caused events, so we process them here
             context.processEvents()
 
+        # clean up when we're done
+        self.clear(self)
+
 
     def parseInput(self, char):
         """
@@ -1611,11 +1614,22 @@ class Engine(InputContext):
         clears the whole drawable
         """
 
-        self.log.debug('clear(%d, %d => %d, %d)', drawable.y, drawable.x, drawable.y + drawable.h, drawable.x + drawable.w)
+        if drawable == self:
+            y = 0
+            x = 0
+            h, w = self.getScreenSize()
 
-        for r in range(drawable.y, drawable.y + drawable.h):
+        else:
+            y = drawable.y
+            x = drawable.x
+            h = drawable.h
+            w = drawable.w
+
+        self.log.debug('clear(%d, %d => %d, %d)', y, x, y + h, x + w)
+
+        for r in range(y, y + h):
             try:
-                self.scr.addstr(r, drawable.x, ' ' * (drawable.w))
+                self.scr.addstr(r, x, ' ' * (w))
             except:
                 pass
 
