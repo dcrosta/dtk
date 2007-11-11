@@ -1,20 +1,11 @@
 """
-dtk
+DTK, a curses "GUI" toolkit for Python programs.
+
 Copyright (C) 2006-2007 Dan Crosta
 Copyright (C) 2006-2007 Ethan Jucovy
 
 @author: Dan Crosta <dcrosta@sccs.swarthmore.edu>
 @author: Ethan Jucovy <ejucovy@openplans.org>
-"""
-__docformat__ = 'epytext en'
-
-__copyright__ = '(C) 2006-2007 Dan Crosta, Ethan Jucovy'
-__license__ = 'LGPL 3'
-__license_long__ = """
-DTK, a curses "GUI" toolkit for Python programs.
-
-Copyright (C) 2006-2007 Dan Crosta
-Copyright (C) 2006-2007 Ethan Jucovy
 
 DTK is free software: you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the

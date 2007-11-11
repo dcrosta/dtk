@@ -16,4 +16,6 @@ setup(name='dtk',
       author_email="dtk-dev@lists.openplans.org",
       url="https://trac.sccs.swarthmore.edu/dtk",
       license="LGPLv3",
+      copyright="(C) 2006-2007 Dan Crosta, Ethan Jucovy",
+      docformat="epytext en",
       packages=['dtk'])
