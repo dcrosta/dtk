@@ -8,8 +8,6 @@ Copyright (C) 2006-2007 Ethan Jucovy
 """
 __docformat__ = 'epytext en'
 
-__version__ = '0.2'
-__url__ = 'https://firefly.student.swarthmore.edu/trac/wiki/Dtk'
 __copyright__ = '(C) 2006-2007 Dan Crosta, Ethan Jucovy'
 __license__ = 'LGPL 3'
 __license_long__ = """
