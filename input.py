@@ -3,44 +3,49 @@ import time
 import curses
 import curses.ascii
 
+waiter = threading.Condition(threading.Lock())
+
 class Monitor(threading.Thread):
 
-    def __init__(self, **kwargs):
+    def __init__(self, scr, **kwargs):
         threading.Thread.__init__(self, **kwargs)
 
         self.stopped = False
-        self.scr = None
+        self.scr = scr
+
+        self.count = 0
 
     def stop(self):
-        #print "setting stopped=True"
+        self.scr.addstr(9, 0, "Monitor set stopped=True")
         self.stopped = True
 
-    def update(self, message):
-        print message
+    def update(self):
+        self.count += 1
 
     def run(self):
 
-        count = 0
-
+        waiter.acquire()
         while not self.stopped:
-            time.sleep(0.5)
-            if self.scr is not None:
-                self.scr.addstr(1, 0, "count is %d" % count)
-                count += 1
+            self.scr.addstr(10, 0, "Monitor waiting %s      " % self.count)
+            waiter.wait()
+            waiter.release()
+            self.scr.addstr(10, 0, "Monitor got a notice   ")
+
+            self.scr.addstr(1, 0, "count is %3d   %s" % (self.count, bool(self.stopped)))
+            self.scr.addstr(10, 0, "Monitor                 %d" % id(waiter))
+            waiter.acquire()
 
 
-def curses_input(scr, m):
+def curses_input(scr):
     scr.move(0,0)
     scr.clrtobot()
     scr.immedok(1)
     scr.keypad(False)
 
-    # find the thread, set it's scr attribute
-    for thread in threading.enumerate():
-        if isinstance(thread, Monitor):
-            thread.scr = scr
-            scr.addstr("set scr on %s" % thread)
-            break
+    m = Monitor(scr)
+    # this lets us quit the program if only the M thread is stil running
+    m.setDaemon(True)
+    m.start()
 
     scr.move(1,0)
     scr.addstr("blah")
@@ -57,16 +62,22 @@ def curses_input(scr, m):
             m.stop()
             break
 
-    m.join()
+        m.update()
+        
+        waiter.acquire()
+        scr.addstr(11, 0, "Main acquired waiter    %d" % id(waiter))
+        waiter.notifyAll()
+        scr.addstr(11, 0, "Main notifying         ")
+        waiter.release()
+
+
+    curses.endwin()
 
 
 
-def start(m):
-    curses.wrapper(curses_input, m)
+def start():
+    curses.wrapper(curses_input)
 
 if __name__ == '__main__':
-    m = Monitor()
-    m.start()
-
-    start(m)
+    start()
 
