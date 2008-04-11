@@ -3,7 +3,7 @@ import time
 import curses
 import curses.ascii
 
-waiter = threading.Condition(threading.Lock())
+waiter = threading.Event()
 
 class Monitor(threading.Thread):
 
@@ -23,17 +23,15 @@ class Monitor(threading.Thread):
         self.count += 1
 
     def run(self):
+        self.scr.addstr(10, 0, "Monitor                 %d" % id(waiter))
 
-        waiter.acquire()
         while not self.stopped:
             self.scr.addstr(10, 0, "Monitor waiting %s      " % self.count)
             waiter.wait()
-            waiter.release()
+            waiter.clear()
             self.scr.addstr(10, 0, "Monitor got a notice   ")
 
             self.scr.addstr(1, 0, "count is %3d   %s" % (self.count, bool(self.stopped)))
-            self.scr.addstr(10, 0, "Monitor                 %d" % id(waiter))
-            waiter.acquire()
 
 
 def curses_input(scr):
@@ -43,8 +41,6 @@ def curses_input(scr):
     scr.keypad(False)
 
     m = Monitor(scr)
-    # this lets us quit the program if only the M thread is stil running
-    m.setDaemon(True)
     m.start()
 
     scr.move(1,0)
@@ -64,15 +60,14 @@ def curses_input(scr):
 
         m.update()
         
-        waiter.acquire()
         scr.addstr(11, 0, "Main acquired waiter    %d" % id(waiter))
-        waiter.notifyAll()
+        waiter.set()
         scr.addstr(11, 0, "Main notifying         ")
-        waiter.release()
 
 
+    waiter.set()
+    m.join()
     curses.endwin()
-
 
 
 def start():
