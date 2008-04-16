@@ -1003,52 +1003,6 @@ class Engine(InputContext):
     colors = None
 
 
-    # this map is used to handle non-printable input characters
-    # from the curses module with the keypad(True) method called.
-    # in theory input values are meant to be in [0-255], but
-    # python's curses module seems to give back some values
-    # that are more than one byte, but that might be OK as long
-    # as it is consistent.
-   
-    keymap = { 
-               curses.ascii.ESC : "esc",
-               curses.ascii.TAB : "tab",
-               curses.ascii.NL  : "enter", # regular "return" key
-               curses.KEY_ENTER : "enter", # the numpad enter key
-
-               curses.KEY_UP    : "up",
-               curses.KEY_DOWN  : "down",
-               curses.KEY_LEFT  : "left",
-               curses.KEY_RIGHT : "right",
-
-               curses.KEY_HOME  : "home",
-               curses.KEY_NPAGE : "page down",
-               curses.KEY_PPAGE : "page up",
-               curses.KEY_END   : "end",
-
-               curses.KEY_BACKSPACE : "backspace",
-               curses.ascii.DEL : "backspace",
-
-               curses.KEY_IC    : "insert",
-               curses.KEY_DC    : "delete",
-
-               curses.KEY_F1  : "F1",
-               curses.KEY_F2  : "F2",
-               curses.KEY_F3  : "F3",
-               curses.KEY_F4  : "F4",
-               curses.KEY_F5  : "F5",
-               curses.KEY_F6  : "F6",
-               curses.KEY_F7  : "F7",
-               curses.KEY_F8  : "F8",
-               curses.KEY_F9  : "F9",
-               curses.KEY_F10 : "F10",
-               curses.KEY_F11 : "F11",
-               curses.KEY_F12 : "F12",
-               } 
-
-
-
-
     def __new__(clazz, *args, **kwargs):
         """
         Allocate or return the singleton instance of Engine. Currently
@@ -1090,8 +1044,15 @@ class Engine(InputContext):
 
             # set up a null logger to avoid the "no logger" message
             self.beginLogging(handler=logging.handlers.BufferingHandler(0))
+            #self.beginLogging(file='log.txt', level=logging.DEBUG)
 
 
+    def set_event_queue(self, event_queue):
+        self.event_queue = event_queue
+
+    def set_scr(self, scr):
+        self.scr = scr
+        self.cursesInitialized = True
 
     def __str__(self):
         return 'Engine'
@@ -1157,59 +1118,45 @@ class Engine(InputContext):
         return self.title
 
 
-    def mainLoop(self):
+    def run(self):
         """
         runs the main input loop
         """
+        self.log.debug("run() called")
+        if not self.cursesInitialized:
+            self.log.debug("curses not initialized")
+            raise Exception("run() called before scr set")
+        self.log.debug("self.scr is %s", self.scr)
 
-        # check things we need
-        if self.root is None:
-            raise EngineError, "Must set a root Drawable with setRoot()"
-
-        curses.wrapper(self.setupCurses)
-
-
-    def setupCurses(self, scr):
-        """
-        perform post-curses-initialization setup required for
-        Engine functioning.
-        """
-
-        self.scr = scr
         (self.h, self.w) = self.scr.getmaxyx()
+        self.log.debug("run() called")
         
         self.setTitle(self.title)
+        self.log.debug("run() called")
 
-        # ask curses to parse the input for us into
-        # single integers at a time
-        self.scr.keypad(True)
-        
         # this doesn't always work in all terms, but will never
         # fail in such a way as to break anything. by default
         # we want to hide it to keep the GUI pretty
         self.hideCursor()
+        self.log.debug("run() called")
 
         # here we do anything we decided could only be done
         # after curses is initialized
-        self.cursesInitialized = True
         for foo in self.doWhenCursesInitialized:
             if type(foo) == types.TupleType:
                 (method, kwargs) = foo
 
                 method(**kwargs)
+                self.log.debug("calling %s", method)
             else:
                 foo()
+                self.log.debug("calling %s", foo)
 
         # these are all 0 so that we get a "resize" on the first time
         self.lasth = self.lastw = 0
         self.resized = True
 
-        # handle input every 1/2 second
-        #
-        # this is necessary to handle input of (possibly
-        # among others) 'esc'
-        curses.halfdelay(5)
-
+        self.log.debug("calling contextLoop(self)")
         self.contextLoop(self)
 
         self.shellMode()
@@ -1225,13 +1172,8 @@ class Engine(InputContext):
         """
 
 
-        # NOTE: don't put any logging in the loop that will happen
-        # each iteration, else the log gets full of not-so-helpful
-        # messages every half second
-
-
         # context.processEvents()
-
+        self.log.debug("Began contextloop")
         context.started = True
 
 
@@ -1263,6 +1205,7 @@ class Engine(InputContext):
                 self.resized = False
                 self.lasth = h
                 self.lastw = w
+                self.log.debug("resized to %dx%d", h, w)
 
 
             # wait to update the screen state
@@ -1270,7 +1213,8 @@ class Engine(InputContext):
 
 
             context.root.drawContents()
-            context.processEvents()
+            self.log.debug("finished drawContents()")
+            #context.processEvents()
 
 
             # draw the cursor only if it's valid and should be shown
@@ -1286,76 +1230,38 @@ class Engine(InputContext):
             # now update
             self.scr.refresh()
             curses.doupdate()
+            self.log.debug("flushed curses")
 
-            # get and parse the input
-            #
-            # for multi-byte input, this whole section will
-            # be called multiple times, which means that
-            # parseInput only gets access to one byte of the
-            # input at a time, and must maintain its state
-            # (ie location in keymap) somehow
-            input = self.scr.getch()
+            # wait for an event from the queue
+            self.log.debug('Waiting on event_queue...')
+            event = self.event_queue.get()
+            self.log.debug('Got event: %s', event)
+
             try:
-                input = self.parseInput(input)
-            except NoInputCharException:
-                input = None
+                input = event.keyname
                 
-            # after this, input will be a convenient string
-            # such as 'a' or 'space', or None, which means
-            # we're waiting on further multi-byte input
+                # after this, input will be a convenient string
+                # such as 'a' or 'space', or None, which means
+                # we're waiting on further multi-byte input
 
-            if input is not None:
-                self.log.debug('Engine: calling handleInput on %s', context.root)
-                if not context.root.handleInput(input):
-                    self.log.debug('Engine: calling handleInput on %s', context)
-                    if not context.handleInput(input) and not context.modal:
-                        self.log.debug('Engine: calling handleInput on self')
-                        self.handleInput(input)
+                if input is not None:
+                    self.log.debug('Engine: calling handleInput on %s', context.root)
+                    if not context.root.handleInput(input):
+                        self.log.debug('Engine: calling handleInput on %s', context)
+                        if not context.handleInput(input) and not context.modal:
+                            self.log.debug('Engine: calling handleInput on self')
+                            self.handleInput(input)
                         
-
-
+            except:
+                # event_queue was clear()ed, so lets stop
+                self.quit()
+                break
 
             # input handling may have caused events, so we process them here
-            context.processEvents()
+            #context.processEvents()
 
         # clean up when we're done
         self.clear(self)
-
-
-    def parseInput(self, char):
-        """
-        Returns a DTK-friendly representation of the given input,
-        or raises a NoInputCharException if the input could not
-        be properly parsed. "DTK-friendly" is the character itself
-        for printable character input, or else a short string
-        describing the key (eg "page up", "space", "enter") for
-        some keys. The complete list of DTK-friendly strings can
-        be gotten from the Engine.capabilities() dict under the key 
-        'keynames'
-
-        @author Peter Norton
-        """
-
-        if char < 0:
-            # awwww... heck, raise an exception
-            raise NoInputCharException
-
-        # If it's the decimal representation of
-        # a printable character... HEY! THAT'S EASY!
-        elif curses.ascii.isprint(char):
-            self.log.debug("Returning char %s" % chr(char))
-            return chr(char)
-
-        # If it's in keymap via a direct lookup, we're golden
-        elif char in self.keymap:
-            self.log.debug("Returning char %s as %s (curses name %s)", char, str(self.keymap[char]), curses.keyname(char))
-            return(self.keymap[char])
-
-        # If we got here, bad user, bad user
-        else:
-            self.log.info("couldn't parse char: %d" % char)
-            # return None
-            raise NoInputCharException
 
 
     def capabilities(self):

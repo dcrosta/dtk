@@ -45,3 +45,5 @@ for module in modules:
             exec 'from %s import %s' % (module, module)
         except SyntaxError:
             pass
+
+from input import mainloop

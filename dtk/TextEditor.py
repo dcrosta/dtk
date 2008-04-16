@@ -245,7 +245,7 @@ class TextEditor(Drawable):
             wrapped.extend(util.wrap(line, self.w))
 
 
-        self.clear()
+        #self.clear()
 
         y = 0
         for line in wrapped:

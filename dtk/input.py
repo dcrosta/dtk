@@ -5,15 +5,19 @@ import curses
 import curses.ascii
 import traceback
 
+from events import EventQueue, KeyEvent
+from core import Engine
+
 waiter = threading.Event()
 
 class Monitor(threading.Thread):
 
-    def __init__(self, scr, **kwargs):
+    def __init__(self, scr, event_queue, **kwargs):
         threading.Thread.__init__(self, **kwargs)
 
         self.stopped = False
         self.scr = scr
+        self.event_queue = event_queue
 
         self.count = 0
 
@@ -28,28 +32,29 @@ class Monitor(threading.Thread):
         self.scr.addstr(10, 0, "Monitor                 %d" % id(waiter))
 
         while not self.stopped:
-            self.scr.addstr(10, 0, "Monitor waiting %s      " % self.count)
-            waiter.wait()
-            waiter.clear()
+            input = self.event_queue.get()
             self.scr.addstr(10, 0, "Monitor got a notice   ")
 
             self.scr.addstr(1, 0, "count is %3d   %s" % (self.count, bool(self.stopped)))
 
 
-def curses_input(scr):
+def curses_mainloop(scr):
     scr.move(0,0)
     scr.clrtobot()
     scr.immedok(1)
     scr.keypad(False)
 
-    m = Monitor(scr)
+    eq = EventQueue()
+
+    e = Engine()
+    e.set_event_queue(eq)
+    e.set_scr(scr)
+    m = threading.Thread(target=e.run)
     m.start()
 
-    scr.move(1,0)
-    scr.addstr("blah")
-
-    lasttime = time.time()
-    line = 3
+    e.log.debug('Threads are:')
+    for thread in threading.enumerate():
+        e.log.debug('  %s', thread)
 
 
     input_queue = []
@@ -67,13 +72,8 @@ def curses_input(scr):
         km = keymap
         i = 0
         for char in input_queue:
-            scr.move(15 + i, 0)
-            scr.clrtoeol()
-            key = '.'.join([str(x) for x in input_queue[0:min(i+1,len(input_queue))]])
             try:
-                scr.addstr(15 + i, 0, "type at key %s is " % key)
                 km = km[char]
-                scr.addstr(str(type(km)))
             except Exception, e:
                 # usually this exception is OK, because
                 # it often comes from printable keys, which
@@ -97,37 +97,17 @@ def curses_input(scr):
         else:
             input = km
 
-        now = time.time()
-        if now - lasttime < 0.1:
-            line += 1
-        else:
-            for y in range(3, 8):
-                scr.move(y, 0)
-                scr.clrtoeol()
-            line = 3
-        lasttime = time.time()
-
-        scr.move(line, 0)
-        scr.clrtoeol()
-        scr.addstr(line, 0, "input was '%s'" % str(input))
-        scr.addstr(8, 0, "iq was '%s'" % str(input_queue))
         if input == 'q':
-            m.stop()
+            eq.clear()
             break
 
-        m.update()
+        eq.add(KeyEvent(input))
         
-        scr.addstr(11, 0, "Main acquired waiter    %d" % id(waiter))
-        waiter.set()
-        scr.addstr(11, 0, "Main notifying         ")
-
         input_queue = []
 
 
     waiter.set()
     m.join()
-    scr.move(0, 0)
-    scr.clrtobot()
     curses.endwin()
 
 # map special keys to nicer names
@@ -162,9 +142,9 @@ keymap = {
     }
 
 
-def start():
-    curses.wrapper(curses_input)
+def mainloop():
+    curses.wrapper(curses_mainloop)
 
 if __name__ == '__main__':
-    start()
+    mainloop()
 
