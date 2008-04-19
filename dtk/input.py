@@ -1,114 +1,12 @@
 import threading
-import time
 import types
 import curses
 import curses.ascii
 import traceback
 
 from events import EventQueue, KeyEvent
-from core import Engine
-
-waiter = threading.Event()
-
-class Monitor(threading.Thread):
-
-    def __init__(self, scr, event_queue, **kwargs):
-        threading.Thread.__init__(self, **kwargs)
-
-        self.stopped = False
-        self.scr = scr
-        self.event_queue = event_queue
-
-        self.count = 0
-
-    def stop(self):
-        self.scr.addstr(9, 0, "Monitor set stopped=True")
-        self.stopped = True
-
-    def update(self):
-        self.count += 1
-
-    def run(self):
-        self.scr.addstr(10, 0, "Monitor                 %d" % id(waiter))
-
-        while not self.stopped:
-            input = self.event_queue.get()
-            self.scr.addstr(10, 0, "Monitor got a notice   ")
-
-            self.scr.addstr(1, 0, "count is %3d   %s" % (self.count, bool(self.stopped)))
-
-
-def curses_mainloop(scr):
-    scr.move(0,0)
-    scr.clrtobot()
-    scr.immedok(1)
-    scr.keypad(False)
-
-    eq = EventQueue()
-
-    e = Engine()
-    e.set_event_queue(eq)
-    e.set_scr(scr)
-    m = threading.Thread(target=e.run)
-    m.start()
-
-    e.log.debug('Threads are:')
-    for thread in threading.enumerate():
-        e.log.debug('  %s', thread)
-
-
-    input_queue = []
-    while True:
-
-        while True:
-            input = scr.getch()
-            # have to do this after we get the char
-            scr.nodelay(1)
-            input_queue.append(input)
-            if input == -1:
-                scr.nodelay(0)
-                break
-
-        km = keymap
-        i = 0
-        for char in input_queue:
-            try:
-                km = km[char]
-            except Exception, e:
-                # usually this exception is OK, because
-                # it often comes from printable keys, which
-                # are not mapped in the keymap
-                break
-
-        # if input_queue is 2 long (something then a -1),
-        # then the first element is the key code for a
-        # printable character; else km should be the string
-        # name of the key found from the keymap
-        if len(input_queue) == 2 and input_queue[0] not in keymap:
-            input = input_queue[0]
-            if curses.ascii.isprint(input):
-                input = chr(input)
-
-        elif type(km) != types.StringType:
-            # throw an exception?
-            #km = str(input_queue) # for now
-            pass
-
-        else:
-            input = km
-
-        if input == 'q':
-            eq.clear()
-            break
-
-        eq.add(KeyEvent(input))
-        
-        input_queue = []
-
-
-    waiter.set()
-    m.join()
-    curses.endwin()
+from engine import Engine
+from screen import Screen
 
 # map special keys to nicer names
 keymap = {
@@ -141,6 +39,88 @@ keymap = {
     127: { -1: "backspace" }
     }
 
+running = True
+
+def stop():
+    global running
+    running = False
+
+def curses_mainloop(scr):
+    scr.move(0,0)
+    scr.clrtobot()
+    scr.keypad(False)
+    #curses.halfdelay(3)
+
+    eq = EventQueue()
+
+    e = Engine()
+    e.set_event_queue(eq)
+    e.set_screen(Screen(scr))
+    m = threading.Thread(target=e.run)
+    m.start()
+
+    fp = file('log.txt', 'a')
+    input_queue = []
+    while running:
+
+        while True:
+            input = scr.getch()
+            scr.nodelay(1)
+            input_queue.append(input)
+
+            if input == -1:
+                scr.nodelay(0)
+                break
+
+        fp.write('input_queue: %s\n' % str(input_queue))
+        fp.flush()
+
+        if len(input_queue) == 1 and input_queue[0] == -1:
+            input_queue = []
+            curses.cbreak()
+            continue
+
+        curses.halfdelay(1)
+
+        km = keymap
+        i = 0
+        # FIXME: need to handle cases where there isn't
+        # enough time between input that getch() returns
+        # a -1... so this requires smarter traversal of
+        # the keymap as well as some intuition about what
+        # keys are regular keycodes (ascii keys, i guess?)
+        for char in input_queue:
+            try:
+                km = km[char]
+            except Exception, e:
+                # usually this exception is OK, because
+                # it often comes from printable keys, which
+                # are not mapped in the keymap
+                break
+
+        # if input_queue is 2 long (something then a -1),
+        # then the first element is the key code for a
+        # printable character; else km should be the string
+        # name of the key found from the keymap
+        if len(input_queue) == 2 and input_queue[0] not in keymap:
+            input = input_queue[0]
+            if curses.ascii.isprint(input):
+                input = chr(input)
+
+        elif type(km) != types.StringType:
+            # throw an exception?
+            #km = str(input_queue) # for now
+            pass
+
+        else:
+            input = km
+
+        eq.add(KeyEvent(input))
+        
+        input_queue = []
+
+    m.join()
+    curses.endwin()
 
 def mainloop():
     curses.wrapper(curses_mainloop)

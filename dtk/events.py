@@ -23,9 +23,9 @@ class Event(object):
 
 class EventQueue(object):
     """
-    A thread-safe queue used to hold events that the Engine
-    must handle. Events will be one of the types that are defined
-    in this module, and will subclass dtk.events.Event.
+    A thread-safe queue used to hold events for later processing.
+    Events types are defined in this module, and must subclass
+    dtk.events.Event.
     """
 
     def __init__(self):
@@ -49,8 +49,6 @@ class EventQueue(object):
 
         self.queue_lock.acquire()
         self.queue.append(event)
-        from core import Engine
-        Engine().log.debug("input queue is now: %s", str(self.queue))
         self.queue_lock.release()
 
         # release threads blocking on get()
@@ -63,10 +61,7 @@ class EventQueue(object):
         None if another thread calls clear() while a thread
         is waiting on get().
         """
-        from core import Engine
-        Engine().log.debug("wait()ing")
         self.available.wait()
-        Engine().log.debug("wait() returned")
         self.queue_lock.acquire()
         try:
             event = self.queue.pop(0)

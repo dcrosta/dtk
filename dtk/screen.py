@@ -70,6 +70,10 @@ class Screen(object):
 
     def __init__(self, scr):
         self.scr = scr
+        self.auto_update = True
+
+    def set_auto_update(self, auto_update):
+        self.auto_update = auto_update
 
     def get_screen_size(self):
         """
@@ -104,6 +108,9 @@ class Screen(object):
         except _curses.error:
             pass
 
+        if self.auto_update:
+            self.scr.refresh()
+
     def draw_down(self, str, row, col, **kwargs):
         """
         draws the string at the position given by row and col, with
@@ -124,6 +131,9 @@ class Screen(object):
                 self.scr.addstr(r, col, char, attr)
             except _curses.error:
                 pass
+
+        if self.auto_update:
+            self.scr.refresh()
 
     def box(self, row, col, box_width, box_height, **kwargs):
         """
@@ -167,6 +177,9 @@ class Screen(object):
             self.scr.vline(row + 1, col, curses.ACS_VLINE, box_height - 2)
             self.scr.vline(row + 1, col + box_width - 1, curses.ACS_VLINE, box_height - 2)
 
+        if self.auto_update:
+            self.scr.refresh()
+
     def line(self, row, col, len, **kwargs):
         """
         """
@@ -198,6 +211,9 @@ class Screen(object):
                 self.scr.addch(row, c, curses.ACS_HLINE, attr)
         else:
             self.scr.hline(row, col, curses.ACS_HLINE, len)
+
+        if self.auto_update:
+            self.scr.refresh()
 
     def line_down(self, row, col, len, **kwargs):
         """
@@ -231,12 +247,18 @@ class Screen(object):
         else:
             self.scr.vline(row, col, curses.ACS_VLINE, len)
 
+        if self.auto_update:
+            self.scr.refresh()
+
     def clear(self):
         """
         clears the whole screen
         """
         self.scr.move(0, 0)
         self.scr.clrtobot()
+
+        if self.auto_update:
+            self.scr.refresh()
 
     def clear_range(self, y, x, h, w):
         """
@@ -246,6 +268,9 @@ class Screen(object):
             for x in range(x, x+w):
                 self.scr.delch(y, x)
                 self.scr.insch(y, x, ' ')
+
+        if self.auto_update:
+            self.scr.refresh()
 
     def _drawing_attr(self, attrdict):
         """
