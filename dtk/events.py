@@ -28,16 +28,34 @@ class EventQueue(object):
     dtk.events.Event.
     """
 
+    _instance = None
+    _initialized = False
+
+    def __new__(clazz, *args, **kwargs):
+        """
+        Allocate or return the singleton instance of Engine. Currently
+        creates an instance of the concrete sublcass CursesEngine (no
+        other known concrete implementations exist).
+        """
+        if clazz._instance is None:
+            EventQueue._instance = object.__new__(EventQueue)
+
+        return clazz._instance
+
+
     def __init__(self):
-        self.queue = []
+        if not EventQueue._initialized:
+            self.queue = []
 
-        # locks so that only one thread
-        # can diddle the Queue at a time
-        self.queue_lock = threading.RLock()
+            # locks so that only one thread
+            # can diddle the Queue at a time
+            self.queue_lock = threading.RLock()
 
-        # an Event which add() uses to release
-        # someone waiting on get()
-        self.available = threading.Event()
+            # an Event which add() uses to release
+            # someone waiting on get()
+            self.available = threading.Event()
+
+            EventQueue._initialized = True
 
     def add(self, event):
         """

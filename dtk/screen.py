@@ -269,8 +269,11 @@ class Screen(object):
         """
         for y in range(y, y+h):
             for x in range(x, x+w):
-                self.scr.delch(y, x)
-                self.scr.insch(y, x, ' ')
+                try:
+                    self.scr.delch(y, x)
+                    self.scr.insch(y, x, ' ')
+                except:
+                    pass
 
         if self.auto_update:
             self.scr.refresh()
