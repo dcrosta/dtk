@@ -46,10 +46,9 @@ def stop():
     running = False
 
 def curses_mainloop(scr):
-    scr.move(0,0)
-    scr.clrtobot()
     scr.keypad(False)
-    #curses.halfdelay(3)
+    delay = 1
+    curses.halfdelay(delay)
 
     eq = EventQueue()
 
@@ -59,72 +58,142 @@ def curses_mainloop(scr):
     m = threading.Thread(target=e.run)
     m.start()
 
-    fp = file('log.txt', 'a')
-    input_queue = []
-    while running:
+    fp = file('log.txt','a')
 
+    input_queue = []
+    no_input_count = 0
+    while len(threading.enumerate()) > 1:
+
+        curses.halfdelay(delay)
         while True:
             input = scr.getch()
-            scr.nodelay(1)
             input_queue.append(input)
+            curses.cbreak()
+            scr.nodelay(1)
 
             if input == -1:
                 scr.nodelay(0)
                 break
 
-        fp.write('input_queue: %s\n' % str(input_queue))
-        fp.flush()
-
         if len(input_queue) == 1 and input_queue[0] == -1:
             input_queue = []
-            curses.cbreak()
+            if no_input_count >= 5:
+                delay = 10
+            no_input_count += 1
             continue
 
-        curses.halfdelay(1)
+        delay = 1
+        no_input_count = 0
 
-        km = keymap
-        i = 0
-        # FIXME: need to handle cases where there isn't
-        # enough time between input that getch() returns
-        # a -1... so this requires smarter traversal of
-        # the keymap as well as some intuition about what
-        # keys are regular keycodes (ascii keys, i guess?)
-        for char in input_queue:
-            try:
-                km = km[char]
-            except Exception, e:
-                # usually this exception is OK, because
-                # it often comes from printable keys, which
-                # are not mapped in the keymap
-                break
-
-        # if input_queue is 2 long (something then a -1),
-        # then the first element is the key code for a
-        # printable character; else km should be the string
-        # name of the key found from the keymap
-        if len(input_queue) == 2 and input_queue[0] not in keymap:
-            input = input_queue[0]
-            if curses.ascii.isprint(input):
-                input = chr(input)
-
-        elif type(km) != types.StringType:
-            # throw an exception?
-            #km = str(input_queue) # for now
-            pass
-
-        else:
-            input = km
-
-        eq.add(KeyEvent(input))
+        fp.write('input_queue: %s\n' % input_queue)
+        parsed = parse_input(input_queue)
+        fp.write('parsed: %s\n' % parsed)
+        fp.flush()
+        for key in parsed:
+            eq.add(KeyEvent(key))
         
         input_queue = []
 
     m.join()
     curses.endwin()
 
+def parse_input(queue):
+    """
+    parse a list of input integers (char codes) into
+    the correct output list of DTK input strings. for
+    printable characters, the output string is the
+    name of the key (eg "a"); for special keys, it
+    is one of the tail values in keymap.
+
+    >>> parse_input([97])
+    ['a']
+    >>> parse_input([97, 98])
+    ['a', 'b']
+    >>> parse_input([97, -1])
+    ['a']
+    >>> parse_input([97, -1, 98, -1])
+    ['a', 'b']
+    >>> parse_input([])
+    []
+    >>> parse_input([27, -1])
+    ['esc']
+    >>> parse_input([27, 91, 49, 53, 126, -1])
+    ['F5']
+
+    It also works if there are no -1s separating
+    the inputs for escape sequences.
+
+    >>> parse_input([27, 27, 91, 49, 53, 126, -1])
+    ['esc', 'F5']
+    """
+
+    out = []
+    i = 0
+    while i < len(queue):
+        char = queue[i]
+        if char == -1:
+            i += 1
+            continue
+        elif curses.ascii.isprint(char):
+            out.append(chr(char))
+            i += 1
+        else:
+            keyname, consumed = parse_escape_sequence(queue[i:])
+            out.append(keyname)
+            i += consumed
+
+    return out
+
+def parse_escape_sequence(sequence):
+    """
+    parses as much of the input sequence (a list of
+    ints as in parse_input) as it can, and returns
+    a tuple (key_name, chars_parsed). if the
+    sequence cannot be parsed at all, key_name is
+    None, and chars_parsed is 0.
+
+    parse_escape_sequence will consume a -1 in the
+    input if it follows a valid escape sequence. it
+    will also accept escape sequences which are not
+    followed by a -1.
+
+    >>> parse_escape_sequence([27, -1])
+    ('esc', 2)
+    >>> parse_escape_sequence([27])
+    ('esc', 1)
+    >>> parse_escape_sequence([27, 27, 91, 49, 53, 126, -1])
+    ('esc', 1)
+    """
+    km = keymap
+    keyname = None
+
+    i = 0
+    while i < len(sequence):
+        char = sequence[i]
+        i += 1
+        if char in km:
+            km = km[char]
+        elif -1 in km:
+            # there was no -1 in the input, but we 
+            # found a leaf in the keymap
+            keyname = km[-1]
+            i -= 1
+            break
+
+        if type(km) in types.StringTypes:
+            keyname = km
+            break
+
+
+    if keyname is None and -1 in km:
+        keyname = km[-1]
+
+    return (keyname, i)
+
 def mainloop():
     curses.wrapper(curses_mainloop)
 
 if __name__ == '__main__':
-    mainloop()
+    import doctest
+    doctest.testmod()
 

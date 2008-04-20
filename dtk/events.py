@@ -71,6 +71,21 @@ class EventQueue(object):
         self.queue_lock.release()
         self.available.clear()
         return event
+
+    def get_all(self):
+        """
+        get all events out of the queue. blocks if no
+        events are currently available, and then
+        returns immediately when at least one event
+        becomes available.
+        """
+        self.available.wait()
+        self.queue_lock.acquire()
+        out = list(self.queue)
+        self.queue = []
+        self.queue_lock.release()
+        self.available.clear()
+        return out
     
     def clear(self):
         """
@@ -81,6 +96,9 @@ class EventQueue(object):
         self.queue_lock.release()
 
         self.available.set()
+
+    def __repr__(self):
+        return repr(self.queue)
 
 class KeyEvent(Event):
     """

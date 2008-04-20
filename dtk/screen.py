@@ -72,6 +72,9 @@ class Screen(object):
         self.scr = scr
         self.auto_update = True
 
+        self.scr.move(0,0)
+        self.scr.clrtobot()
+
     def set_auto_update(self, auto_update):
         self.auto_update = auto_update
 
