@@ -1,12 +1,11 @@
-DTK r153 (Dec 24, 2006)
-https://firefly.student.swarthmore.edu/src/trunk/dtk@150
+0.3
+---
 
- * Removed double-logging bug (r151)
- * Added TextTable support for new sizing algorithm
-
-DTK r150 (Dec 22, 2006)
-https://firefly.student.swarthmore.edu/src/trunk/dtk@150
-
- * Now using new, much simpler sizing algorithm for Rows and Columns,
-   only supporting fixed size columns and weighted auto-sized columns,
-   so this is no longer backwards compatible to earlier versions.
+* LGPL license
+* Added testrunner and test cases for widgets and known bugs
+* Added Canvas widget class
+* Use setuptools in setup script
+* Bugfix: avoid a "no handler registered for 'dtk'" error
+* Bugfix: drawables no longer improperly clipped at edges
+* Bugfix: don't process events for an inputcontext which is done processing (after a modal dialog is hidden)
+* Bugfix: support for clearing Dialog in core
