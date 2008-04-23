@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-version = '0.3'
+version = '0.4dev'
 
 readme = open('README.txt').read() + '\n\n' + open('ChangeLog').read()
 
@@ -14,6 +14,6 @@ setup(name='dtk',
       author_email="dtk-dev@sccs.swarthmore.edu",
       url="http://trac.sccs.swarthmore.edu/dtk",
       license="LGPLv3",
-      copyright="(C) 2006-2007 Dan Crosta, Ethan Jucovy",
+      copyright="(C) 2006-2008 Dan Crosta, Ethan Jucovy",
       docformat="epytext en",
       packages=['dtk'])

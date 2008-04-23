@@ -1,5 +1,8 @@
-0.3
----
+0.4 (unreleased)
+----------------
+	
+0.3 (2008-04-23)
+----------------
 
 * LGPL license
 * Added testrunner and test cases for widgets and known bugs
