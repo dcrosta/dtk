@@ -1629,7 +1629,8 @@ class Engine(InputContext):
 
         for r in range(y, y + h):
             try:
-                self.scr.addstr(r, x, ' ' * (w))
+                self.scr.delch(y, x)
+                self.scr.insch(y, x, ' ')
             except:
                 pass
 
