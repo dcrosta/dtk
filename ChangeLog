@@ -9,3 +9,4 @@
 * Bugfix: drawables no longer improperly clipped at edges
 * Bugfix: don't process events for an inputcontext which is done processing (after a modal dialog is hidden)
 * Bugfix: support for clearing Dialog in core
+* Bugfix: clearing a drawable no longer sometimes leaves dots
