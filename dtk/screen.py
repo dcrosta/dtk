@@ -68,12 +68,12 @@ class Screen(object):
     colors = None
 
 
-    def __init__(self, scr):
-        self.scr = scr
+    def __init__(self):
+        self.win = None
         self.auto_update = True
 
-        self.scr.move(0,0)
-        self.scr.clrtobot()
+    def set_curses_window(self, win):
+        self.win = win
 
     def set_auto_update(self, auto_update):
         self.auto_update = auto_update
@@ -86,12 +86,16 @@ class Screen(object):
         w = curses.tigetnum('cols')
         return h, w
 
+    def end(self):
+        self.clear()
+        curses.endwin()
+
     def draw(self, str, row, col, **kwargs):
         """
         draws the string at the given row and column.
         drawing style is defined by **kwargs.
         """
-        h, w = self.scr.getmaxyx()
+        h, w = self.win.getmaxyx()
 
         # if it's completely off-screen, don't draw
         if row < 0 or row >= h or col >= w:
@@ -107,12 +111,12 @@ class Screen(object):
 
         # now draw it
         try:
-            self.scr.addstr(row, col, str, self._drawing_attr(kwargs))
+            self.win.addstr(row, col, str, self._drawing_attr(kwargs))
         except _curses.error:
             pass
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def draw_down(self, str, row, col, **kwargs):
         """
@@ -122,7 +126,7 @@ class Screen(object):
         underline, etc), colors, and other things specific to the
         Engine. capabilities() should list all the possibilities.
         """
-        h, w = self.scr.getmaxyx()
+        h, w = self.win.getmaxyx()
 
         if row > h or col < 0 or col > w:
             return
@@ -131,12 +135,12 @@ class Screen(object):
 
         for char, r in zip(str, range(row, min(row + len(str), h))):
             try:
-                self.scr.addstr(r, col, char, attr)
+                self.win.addstr(r, col, char, attr)
             except _curses.error:
                 pass
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def box(self, row, col, box_width, box_height, **kwargs):
         """
@@ -153,11 +157,11 @@ class Screen(object):
         attr = self._drawing_attr(kwargs)
 
         # draw corners
-        self.scr.addch(row, col, curses.ACS_ULCORNER, attr)
-        self.scr.addch(row, col + box_width - 1, curses.ACS_URCORNER, attr)
-        self.scr.addch(row + box_height - 1, col, curses.ACS_LLCORNER, attr)
+        self.win.addch(row, col, curses.ACS_ULCORNER, attr)
+        self.win.addch(row, col + box_width - 1, curses.ACS_URCORNER, attr)
+        self.win.addch(row + box_height - 1, col, curses.ACS_LLCORNER, attr)
         try:
-            self.scr.addch(row + box_height - 1, col + box_width - 1, curses.ACS_LRCORNER, attr)
+            self.win.addch(row + box_height - 1, col + box_width - 1, curses.ACS_LRCORNER, attr)
         except _curses.error, e:
             pass
 
@@ -165,23 +169,23 @@ class Screen(object):
         if attr:
             # if we have an attribute, we have to draw char-brow-char
             for r in range(col + 1, col + box_width - 1):
-                self.scr.addch(row, r, curses.ACS_HLINE, attr)
-                self.scr.addch(row + box_height - 1, r, curses.ACS_HLINE, attr)
+                self.win.addch(row, r, curses.ACS_HLINE, attr)
+                self.win.addch(row + box_height - 1, r, curses.ACS_HLINE, attr)
     
             for c in range(row + 1, row + box_height - 1):
-                self.scr.addch(c, col, curses.ACS_VLINE, attr)
-                self.scr.addch(c, col + box_width - 1, curses.ACS_VLINE, attr)
+                self.win.addch(c, col, curses.ACS_VLINE, attr)
+                self.win.addch(c, col + box_width - 1, curses.ACS_VLINE, attr)
 
         else:
             # else we can use these functions which are probably quicker
-            self.scr.hline(row, col + 1, curses.ACS_HLINE, box_width - 2)
-            self.scr.hline(row + box_height - 1, col + 1, curses.ACS_HLINE, box_width - 2)
+            self.win.hline(row, col + 1, curses.ACS_HLINE, box_width - 2)
+            self.win.hline(row + box_height - 1, col + 1, curses.ACS_HLINE, box_width - 2)
 
-            self.scr.vline(row + 1, col, curses.ACS_VLINE, box_height - 2)
-            self.scr.vline(row + 1, col + box_width - 1, curses.ACS_VLINE, box_height - 2)
+            self.win.vline(row + 1, col, curses.ACS_VLINE, box_height - 2)
+            self.win.vline(row + 1, col + box_width - 1, curses.ACS_VLINE, box_height - 2)
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def line(self, row, col, len, **kwargs):
         """
@@ -201,22 +205,22 @@ class Screen(object):
         attr = self._drawing_attr(kwargs)
 
         if 'leftEnd' in kwargs:
-            self.scr.addch(row, col, kwargs['leftEnd'], attr)
+            self.win.addch(row, col, kwargs['leftEnd'], attr)
             len -= 1
             col += 1
 
         if 'rightEnd' in kwargs:
-            self.scr.addch(row, col + len - 1, kwargs['rightEnd'], attr)
+            self.win.addch(row, col + len - 1, kwargs['rightEnd'], attr)
             len -= 1
 
         if attr:
             for c in range(col, col + len):
-                self.scr.addch(row, c, curses.ACS_HLINE, attr)
+                self.win.addch(row, c, curses.ACS_HLINE, attr)
         else:
-            self.scr.hline(row, col, curses.ACS_HLINE, len)
+            self.win.hline(row, col, curses.ACS_HLINE, len)
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def line_down(self, row, col, len, **kwargs):
         """
@@ -236,32 +240,32 @@ class Screen(object):
         attr = self._drawing_attr(kwargs)
 
         if 'topEnd' in kwargs:
-            self.scr.addch(row, col, kwargs['topEnd'], attr)
+            self.win.addch(row, col, kwargs['topEnd'], attr)
             len -= 1
             row += 1
 
         if 'bottomEnd' in kwargs:
-            self.scr.addch(row + len - 1, col, kwargs['bottomEnd'], attr)
+            self.win.addch(row + len - 1, col, kwargs['bottomEnd'], attr)
             len -= 1
 
         if attr:
             for r in range(row, row + len):
-                self.scr.addch(r, col, curses.ACS_VLINE, attr)
+                self.win.addch(r, col, curses.ACS_VLINE, attr)
         else:
-            self.scr.vline(row, col, curses.ACS_VLINE, len)
+            self.win.vline(row, col, curses.ACS_VLINE, len)
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def clear(self):
         """
         clears the whole screen
         """
-        self.scr.move(0, 0)
-        self.scr.clrtobot()
+        self.win.move(0, 0)
+        self.win.clrtobot()
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def clear_range(self, y, x, h, w):
         """
@@ -270,13 +274,13 @@ class Screen(object):
         for y in range(y, y+h):
             for x in range(x, x+w):
                 try:
-                    self.scr.delch(y, x)
-                    self.scr.insch(y, x, ' ')
+                    self.win.delch(y, x)
+                    self.win.insch(y, x, ' ')
                 except:
                     pass
 
         if self.auto_update:
-            self.scr.refresh()
+            self.win.refresh()
 
     def _drawing_attr(self, attrdict):
         """

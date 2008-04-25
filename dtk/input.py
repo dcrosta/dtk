@@ -2,11 +2,8 @@ import threading
 import types
 import curses
 import curses.ascii
-import traceback
 
-from events import EventQueue, KeyEvent
-from engine import Engine
-from screen import Screen
+from events import KeyEvent
 
 # map special keys to nicer names
 keymap = {
@@ -45,20 +42,15 @@ def stop():
     global running
     running = False
 
-def curses_mainloop(scr):
-    scr.keypad(False)
+def curses_mainloop(win, engine):
+    win.keypad(False)
     delay = 1
     curses.halfdelay(delay)
 
-    eq = EventQueue()
+    engine.get_screen().set_curses_window(win)
+    engine.start()
 
-    e = Engine()
-    e.set_event_queue(eq)
-    e.set_screen(Screen(scr))
-    m = threading.Thread(target=e.run)
-    m.start()
-
-    fp = file('log.txt','a')
+    event_queue = engine.get_event_queue()
 
     input_queue = []
     no_input_count = 0
@@ -66,13 +58,13 @@ def curses_mainloop(scr):
 
         curses.halfdelay(delay)
         while True:
-            input = scr.getch()
+            input = win.getch()
             input_queue.append(input)
             curses.cbreak()
-            scr.nodelay(1)
+            win.nodelay(1)
 
             if input == -1:
-                scr.nodelay(0)
+                win.nodelay(0)
                 break
 
         if len(input_queue) == 1 and input_queue[0] == -1:
@@ -85,16 +77,13 @@ def curses_mainloop(scr):
         delay = 1
         no_input_count = 0
 
-        fp.write('input_queue: %s\n' % input_queue)
         parsed = parse_input(input_queue)
-        fp.write('parsed: %s\n' % parsed)
-        fp.flush()
         for key in parsed:
-            eq.add(KeyEvent(key))
+            event_queue.add(KeyEvent(key))
         
         input_queue = []
 
-    m.join()
+    engine.join()
     curses.endwin()
 
 def parse_input(queue):
@@ -190,8 +179,8 @@ def parse_escape_sequence(sequence):
 
     return (keyname, i)
 
-def mainloop():
-    curses.wrapper(curses_mainloop)
+def mainloop(engine):
+    curses.wrapper(curses_mainloop, engine)
 
 if __name__ == '__main__':
     import doctest

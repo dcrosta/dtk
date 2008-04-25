@@ -4,6 +4,7 @@ import logging
 import time
 
 import dtk.events
+from dtk.engine import Engine
 
 
 class TimerEvent(dtk.events.Event):
@@ -12,19 +13,38 @@ class TimerEvent(dtk.events.Event):
         self.count = count
 
     def __repr__(self):
-        return self.count
+        return str(self.count)
 
 class Timer(threading.Thread):
+    """
+    based on threading.Timer, but resets the timer
+    unless cancel() is called.
+    """
 
-    def __init__(self):
+    def __init__(self, event_queue):
         threading.Thread.__init__(self)
-        self.event_queue = dtk.events.EventQueue()
+
+        self.finished = threading.Event()
+        self.event_queue = event_queue
+        self.done = False
+
+    def cancel(self):
+        self.event_queue.add(TimerEvent(100))
+        self.done = True
+        self.finished.set()
 
     def run(self):
         for i in range(1, 6):
-            time.sleep(1)
-            self.event_queue.add(TimerEvent(i))
+            self.finished.wait(1.0)
+            if self.done:
+                break
+            else:
+                self.event_queue.add(TimerEvent(i))
+            self.finished.clear()
 
-t = Timer()
+e = Engine()
+t = Timer(e.get_event_queue())
 t.start()
-dtk.mainloop()
+
+e.start_dtk()
+
