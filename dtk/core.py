@@ -1628,11 +1628,12 @@ class Engine(InputContext):
         self.log.debug('clear(%d, %d => %d, %d)', y, x, y + h, x + w)
 
         for r in range(y, y + h):
-            try:
-                self.scr.delch(y, x)
-                self.scr.insch(y, x, ' ')
-            except:
-                pass
+            for c in range(x, x + w):
+                try:
+                    self.scr.delch(r, c)
+                    self.scr.insch(r, c, ' ')
+                except:
+                    pass
 
 
     # curses support functions
