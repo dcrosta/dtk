@@ -22,27 +22,27 @@ from RowColumns import RowColumns
 import curses
 import util
 
-class Rows(RowColumns):
+class ColumnLayout(RowColumns):
     """
     implements a flexible, resizable (hopefully!) layout
     scheme for Drawables. Supports a border option, which
     will draw a one-character border around the whole area,
-    or between the row, or both.
+    or between the columns, or both.
     """
 
-    addRow = RowColumns.addChild
-    insertRow = RowColumns.insertChild
-    nextRow = RowColumns.nextChild
-    prevRow = RowColumns.prevChild
-    switchRow = RowColumns.switchChild
-    lineSomehow = RowColumns.line
-    drawSomehow = RowColumns.draw
+    addColumn = RowColumns.addChild
+    insertColumn = RowColumns.insertChild
+    nextColumn = RowColumns.nextChild
+    prevColumn = RowColumns.prevChild
+    switchColumn = RowColumns.switchChild
+    lineSomehow = RowColumns.lineDown
+    drawSomehow = RowColumns.drawDown
 
     def setSize(self, y, x, h, w):
         """
         calculate children's sizes, then call setSize on each of them
         """
-        super(Rows, self).setSize(y, x, h, w)
+        super(ColumnLayout, self).setSize(y, x, h, w)
 
         # this is the case when we're being resized before
         # the Engine is initialized
@@ -57,19 +57,19 @@ class Rows(RowColumns):
         h = self.h
         w = self.w
 
-        # start from available height
-        available = h
+        # start from available width
+        available = w
 
         # adjust for borders, if they're to be drawn
         if self.outerborder:
             available -= 2
 
-            # pushes the starting y down by 1
-            y += 1
-            
-            # outer border will also shrink our available horizontal area
+            # pushes the starting x over by 1
             x += 1
-            w -= 2
+            
+            # outer border will also shrink our available vertical area
+            y += 1
+            h -= 2
 
         if self.innerborder:
             available -= (len(self.cells) - 1)
@@ -83,13 +83,13 @@ class Rows(RowColumns):
             child._meta['primary_dim'] = size
 
             if isinstance(child, Drawable):
-                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, child._meta['primary_dim'], w)
-                child.setSize(y, x, child._meta['primary_dim'], w)
+                self.log.debug('setting size of "%s" to (%d, %d, %d, %d)', child.name, y, x, h, child._meta['primary_dim'])
+                child.setSize(y, x, h, child._meta['primary_dim'])
 
-            y += child._meta['primary_dim']
+            x += child._meta['primary_dim']
             if self.innerborder:
-                y += 1
-
+                x += 1
+        
     def render(self):
         """
         draw the borders
@@ -97,25 +97,25 @@ class Rows(RowColumns):
         attr = {}
         if self.outerborder:
             self.box(0, 0, self.w, self.h)
-            attr['leftEnd'] = curses.ACS_LTEE
-            attr['rightEnd'] = curses.ACS_RTEE
+            attr['topEnd'] = curses.ACS_TTEE
+            attr['bottomEnd'] = curses.ACS_BTEE
 
         # 1 if true, 0 if false
-        borders = int(self.outerborder) 
+        borders = int(self.outerborder)
 
-        y = borders
+        x = borders 
 
         for child in self.cells:
             if isinstance(child, self.Separator):
                 if child.type == 'line':
-                    self.lineSomehow(y, borders, self.w - 2 * borders)
+                    self.lineSomehow(borders, x, self.h - 2 * borders)
                 elif child.type == 'blank':
-                    self.drawSomehow(' ' * (self.w - 2 * borders), y, borders)
+                    self.drawSomehow(' ' * (self.h - 2 * borders), 0, x + borders)
 
-            y += child._meta['primary_dim']
+            x += child._meta['primary_dim']
 
             # if we're drawing inner borders, do it here
-            # but only if there are more rows after this
+            # but only if there are more cols after this
             if self.innerborder and self.cells.index(child) != len(self.cells) - 1:
-                self.lineSomehow(y, 0, self.w, **attr)
-                y += 1 # for ther inner border
+                self.lineSomehow(0, x, self.h, **attr)
+                x += 1 # for the inner border

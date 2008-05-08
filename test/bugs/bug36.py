@@ -13,8 +13,8 @@ class BugThirtySix(dtktest.DtkTestCase):
 
         e = dtk.Engine()
 
-        cols = dtk.Columns()
-        rows = dtk.Rows()
+        cols = dtk.ColumnLayout()
+        rows = dtk.RowLayout()
         lb = dtk.ListBox()
 
         lll = []

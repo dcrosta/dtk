@@ -266,15 +266,15 @@ class Dialog(Container):
 
 
 
-        from Rows import Rows
-        from Columns import Columns
+        from RowLayout import RowLayout
+        from ColumnLayout import ColumnLayout
         from Label import Label
         from Pager import Pager
         from TextField import TextField
         from Button import Button
         from core import Drawable
 
-        self.window = Rows(outerborder = True, innerborder = False)
+        self.window = RowLayout(outerborder = True, innerborder = False)
         self.window.name = 'Dialog::Window'
         self.window.unbindKey('all')
 
@@ -313,7 +313,7 @@ class Dialog(Container):
             self.window.setActiveDrawable(self.kids['input'])
 
         else:
-            self.kids['yesno'] = Columns(outerborder = False, innerborder = False)
+            self.kids['yesno'] = ColumnLayout(outerborder = False, innerborder = False)
 
             self.kids['yes']   = Button(' Yes ')
             self.kids['yes'].name = 'Dialog::YesButton'

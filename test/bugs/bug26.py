@@ -14,7 +14,7 @@ class BugTwentySix(DtkTestCase):
 
         e = dtk.Engine()
 
-        c = dtk.Columns()
+        c = dtk.ColumnLayout()
         l = dtk.ListBox()
         l.setItems([
                 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nullam ac elit. Nullam consectetuer ultrices elit. Morbi a sem.',

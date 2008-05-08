@@ -48,7 +48,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'te':
     e.setRoot(te)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'r':
-    c = dtk.Rows()
+    c = dtk.RowLayout()
     c.bindKey('a', add_item)
     e.setRoot(c)
 
@@ -72,7 +72,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'r':
     e.setFocus(lb1)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'c':
-    c = dtk.Columns()
+    c = dtk.ColumnLayout()
     c.bindKey('a', add_item)
     e.setRoot(c)
 
@@ -164,7 +164,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 's':
     s.bindKey('page down', s.pop)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'button':
-    r = dtk.Rows(outerborder = False, innerborder = False)
+    r = dtk.RowLayout(outerborder = False, innerborder = False)
 
     def toggle(item):
         text = item.getText()
@@ -217,7 +217,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
     p.bindKey('enter', showDialog)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'event':
-    root = dtk.Rows()
+    root = dtk.RowLayout()
     e.setRoot(root)
 
     tf = dtk.TextField()
@@ -274,7 +274,7 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'color':
 
                     
 elif len(sys.argv) > 1 and sys.argv[1] == 'select':
-    rw = dtk.Rows()
+    rw = dtk.RowLayout()
 
     s1 = dtk.Select()
     s1.name = 's1'

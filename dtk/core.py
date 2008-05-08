@@ -527,8 +527,8 @@ class Container(Drawable):
          child is a Drawable)
 
     Containers which want to provide methods to update the active
-    status among their children (ie nextRow() in Rows) can update
-    the active reference; if the Rows is on the active path, then
+    status among their children (ie nextRow() in RowLayout) can update
+    the active reference; if the RowLayout is on the active path, then
     the new child is automatically focused. When doing this,
     Containers should call getActivePath() on Engine; if self is
     in the active path, then the previous active path below self
