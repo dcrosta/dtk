@@ -194,28 +194,6 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'button':
     e.setRoot(r)
     e.setFocus(b1)
 
-elif len(sys.argv) > 1 and sys.argv[1] == 'dialog':
-    fp = file('dtk/ListBox.py', 'r')
-    text = ''.join(fp.readlines())
-    fp.close()
-
-    p = dtk.Pager()
-    p.setText(text)
-    e.setRoot(p)
-
-    d = dtk.Dialog()
-    if len(sys.argv) == 3:
-        d.setType(sys.argv[2])
-    else:
-        d.setType('message')
-    d.setTitle('Dialog Box')
-    d.setText('If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee. If a module is syntactically correct but its initialization fails then Andrew gets very unhappy and wants to walk to Pearson. Mustafa is busy color-calibrating the monitor in the corner; Dan wishes he had coffee?')
-
-    def showDialog():
-        d.show()
-
-    p.bindKey('enter', showDialog)
-
 elif len(sys.argv) > 1 and sys.argv[1] == 'event':
     root = dtk.RowLayout()
     e.setRoot(root)

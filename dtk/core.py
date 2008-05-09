@@ -714,10 +714,7 @@ class InputContext(InputHandler):
     a pointer to a root drawable and some methods for manipulating
     the tree of drawables rooted there. This is useful, though,
     as it provides a way for Drawables to create nested input loops
-    if they have some special purpose. For example, Dialog creates
-    an InputContext and processes it so that interactions with the
-    dialog are not available to the "regular" DTK drawable tree (ie
-    the Dialog is modal).
+    if they have some special purpose.
     """
 
     def __init__(self, modal = True, *args, **kwargs):
