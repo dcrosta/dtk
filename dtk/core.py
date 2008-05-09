@@ -222,15 +222,12 @@ class Drawable(InputHandler):
     Some drawables which do not wish to take up the entire space
     allotted for them by DTK core may override setSize. 
 
-    Finally, each Drawable has a reference to the Engine and the
-    context in which it exists. For more information on input
-    contexts, see the documentation in InputContext and Engine.
-    Drawables may check the focused attribute to determine if
-    they are currently the focused Drawable in their context. Some
-    Drawables use this value to change their drawing style: ListBox
-    shows the active highlighted row in reverse-colors when it has
-    focus, and normally when it does not, creating a cursor only
-    when the ListBox has focus.
+    Finally, each Drawable has a reference to the Engine. Drawables
+    may check the focused attribute to determine if they are currently
+    the focused Drawable. Some Drawables use this value to change
+    their drawing style: ListBox shows the active highlighted row in
+    reverse-colors when it has focus, and normally when it does not,
+    creating a cursor only when the ListBox has focus.
 
     Events:
      * 'got focus' when this Drawable gains focus
@@ -259,7 +256,6 @@ class Drawable(InputHandler):
             self.name = kwargs['name']
 
         self.engine = Engine()
-        self.context = self.engine
 
         self.touched = True
         self._meta = dict()
@@ -271,7 +267,7 @@ class Drawable(InputHandler):
     def _setFocused(self, value):
         raise EngineException("Do not set focus on a Drawable directly.  Call Engine::setFocus instead.")
     def _getFocused(self):
-        return self.context.getFocusedDrawable() is self
+        return self.engine.getFocusedDrawable() is self
     focused = property(_getFocused, _setFocused,
             doc="True when this Drawable is the focused Drawable. "
                 "Focus means this drawable will get input keys "
@@ -306,7 +302,6 @@ class Drawable(InputHandler):
         """
         this drawable is now part of an active path of some subtree.
         note that this does not mean that it is on *the* active path
-        (ie the one beginning at the context root).
         """
         self.touch()
         self.fireEvent('became active')
@@ -316,22 +311,9 @@ class Drawable(InputHandler):
         """
         this drawable is now part of an active path of some subtree.
         note that this does not mean that it is on *the* active path
-        (ie the one beginning at the context root).
         """
         self.touch()
         self.fireEvent('became inactive')
-
-
-    def setContext(self, context):
-        """
-        update the context reference and rebind events
-        to the new context
-        """
-        self.log.debug('moving bindings from context %s to %s', self.context, context)
-
-        bindings = self.context.dropBindings(self)
-        self.context = context
-        self.context.loadBindings(self, bindings)
 
 
     def drawContents(self):
@@ -393,27 +375,26 @@ class Drawable(InputHandler):
     def bindEvent(self, event, method, *args, **kwargs):
         """
         bind method with the given args and keyword args
-        on this instance. see InputContext.bindEvent for
+        on this instance. see Engine.bindEvent for
         more details on event binding.
         """
-        self.context.bindEvent(self, event, method, *args, **kwargs)
+        self.engine.bindEvent(self, event, method, *args, **kwargs)
     
 
     def unbindEvent(self, event, method):
         """
         unbind the given method on this instance. see
-        InputContext.bindEvent for more details on event
+        Engine.bindEvent for more details on event
         binding.
         """
-        self.context.unbindEvent(self, event, method)
+        self.engine.unbindEvent(self, event, method)
 
 
     def fireEvent(self, event):
         """
-        enqueue the given event with the context with self
-        as the source
+        fire an event originating from this Drawable
         """
-        self.context.enqueueEvent(self, event)
+        self.engine.enqueueEvent(self, event)
 
 
     # drawables should use these methods for drawing rather than
@@ -521,10 +502,6 @@ class Container(Drawable):
     * touchAll():
        * for each child, call touchAll() (if child is a Container)
          or touch() (if child is a Drawable)
-    * setContext(context):
-       * for each child, call setContext() (if child is a Container)
-         or simply set the context member to the given value (if
-         child is a Drawable)
 
     Containers which want to provide methods to update the active
     status among their children (ie nextRow() in RowLayout) can update
@@ -659,18 +636,6 @@ class Container(Drawable):
         self.touch()
 
 
-    def setContext(self, context):
-        """
-        sets the context member of each Drawable and Container
-        at or below this Container; should be used only from
-        within Engine
-        """
-        for child in self.children:
-            child.setContext(context)
-
-        super(Container, self).setContext(context)
-
-
     def handleInput(self, input):
         """
         try the input on the active child/path first, and if it
@@ -707,257 +672,11 @@ class ContainerException(Exception):
     pass
 
 
-class InputContext(InputHandler):
+class Engine(InputHandler):
     """
-    An InputContext creates an isolated set of Drawables on which
-    Engine's input loop operates. Essentially, InputContext is
-    a pointer to a root drawable and some methods for manipulating
-    the tree of drawables rooted there. This is useful, though,
-    as it provides a way for Drawables to create nested input loops
-    if they have some special purpose.
-    """
-
-    def __init__(self, modal = True, *args, **kwargs):
-        super(InputContext, self).__init__(*args, **kwargs)
-
-        if getattr(self, 'log', None) is None:
-            self.log = logging.getLogger('dtk')
-
-        self.root = None
-        self.modal = modal
-        self.done = False
-        self.started = False
-
-        # a list of tuples (source, event)
-        self.eventQueue = []
-
-        # nested dict of bindings:
-        #
-        # eventBindings keyed by source (incl None)
-        #  + sub-dicts keyed by event
-        #     + sub-dicts keyed by method
-        #        + value is tuple (*args, **kwargs)
-        self.eventBindings = {}
-
-
-    def quit(self):
-        """
-        stop processing this context
-        """
-        self.done = True
-
-
-    def getFocusedDrawable(self):
-        """
-        returns the drawable in this context that has focus
-        """
-        if isinstance(self.root, Container):
-            return self.root.getActiveDrawable()
-        else:
-            return self.root
-
-
-    def setFocus(self, drawable):
-        """
-        Set the focused drawable in this context to the given one
-        """
-
-        if isinstance(self.root, Container):
-            self.log.debug('self.root.setActiveDrawable(%s)', drawable)
-            self.root.setActiveDrawable(drawable)
-        else:
-            if self.root is drawable:
-                return
-            else:
-                raise EngineException, "To change the root Drawable, use setRoot()"
- 
-
-    def setRoot(self, drawable):
-        """
-        set the given drawable as the root drawable of the context
-        """
-        self.root = drawable
-
-
-    def getRoot(self):
-        """
-        returns the root drawable of the context, as set by setRoot()
-        """
-        return self.root
-
-
-    def bindEvent(self, source, event, method, *args, **kwargs):
-        """
-
-        add a binding for events of the given type from the given source.
-        some events without a source object may have 'None' as the
-        source; for others, source will be a reference to the Drawable
-        which caused the event. method may be a function or method. when
-        a matching event is found in the event queue, method will be
-        called with the given arguments and keyword arguments. many
-        bindings may be made for a given (source, event, method). bound
-        methods with an argument named '_source_obj' will receive a
-        reference to the source in that argument. bound methods with an
-        argument named '_event_type' will receive a copy of the event
-        type (usually a string) in thar argument.
-        
-        the return value of bound methods (if any) is ignored when
-        processing events
-        """
-
-        if source not in self.eventBindings:
-            self.eventBindings[source] = {}
-
-        if event not in self.eventBindings[source]:
-            self.eventBindings[source][event] = {}
-
-        self.eventBindings[source][event][method] = (args, kwargs)
-        self.log.debug('bound event handler for (%s, %s) => %s', source, event, method)
-
-
-    def unbindEvent(self, source, event, method):
-        """
-        remove the given method from the list of event bindings on the
-        given source and event.
-        """
-        try:
-            del self.eventBindings[source][event][method]
-            self.log.debug("unbound %s on (%s, %s)", method, source, event)
-        
-        except KeyError:
-            self.log.debug("no bindings for %s on (%s, %s)", method, source, event)
-
-
-    def enqueueEvent(self, source, event):
-        """
-        add an event to the event queue. the event queue is processed
-        periodically by the contextLoop (see Engine), at which time
-        any events with matching bindings will trigger a call to
-        each bound method. for user events without a source object,
-        set source to 'None', which will match bindings to events
-        with 'None' as source.
-        """
-        if self.started and not self.done:
-            self.eventQueue.append((source, event))
-            self.log.debug('enqueued event for (%s, %s)', source, event)
-
-
-    def processEvents(self):
-        """
-        process all the events in the event queue, and clear the queue
-        """
-
-        if len(self.eventQueue) > 0:
-            self.log.debug('processing event queue with %d items', len(self.eventQueue))
-
-        # make a local copy
-        localEventQueue = list(self.eventQueue)
-        self.eventQueue = []
-
-        if self.done: return
-
-        for (source, event) in localEventQueue:
-            # do this in a try/catch since we expect
-            # it to fail in most cases
-            try:
-                # the dict of methods bound to this (source, event)
-                bindings = self.eventBindings[source][event]
-
-                # each method bound to the (source, event)
-                for method in bindings.keys():
-                    (args, kwargs) = bindings[method]
-
-                    try:
-                        varnames = method.func_code.co_varnames
-                    except AttributeError:
-                        varnames = method.__call__.func_code.co_varnames
-
-                    # copy the kwargs dictionary so that we don't save any of the
-                    # extra information we're about to conditionally pass along
-                    # (or overwrite anything passed in from the user)
-                    kwargs = dict(kwargs)
-
-                    # if the method is asking for a _source_obj argument,
-                    # bind the event source to the method before calling it
-                    # unless another object is already bound to the method
-                    # TODO this is actually broken. it will still fill the slot
-                    # if the user passes in a POSITIONAL argument for _source_obj,
-                    # resulting in an exception.
-                    if '_source_obj' in varnames:
-                        kwargs['_source_obj'] = kwargs.get('_source_obj', None) or source
-
-                    # do the same for _event_type
-                    if '_event_type' in varnames:
-                        kwargs['_event_type'] = kwargs.get('_event_type', None) or event
-
-
-                    method(*args, **kwargs)
-                    self.log.debug('calling %s(*args = %s, **kwargs = %s)', method, args, kwargs)
-
-            except KeyError:
-                pass
-
-
-    def dropBindings(self, source):
-        """
-        return the dict of bindings for the given source, and
-        remove them from the eventBindings dictionary. this
-        should only be called from Drawable.setContext()
-        """
-        bindings = self.eventBindings.get(source, {})
-
-        try:
-            del self.eventBindings[source]
-        except KeyError:
-            pass
-
-        return bindings
-    
-
-    def loadBindings(self, source, bindings):
-        """
-        add the bindings to the bindings dictionary for the given
-        source. this should only be called from Drawable.setContext().
-        if any bindings exist for the (source, event, method), then
-        we will overwrite them here and issue a warning to the log
-        """
-
-        if source not in self.eventBindings:
-            # the simple case, where no previous bindings
-            # exist for the source -- just set the reference
-            self.eventBindings[source] = bindings
-
-        else:
-            # if previous bindings exist, we have to merge
-            # the incoming ones with what exists. i doubt
-            # this will happen, but be careful just in case
-            sbindings = self.eventBindings[source]
-
-            for event in bindings.keys():
-                if event not in sbindings:
-                    sbindings[event] = bindings[event]
-
-                else:
-                    ebindings = self.eventBindings[source][event]
-
-                    new_ebindings = bindings[event]
-
-                    for method in new_ebindings.keys():
-                        if method in ebindings:
-                            self.log.warn('overwriting existing binding on (%s, %s) => %s', source, event, method)
-
-                        ebindings[method] = new_ebindings[method]
-                        
-                    
-
-
-
-class Engine(InputContext):
-    """
-    Engine handles input processing, screen drawing and the event
-    loop for the DTK core. Engine is an InputContext which means
-    that it also contains a root drawable and methods for
-    manipulating a tree of Drawables.
+    Engine handles input processing, screen drawing and the
+    event loop for the DTK core. Engine also contains a root
+    drawable and methods for manipulating a tree of Drawables.
 
     Engine is a singleton. This means you don't need to ever
     keep a reference to it, you can simply call
@@ -1067,8 +786,21 @@ class Engine(InputContext):
             # _initialized is False the first time Engine() is
             # allocated and initialized; subsequently it is True
             Engine._initialized = True
+            super(Engine, self).__init__()
 
-            super(Engine, self).__init__(modal = False)
+            # a list of tuples (source, event)
+            self.eventQueue = []
+
+            # nested dict of bindings:
+            #
+            # eventBindings keyed by source (incl None)
+            #  + sub-dicts keyed by event
+            #     + sub-dicts keyed by method
+            #        + value is tuple (*args, **kwargs)
+            self.eventBindings = {}
+
+            self.done = False
+            self.root = None
 
             # some things can only be done once curses.init_scr has been called
             self.cursesInitialized = False
@@ -1093,6 +825,153 @@ class Engine(InputContext):
     def __str__(self):
         return 'Engine'
 
+    def quit(self):
+        """
+        stop processing
+        """
+        self.done = True
+
+    def getFocusedDrawable(self):
+        """
+        returns the drawable that has focus
+        """
+        if isinstance(self.root, Container):
+            return self.root.getActiveDrawable()
+        else:
+            return self.root
+
+    def setFocus(self, drawable):
+        """
+        set the focused drawable
+        """
+
+        if isinstance(self.root, Container):
+            self.log.debug('self.root.setActiveDrawable(%s)', drawable)
+            self.root.setActiveDrawable(drawable)
+        else:
+            if self.root is drawable:
+                return
+            else:
+                raise EngineException, "To change the root Drawable, use setRoot()"
+ 
+    def setRoot(self, drawable):
+        """
+        set the root drawable, which takes up the whole screen area
+        """
+        self.root = drawable
+
+    def getRoot(self):
+        """
+        returns the root drawable, as set by setRoot()
+        """
+        return self.root
+
+    def bindEvent(self, source, event, method, *args, **kwargs):
+        """
+        add a binding for events of the given type from the given source.
+        some events without a source object may have 'None' as the
+        source; for others, source will be a reference to the Drawable
+        which caused the event. method may be a function or method. when
+        a matching event is found in the event queue, method will be
+        called with the given arguments and keyword arguments. many
+        bindings may be made for a given (source, event, method). bound
+        methods with an argument named '_source_obj' will receive a
+        reference to the source in that argument. bound methods with an
+        argument named '_event_type' will receive a copy of the event
+        type (usually a string) in thar argument.
+        
+        the return value of bound methods (if any) is ignored when
+        processing events
+        """
+
+        if source not in self.eventBindings:
+            self.eventBindings[source] = {}
+
+        if event not in self.eventBindings[source]:
+            self.eventBindings[source][event] = {}
+
+        self.eventBindings[source][event][method] = (args, kwargs)
+        self.log.debug('bound event handler for (%s, %s) => %s', source, event, method)
+
+    def unbindEvent(self, source, event, method):
+        """
+        remove the given method from the list of event bindings on the
+        given source and event.
+        """
+        try:
+            del self.eventBindings[source][event][method]
+            self.log.debug("unbound %s on (%s, %s)", method, source, event)
+        
+        except KeyError:
+            self.log.debug("no bindings for %s on (%s, %s)", method, source, event)
+
+    def enqueueEvent(self, source, event):
+        """
+        add an event to the event queue. the event queue is processed
+        periodically by the runtimeLoop (see Engine), at which time
+        any events with matching bindings will trigger a call to
+        each bound method. for user events without a source object,
+        set source to 'None', which will match bindings to events
+        with 'None' as source.
+        """
+        if not self.done:
+            self.eventQueue.append((source, event))
+            self.log.debug('enqueued event for (%s, %s)', source, event)
+
+    def processEvents(self):
+        """
+        process all the events in the event queue, and clear the queue
+        """
+
+        if len(self.eventQueue) > 0:
+            self.log.debug('processing event queue with %d items', len(self.eventQueue))
+
+        # make a local copy
+        localEventQueue = list(self.eventQueue)
+        self.eventQueue = []
+
+        if self.done: return
+
+        for (source, event) in localEventQueue:
+            # do this in a try/catch since we expect
+            # it to fail in most cases
+            try:
+                # the dict of methods bound to this (source, event)
+                bindings = self.eventBindings[source][event]
+
+                # each method bound to the (source, event)
+                for method in bindings.keys():
+                    (args, kwargs) = bindings[method]
+
+                    try:
+                        varnames = method.func_code.co_varnames
+                    except AttributeError:
+                        varnames = method.__call__.func_code.co_varnames
+
+                    # copy the kwargs dictionary so that we don't save any of the
+                    # extra information we're about to conditionally pass along
+                    # (or overwrite anything passed in from the user)
+                    kwargs = dict(kwargs)
+
+                    # if the method is asking for a _source_obj argument,
+                    # bind the event source to the method before calling it
+                    # unless another object is already bound to the method
+                    # TODO this is actually broken. it will still fill the slot
+                    # if the user passes in a POSITIONAL argument for _source_obj,
+                    # resulting in an exception.
+                    if '_source_obj' in varnames:
+                        kwargs['_source_obj'] = kwargs.get('_source_obj', None) or source
+
+                    # do the same for _event_type
+                    if '_event_type' in varnames:
+                        kwargs['_event_type'] = kwargs.get('_event_type', None) or event
+
+
+                    method(*args, **kwargs)
+                    self.log.debug('calling %s(*args = %s, **kwargs = %s)', method, args, kwargs)
+
+            except KeyError:
+                pass
 
     def beginLogging(self, file = None, level = logging.ERROR, formatter = None, handler = None):
         """
@@ -1163,13 +1042,18 @@ class Engine(InputContext):
         if self.root is None:
             raise EngineError, "Must set a root Drawable with setRoot()"
 
-        curses.wrapper(self.setupCurses)
+        curses.wrapper(self.runtimeLoop)
 
 
-    def setupCurses(self, scr):
+    def runtimeLoop(self, scr):
         """
         perform post-curses-initialization setup required for
-        Engine functioning.
+        Engine functioning, then start the main runtime loop.
+
+        the loop redraws the context's Drawable tree, beginning
+        at the root, then waits for keyboard input from the user,
+        parses it into a DTK friendly string and passes it off to
+        the root Drawable for input processing.
         """
 
         self.scr = scr
@@ -1207,41 +1091,14 @@ class Engine(InputContext):
         # among others) 'esc'
         curses.halfdelay(5)
 
-        self.contextLoop(self)
-
-        self.shellMode()
-
-
-    def contextLoop(self, context):
-        """
-        contextLoop runs an input loop on a given InputContext. It
-        redraws the context's Drawable tree, beginning at the root,
-        then waits for keyboard input from the user, parses it into
-        a DTK friendly string (eg "page up" and "enter") and passes
-        it off to the context's root Drawable for input processing.
-        """
-
 
         # NOTE: don't put any logging in the loop that will happen
         # each iteration, else the log gets full of not-so-helpful
         # messages every half second
-
-
-        # context.processEvents()
-
-        context.started = True
-
-
         (h, w) = self.scr.getmaxyx()
-        context.root.setSize(0, 0, h, w)
+        self.root.setSize(0, 0, h, w)
 
-        if isinstance(context.root, Container):
-            context.root.setContext(context)
-        else:
-            context.root.context = context
-
-        # call into the main loop of the current context
-        while not context.done:
+        while not self.done:
             (h, w) = self.scr.getmaxyx()
 
             # update self.resized to be True if the height
@@ -1255,7 +1112,7 @@ class Engine(InputContext):
                 self.scr.clrtobot()
                 self.scr.refresh()
 
-                context.root.setSize(0, 0, h, w)
+                self.root.setSize(0, 0, h, w)
 
                 self.resized = False
                 self.lasth = h
@@ -1266,8 +1123,8 @@ class Engine(InputContext):
             self.scr.noutrefresh()
 
 
-            context.root.drawContents()
-            context.processEvents()
+            self.root.drawContents()
+            self.processEvents()
 
 
             # draw the cursor only if it's valid and should be shown
@@ -1302,21 +1159,18 @@ class Engine(InputContext):
             # we're waiting on further multi-byte input
 
             if input is not None:
-                self.log.debug('Engine: calling handleInput on %s', context.root)
-                if not context.root.handleInput(input):
-                    self.log.debug('Engine: calling handleInput on %s', context)
-                    if not context.handleInput(input) and not context.modal:
-                        self.log.debug('Engine: calling handleInput on self')
-                        self.handleInput(input)
-                        
-
+                self.log.debug('Engine: calling handleInput on %s', self.root)
+                if not self.root.handleInput(input):
+                    self.log.debug('Engine: calling handleInput on self')
+                    self.handleInput(input)
 
 
             # input handling may have caused events, so we process them here
-            context.processEvents()
+            self.processEvents()
 
         # clean up when we're done
         self.clear(self)
+        self.shellMode()
 
 
     def parseInput(self, char):
@@ -1401,7 +1255,6 @@ class Engine(InputContext):
     def touchAll(self):
         """
         causes all drawables to be re-drawn on the next refresh
-        TODO: move to InputContext?
         """
         if isinstance(self.root, Container):
             self.root.touchAll()
