@@ -24,7 +24,13 @@ class DtkTestCase(unittest.TestCase):
         curses.use_delay(False)
         curses.print_screen(False)
 
-        dtk.Engine().log.debug('\n\nBeginning test %s\n', self._TestCase__testMethodName)
+        # Py25 renamed __testMethodName to visible _testMethodName
+        try:
+            test_method_name = self._testMethodName
+        except:
+            test_method_name = self._TestCase__test_method_name
+
+        dtk.Engine().log.debug('\n\nBeginning test %s\n', test_method_name)
         
     def tearDown(self):
         curses.endwin()
