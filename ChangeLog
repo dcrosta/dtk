@@ -1,5 +1,10 @@
 0.4 (unreleased)
 ----------------
+
+* Renamed Rows -> RowLayout, Columns -> ColumnLayout
+* Removed InputContext and Dialog
+* Fixed a bug in test cases in Python 2.5
+* Bugfix: clear() wasn't actually clearing anything
 	
 0.3 (2008-04-23)
 ----------------

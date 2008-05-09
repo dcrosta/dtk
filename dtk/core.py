@@ -1050,10 +1050,10 @@ class Engine(InputHandler):
         perform post-curses-initialization setup required for
         Engine functioning, then start the main runtime loop.
 
-        the loop redraws the context's Drawable tree, beginning
-        at the root, then waits for keyboard input from the user,
-        parses it into a DTK friendly string and passes it off to
-        the root Drawable for input processing.
+        the loop redraws the Drawable tree, beginning at the
+        root, then waits for keyboard input from the user, parses
+        it into a DTK friendly string and passes it off to the
+        root Drawable for input processing.
         """
 
         self.scr = scr
