@@ -1,3 +1,7 @@
+"""
+DECOMMISSIONING THIS TEST. We have currently removed focus events pending review
+
+
 import dtk
 import dtktest
 
@@ -58,3 +62,4 @@ class BugThirtySix(dtktest.DtkTestCase):
         for e, a, i in zip( expected, event_trace, range(len(expected))):
             self.assertEqual(e[0], a[0], "source objs: event %d" % i)
             self.assertEqual(e[1], a[1], "event types: event %d" % i)
+"""

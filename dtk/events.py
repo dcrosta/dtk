@@ -3,12 +3,16 @@ __all__ = ['Event', 'SelectionChanged', 'HighlightChanged', 'Clicked', 'TextChan
 
 class Event(object):
     """
-    the base event type. contains a public attribute `source`
-    which is a reference to the widget which fired the event.
+    The base event type. Two public attributes of interest:
+
+    * source: the object which fired the event
+    * type: a the string class name of the event
     """
 
     def __init__(self, source):
         self.source = source
+
+    type = property(fget=lambda self: self.__class__.__name__)
 
 class SelectionChanged(Event):
     """
