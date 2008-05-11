@@ -27,6 +27,7 @@ import _curses
 import curses
 import curses.ascii
 
+from events import Resized
 
 
 class InputHandler(object):
@@ -304,7 +305,7 @@ class Drawable(InputHandler):
         note that this does not mean that it is on *the* active path
         """
         self.touch()
-        self.fireEvent('became active')
+        #self.fireEvent('became active')
 
 
     def becameInactive(self):
@@ -313,7 +314,7 @@ class Drawable(InputHandler):
         note that this does not mean that it is on *the* active path
         """
         self.touch()
-        self.fireEvent('became inactive')
+        #self.fireEvent('became inactive')
 
 
     def drawContents(self):
@@ -366,35 +367,35 @@ class Drawable(InputHandler):
 
         if sizeChanged:
             self.touch()
-            self.fireEvent('resized')
+            self.fireEvent(Resized(self, self.w, self.h))
 
 
 
     # convenience method for binding and unbinding events on
     # this instance
-    def bindEvent(self, event, method, *args, **kwargs):
+    def bindEvent(self, event_type, method, *args, **kwargs):
         """
         bind method with the given args and keyword args
         on this instance. see Engine.bindEvent for
         more details on event binding.
         """
-        self.engine.bindEvent(self, event, method, *args, **kwargs)
+        self.engine.bindEvent(self, event_type, method, *args, **kwargs)
     
 
-    def unbindEvent(self, event, method):
+    def unbindEvent(self, event_type, method):
         """
         unbind the given method on this instance. see
         Engine.bindEvent for more details on event
         binding.
         """
-        self.engine.unbindEvent(self, event, method)
+        self.engine.unbindEvent(self, event_type, method)
 
 
     def fireEvent(self, event):
         """
         fire an event originating from this Drawable
         """
-        self.engine.enqueueEvent(self, event)
+        self.engine.enqueueEvent(event)
 
 
     # drawables should use these methods for drawing rather than
@@ -866,7 +867,7 @@ class Engine(InputHandler):
         """
         return self.root
 
-    def bindEvent(self, source, event, method, *args, **kwargs):
+    def bindEvent(self, source, event_type, method, *args, **kwargs):
         """
         add a binding for events of the given type from the given source.
         some events without a source object may have 'None' as the
@@ -887,25 +888,25 @@ class Engine(InputHandler):
         if source not in self.eventBindings:
             self.eventBindings[source] = {}
 
-        if event not in self.eventBindings[source]:
-            self.eventBindings[source][event] = {}
+        if event_type not in self.eventBindings[source]:
+            self.eventBindings[source][event_type] = {}
 
-        self.eventBindings[source][event][method] = (args, kwargs)
-        self.log.debug('bound event handler for (%s, %s) => %s', source, event, method)
+        self.eventBindings[source][event_type][method] = (args, kwargs)
+        self.log.debug('bound event handler for (%s, %s) => %s', source, event_type, method)
 
-    def unbindEvent(self, source, event, method):
+    def unbindEvent(self, source, event_type, method):
         """
         remove the given method from the list of event bindings on the
         given source and event.
         """
         try:
-            del self.eventBindings[source][event][method]
-            self.log.debug("unbound %s on (%s, %s)", method, source, event)
+            del self.eventBindings[source][event_type][method]
+            self.log.debug("unbound %s on (%s, %s)", method, source, event_type)
         
         except KeyError:
-            self.log.debug("no bindings for %s on (%s, %s)", method, source, event)
+            self.log.debug("no bindings for %s on (%s, %s)", method, source, event_type)
 
-    def enqueueEvent(self, source, event):
+    def enqueueEvent(self, event):
         """
         add an event to the event queue. the event queue is processed
         periodically by the runtimeLoop (see Engine), at which time
@@ -915,8 +916,8 @@ class Engine(InputHandler):
         with 'None' as source.
         """
         if not self.done:
-            self.eventQueue.append((source, event))
-            self.log.debug('enqueued event for (%s, %s)', source, event)
+            self.eventQueue.append(event)
+            self.log.debug('enqueued event for (%s, %s)', event.source, event)
 
     def processEvents(self):
         """
@@ -930,47 +931,28 @@ class Engine(InputHandler):
         localEventQueue = list(self.eventQueue)
         self.eventQueue = []
 
+        # FIXME: do we need this line? i think this had something
+        # to do with InputContext
         if self.done: return
 
-        for (source, event) in localEventQueue:
+        for event in localEventQueue:
             # do this in a try/catch since we expect
             # it to fail in most cases
+            source = event.source
             try:
                 # the dict of methods bound to this (source, event)
-                bindings = self.eventBindings[source][event]
+                bindings = self.eventBindings[source][event.__class__]
 
                 # each method bound to the (source, event)
                 for method in bindings.keys():
-                    (args, kwargs) = bindings[method]
-
-                    try:
-                        varnames = method.func_code.co_varnames
-                    except AttributeError:
-                        varnames = method.__call__.func_code.co_varnames
-
-                    # copy the kwargs dictionary so that we don't save any of the
-                    # extra information we're about to conditionally pass along
-                    # (or overwrite anything passed in from the user)
-                    kwargs = dict(kwargs)
-
-                    # if the method is asking for a _source_obj argument,
-                    # bind the event source to the method before calling it
-                    # unless another object is already bound to the method
-                    # TODO this is actually broken. it will still fill the slot
-                    # if the user passes in a POSITIONAL argument for _source_obj,
-                    # resulting in an exception.
-                    if '_source_obj' in varnames:
-                        kwargs['_source_obj'] = kwargs.get('_source_obj', None) or source
-
-                    # do the same for _event_type
-                    if '_event_type' in varnames:
-                        kwargs['_event_type'] = kwargs.get('_event_type', None) or event
-
-
+                    args, kwargs = bindings[method]
+                    args = list(args)
+                    args.insert(0, event)
                     method(*args, **kwargs)
                     self.log.debug('calling %s(*args = %s, **kwargs = %s)', method, args, kwargs)
 
             except KeyError:
+                # this means the source or event was not bound anywhere
                 pass
 
     def beginLogging(self, file = None, level = logging.ERROR, formatter = None, handler = None):

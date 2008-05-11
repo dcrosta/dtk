@@ -20,6 +20,7 @@
 import types
 
 from core import Drawable
+from events import SelectionChanged, HighlightChanged
 
 class ListBox(Drawable):
     """
@@ -46,8 +47,8 @@ class ListBox(Drawable):
            j/k for up/down
 
         Events:
-         * 'selection changed' when the selection changes
-         * 'cursor moved' when the highlight/cursor moves
+         * SelectionChanged
+         * HighlightChanged
         """
         super(ListBox, self).__init__(**kwargs)
 
@@ -203,7 +204,7 @@ class ListBox(Drawable):
 
         self.touch()
 
-        self.fireEvent('cursor moved')
+        self.fireEvent(HighlightChanged(self, self.items[self.highlighted]))
 
 
     def moveToTop(self):
@@ -353,7 +354,7 @@ class ListBox(Drawable):
 
         self.touch()
 
-        self.fireEvent('selection changed')
+        self.fireEvent(SelectionChanged(self, self.selected))
 
     def render(self):
         """

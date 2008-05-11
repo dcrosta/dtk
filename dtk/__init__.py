@@ -35,6 +35,7 @@ for name in os.listdir(mod_path):
 
 # first get the core classes
 from core import *
+from events import *
 
 # import into 'dtk' namespace only those things
 # with the same name as the file they appear in,

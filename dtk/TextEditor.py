@@ -18,6 +18,7 @@
 
 
 from core import Drawable
+from events import TextChanged
 import util
 
 import types
@@ -30,7 +31,7 @@ class TextEditor(Drawable):
     A simple multi-line text edtor/viewer that does smart things.
 
     Events:
-     * 'text changed' whenever the text changes
+     * TextChanged
     """
 
     def __init__(self, editable = True, **kwargs):
@@ -83,7 +84,7 @@ class TextEditor(Drawable):
 
         self.touch()
 
-        self.fireEvent('text changed')
+        self.fireEvent(TextChanged(self, '\n'.join(self.buffer)))
 
 
     def backspace(self):
@@ -106,7 +107,7 @@ class TextEditor(Drawable):
 
         self.touch()
 
-        self.fireEvent('text changed')
+        self.fireEvent(TextChanged(self, '\n'.join(self.buffer)))
     
 
     def delete(self):
@@ -121,7 +122,7 @@ class TextEditor(Drawable):
 
         self.touch()
 
-        self.fireEvent('text changed')
+        self.fireEvent(TextChanged(self, '\n'.join(self.buffer)))
 
 
     def moveHome(self):
@@ -228,7 +229,7 @@ class TextEditor(Drawable):
 
         self.touch()
 
-        self.fireEvent('text changed')
+        self.fireEvent(TextChanged(self, '\n'.join(self.buffer)))
 
 
     def getText(self):

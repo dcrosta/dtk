@@ -18,6 +18,7 @@
 
 
 from core import Drawable
+from events import TextChanged
 
 class TextField(Drawable):
     """
@@ -34,7 +35,7 @@ class TextField(Drawable):
 
 
     Events (in addition to standard Drawable events):
-     * 'text changed' whenever the text changes
+     * TextChanged
     """
 
     def __init__(self, **kwargs):
@@ -53,14 +54,12 @@ class TextField(Drawable):
         self.bindKey('backspace', self.backspace)
         self.bindKey('delete', self.delete)
 
-
     def setText(self, text):
         self.buffer = text
         self.moveToStart()
         self.touch()
 
-        self.fireEvent('text changed') 
-
+        self.fireEvent(TextChanged(self, self.buffer))
 
     def getText(self):
         return self.buffer
@@ -74,7 +73,6 @@ class TextField(Drawable):
             self.start = self.cursor
 
         self.touch()
-
 
     def moveRight(self):
         self.cursor += 1
@@ -107,14 +105,14 @@ class TextField(Drawable):
         self.buffer = self.buffer[:max(0, self.cursor-1)] + self.buffer[self.cursor:]
         self.moveLeft()
 
-        self.fireEvent('text changed') 
+        self.fireEvent(TextChanged(self, self.buffer))
 
     def delete(self):
         self.buffer = self.buffer[:self.cursor] + self.buffer[self.cursor+1:]
 
         self.touch()
 
-        self.fireEvent('text changed') 
+        self.fireEvent(TextChanged(self, self.buffer))
 
     def typing(self, _input_key):
         self.buffer = self.buffer[:self.cursor] + _input_key + self.buffer[self.cursor:]
@@ -122,7 +120,7 @@ class TextField(Drawable):
 
         self.touch()
 
-        self.fireEvent('text changed') 
+        self.fireEvent(TextChanged(self, self.buffer))
 
     def render(self):
         """

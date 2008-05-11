@@ -18,6 +18,7 @@
 
 
 from core import Drawable
+from events import SelectionChanged, Clicked
 
 class Select(Drawable):
     """
@@ -37,8 +38,8 @@ class Select(Drawable):
     but hasn't hit enter) will be bold.
 
     Events:
-     * 'selection changed' when the selection changes
-     * 'clicked' when the user hits enter on an option
+     * SelectionChanged
+     * Clicked
     """
 
 
@@ -87,7 +88,7 @@ class Select(Drawable):
         self.chosen = self.selected
         self.touch()
 
-        self.fireEvent('clicked')
+        self.fireEvent(Clicked(self))
 
 
     def selectNext(self):
@@ -103,7 +104,7 @@ class Select(Drawable):
 
         self.touch()
 
-        self.fireEvent('selection changed')
+        self.fireEvent(SelectionChanged(self, self.selected))
 
 
     def selectPrev(self):
@@ -119,7 +120,7 @@ class Select(Drawable):
 
         self.touch()
 
-        self.fireEvent('selection changed')
+        self.fireEvent(SelectionChanged(self, self.selected))
 
 
     def render(self):

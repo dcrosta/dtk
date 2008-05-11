@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import dtk, dtk.util
+from dtk.events import *
 import time
 import sys, os
 import logging
@@ -204,20 +205,14 @@ elif len(sys.argv) > 1 and sys.argv[1] == 'event':
     p = dtk.Pager()
     root.addRow(p)
 
-    def onchange(pager, _source_obj, _event_type):
-        pager.setText("got event '%s' from %s" % (_event_type, _source_obj))
+    def onchange(event, pager):
+        pager.setText("got event '%s' from %s" % (event.__class__.__name__, event.source))
 
-    tf.bindEvent('text changed', onchange, pager = p)
-    tf.bindKey('page up', tf.unbindEvent, 'text changed', onchange)
+    tf.bindEvent(TextChanged, onchange, p)
+    tf.bindKey('page up', tf.unbindEvent, TextChanged, onchange)
 
     tf.bindKey('esc', e.quit)
 
-    d = dtk.Dialog()
-    d.setText('a happy dialog!')
-
-    d.bindEvent('dismissed', p.setText, 'dialog was dismissed')
-
-    tf.bindKey('page down', d.show)
 
 elif len(sys.argv) > 1 and sys.argv[1] == 'color':
     from dtk import util

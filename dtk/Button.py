@@ -17,6 +17,7 @@
 # License along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
 from Label import Label
+from events import Clicked
 
 class Button(Label):
     """
@@ -25,7 +26,7 @@ class Button(Label):
     action which fires the 'clicked' event.
 
     Events (in addition to standard Drawable events):
-     * 'clicked' when the user "clicks" the button (hitting enter)
+     * Clicked
     """
 
     def __init__(self, text = None, decoration = '[%s]', **kwargs):
@@ -49,7 +50,8 @@ class Button(Label):
         called when the button is clicked by a keybinding,
         or when you want to simulate such a click
         """
-        self.fireEvent('clicked')
+        self.fireEvent(Clicked(self))
+        pass
 
 
     def render(self):
