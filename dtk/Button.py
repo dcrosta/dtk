@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ['Button']
+
 from Label import Label
 from events import Clicked
 

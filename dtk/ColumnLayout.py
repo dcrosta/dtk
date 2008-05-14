@@ -16,11 +16,18 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ['Column', 'ColumnLayout']
 
 from core import Drawable, Container, ContainerException
 from RowColumns import RowColumns
 import curses
 import util
+
+class Column(object):
+
+    def __init__(self, drawable, width=None):
+        self.drawable = drawable
+        self.width = width
 
 class ColumnLayout(RowColumns):
     """
@@ -37,6 +44,18 @@ class ColumnLayout(RowColumns):
     switchColumn = RowColumns.switchChild
     lineSomehow = RowColumns.lineDown
     drawSomehow = RowColumns.drawDown
+
+    def __init__(self, *args, **kwargs):
+        RowColumns.__init__(self, **kwargs)
+
+        # expect *args to be a list of Drawables,
+        # or possibly adapted Drawables
+
+        for arg in args:
+            if isinstance(arg, Column):
+                self.addColumn(arg.drawable, fixedsize=arg.width)
+            else:
+                self.addColumn(arg)
 
     def setSize(self, y, x, h, w):
         """

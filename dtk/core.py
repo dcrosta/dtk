@@ -16,10 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ['InputHandler',
+           'Drawable',
+           'Container',
+           'EngineException',
+           'NoInputCharException',
+           'ContainerException',
+           'Engine']
 
-import string
 import types
-import time
 import logging
 import logging.handlers
 
@@ -27,7 +32,7 @@ import _curses
 import curses
 import curses.ascii
 
-from events import Resized
+import events
 
 
 class InputHandler(object):
@@ -367,7 +372,7 @@ class Drawable(InputHandler):
 
         if sizeChanged:
             self.touch()
-            self.fireEvent(Resized(self, self.w, self.h))
+            self.fireEvent(events.Resized(self, self.w, self.h))
 
 
 
