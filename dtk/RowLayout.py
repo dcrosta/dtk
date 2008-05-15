@@ -29,6 +29,8 @@ class Row(object):
         self.drawable = drawable
         self.height = height
 
+    fixedsize = property(fget=lambda self: self.height)
+
 class RowLayout(RowColumns):
     """
     implements a flexible, resizable (hopefully!) layout
@@ -44,18 +46,7 @@ class RowLayout(RowColumns):
     switchRow = RowColumns.switchChild
     lineSomehow = RowColumns.line
     drawSomehow = RowColumns.draw
-
-    def __init__(self, *args, **kwargs):
-        RowColumns.__init__(self, **kwargs)
-
-        # expect *args to be a list of Drawables,
-        # or possibly adapted Drawables
-
-        for arg in args:
-            if isinstance(arg, Row):
-                self.addRow(arg.drawable, fixedsize=arg.height)
-            else:
-                self.addRow(arg)
+    adapterClass = Row
 
     def setSize(self, y, x, h, w):
         """

@@ -31,6 +31,17 @@ class RowColumns(Container):
     or between the row, or both.
     """
 
+    # these things are all set by the implementing
+    # class, either RowLayout or ColumnLayout
+    addRow = None
+    insertRow = None
+    nextRow = None
+    prevRow = None
+    switchRow = None
+    lineSomehow = None
+    drawSomehow = None
+    adapterClass = None
+
     class Separator:
         def __init__(self, type):
             self.fixedsize = 1
@@ -38,17 +49,25 @@ class RowColumns(Container):
             self.weight = 0
             self.type = type
 
-    def __init__(self, outerborder = True, innerborder = True, **kwargs):
+    def __init__(self, *args, **kwargs):
         if not issubclass(self.__class__, RowColumns):
             raise ContainerException("do not create a RowColumns instance. instantiate a subclass of RowColumns instead.")
 
         super(RowColumns, self).__init__(**kwargs)
 
-        self.outerborder = outerborder
-        self.innerborder = innerborder
+        self.outerborder = kwargs.get('outerborder', True)
+        self.innerborder = kwargs.get('innerborder', True)
         self.cells = []
 
         self.bindKey('tab', self.nextChild)
+
+        # expect args to be a list of Drawables,
+        # or possibly adapted Drawables
+        for arg in args:
+            if isinstance(arg, self.adapterClass):
+                self.addChild(arg.drawable, fixedsize=arg.fixedsize)
+            else:
+                self.addChild(arg)
 
     def addChild(self, drawable, fixedsize = None, weight = 1):
         """
