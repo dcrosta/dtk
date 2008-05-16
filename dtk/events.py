@@ -19,7 +19,25 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with DTK. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['Event', 'SelectionChanged', 'HighlightChanged', 'Clicked', 'TextChanged', 'Resized']
+__all__ = ['Event', 'SelectionChanged', 'HighlightChanged', 'Clicked', 'TextChanged', 'Resized', 'event_bound']
+
+def event_bound(event_type, **kwargs):
+    def wrapper(target_function):
+        def inner(self, *iargs, **ikwargs):
+            if len(iargs) > 0:
+                event = iargs[0]
+                if isinstance(event, event_type):
+                    new_ikwargs = {}
+                    for key, value in kwargs.items():
+                        new_ikwargs[key] = eval(value, {'event':event})
+                    return target_function(self, **new_ikwargs)
+                else:
+                    return target_function(self, *iargs, **ikwargs)
+            else:
+                return target_function(self, *iargs, **ikwargs)
+        return inner
+    return wrapper
+
 
 class Event(object):
     """
