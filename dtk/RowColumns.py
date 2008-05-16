@@ -63,9 +63,15 @@ class RowColumns(Container):
 
         # expect args to be a list of Drawables,
         # or possibly adapted Drawables
-        for arg in args:
+        did_set_focus = False
+        for i, arg in enumerate(args):
             if isinstance(arg, self.adapterClass):
                 self.addChild(arg.drawable, fixedsize=arg.fixedsize)
+                if arg.focused:
+                    if did_set_focus:
+                        raise ContainerException("only one child may have focus")
+                    self.switchChild(i)
+                    did_set_focus = True
             else:
                 self.addChild(arg)
 

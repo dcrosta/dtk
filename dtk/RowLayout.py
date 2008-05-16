@@ -25,9 +25,10 @@ import util
 
 class Row(object):
 
-    def __init__(self, drawable, height=None):
+    def __init__(self, drawable, height=None, focused=False):
         self.drawable = drawable
         self.height = height
+        self.focused = focused
 
     fixedsize = property(fget=lambda self: self.height)
 

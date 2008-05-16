@@ -25,9 +25,10 @@ import util
 
 class Column(object):
 
-    def __init__(self, drawable, width=None):
+    def __init__(self, drawable, width=None, focused=False):
         self.drawable = drawable
         self.width = width
+        self.focused = focused
 
     fixedsize = property(fget=lambda self: self.width)
 
